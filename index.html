@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TEi Composites · 國際新聞 · 2026-04-22 13:33</title>
+<style>
+ * { box-sizing: border-box; }
+ body { margin:0; min-height:100vh; color:#1a1d24; line-height:1.5;
+        font-family:"Microsoft JhengHei","PingFang TC",-apple-system,"Segoe UI",sans-serif;
+        background:linear-gradient(135deg,#c9d6ff 0%,#e2dbf5 50%,#ffd8e5 100%);
+        background-attachment:fixed; }
+ .wrap { max-width:1320px; margin:28px auto; padding:28px;
+         background:rgba(255,255,255,0.72);
+         backdrop-filter:blur(28px) saturate(180%);
+         -webkit-backdrop-filter:blur(28px) saturate(180%);
+         border-radius:22px; box-shadow:0 12px 48px rgba(60,50,110,0.14);
+         border:1px solid rgba(255,255,255,0.5); }
+ header { display:flex; align-items:center; gap:16px; margin-bottom:22px;
+          padding-bottom:18px; border-bottom:1px solid rgba(0,0,0,0.06); }
+ header .logo { height:52px; width:auto; flex-shrink:0; }
+ header .logo-placeholder { height:52px; min-width:52px; border-radius:10px;
+          background:linear-gradient(135deg,#3a3a3a,#1a1a1a); color:#fff;
+          display:flex; align-items:center; justify-content:center;
+          font-weight:800; font-size:22px; letter-spacing:0.04em; padding:0 14px; }
+ header .brand-text { display:flex; flex-direction:column; gap:2px; }
+ header h1 { font-size:22px; margin:0; font-weight:700; letter-spacing:-0.01em; line-height:1.2; }
+ header .sub { color:#666; font-size:12.5px; }
+
+ .hero-row { display:grid; grid-template-columns:1.3fr 1fr 0.8fr; gap:14px; margin-bottom:14px; }
+ .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+
+ .card { background:#fff; border-radius:14px; overflow:hidden;
+         box-shadow:0 2px 10px rgba(0,0,0,0.05);
+         transition:transform .18s, box-shadow .18s; }
+ .card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.1); }
+ details { cursor:pointer; }
+ details > summary { list-style:none; cursor:pointer; display:block; }
+ details > summary::-webkit-details-marker { display:none; }
+
+ /* Hero */
+ .hero { position:relative; min-height:440px; display:flex; flex-direction:column; }
+ .hero > summary { flex:1; position:relative; min-height:440px; }
+ .hero-img { position:absolute; inset:0; background-size:cover;
+             background-position:center; background-repeat:no-repeat; }
+ .hero-overlay { position:absolute; inset:0;
+             background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.35) 45%,transparent 75%); }
+ .hero-caption { position:absolute; bottom:0; left:0; right:0; padding:24px 26px; color:#fff; z-index:1; }
+ .hero-caption h2 { font-size:22px; margin:10px 0 8px; line-height:1.35;
+             text-shadow:0 2px 12px rgba(0,0,0,0.55); font-weight:700; }
+ .hero-caption .meta { font-size:12.5px; opacity:0.9; }
+
+ /* List */
+ .list { padding:18px 20px; }
+ .list h3, .carbon h3 { margin:0 0 12px; font-size:14.5px; font-weight:700; display:flex; align-items:baseline; gap:8px; }
+ .list h3 .sub, .carbon h3 .sub { font-size:11px; color:#999; font-weight:400; }
+ .list-item { border-bottom:1px solid #eee; padding:10px 0; }
+ .list-item:last-of-type { border-bottom:none; padding-bottom:0; }
+ .list-item summary { display:flex; gap:12px; align-items:flex-start; }
+ .list-thumb { width:68px; height:68px; flex-shrink:0; border-radius:8px;
+               background-size:cover; background-position:center; }
+ .list-caption { flex:1; min-width:0; }
+ .list-caption h4 { font-size:13.5px; margin:0 0 5px; line-height:1.4; font-weight:600; color:#1a1d24;
+                    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+ .list-caption .meta { font-size:11px; color:#666; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+ /* Carbon Fiber 右側面板 */
+ .carbon { padding:18px 18px 14px; display:flex; flex-direction:column; min-height:0; }
+ .carbon-list { overflow-y:auto; flex:1; min-height:0; margin:0 -8px; padding:0 8px 4px; }
+ .carbon-list::-webkit-scrollbar { width:5px; }
+ .carbon-list::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.15); border-radius:3px; }
+ .carbon-list::-webkit-scrollbar-track { background:transparent; }
+ .carbon-item { border-bottom:1px solid #eee; padding:8px 0; }
+ .carbon-item:last-of-type { border-bottom:none; }
+ .carbon-item summary { display:flex; gap:10px; align-items:flex-start; }
+ .carbon-badge { flex-shrink:0; font-size:10px; font-weight:700; padding:2px 6px;
+                 background:linear-gradient(135deg,#2a2a2a,#555); color:#fff;
+                 border-radius:4px; letter-spacing:0.04em; margin-top:2px; }
+ .carbon-line { flex:1; min-width:0; }
+ .carbon-line h4 { font-size:12.5px; margin:0 0 3px; line-height:1.4; font-weight:600; color:#1a1d24;
+                   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+ .carbon-line .meta { font-size:10.5px; color:#666; }
+ .carbon-empty { font-size:12px; color:#999; padding:20px 4px; text-align:center; }
+ .carbon-item .detail { padding:10px 4px 4px; background:transparent; border-top:1px dashed #ddd; margin-top:8px; font-size:12px; }
+
+ /* Tile */
+ .tile-img { width:100%; aspect-ratio:16/9; background-size:cover; background-position:center; }
+ .tile-body { padding:12px 14px 14px; }
+ .tile-body h3 { font-size:14.5px; margin:8px 0 6px; line-height:1.45; font-weight:600; color:#1a1d24;
+                 display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+ .tile-body .meta { font-size:11.5px; color:#666; }
+
+ .tags { display:flex; gap:6px; align-items:center; }
+ .tag { font-size:10.5px; padding:2px 9px; border-radius:999px;
+        color:#fff; font-weight:600; letter-spacing:0.03em; }
+ .tag.tiny { font-size:10px; padding:1px 7px; }
+ .lang { font-size:10px; padding:1px 6px; border-radius:3px;
+         background:rgba(0,0,0,0.08); color:#555; font-weight:600; }
+ .lang.dark { background:rgba(255,255,255,0.25); color:#fff; }
+
+ /* Detail expansion */
+ .detail { padding:14px 18px 18px; background:#fafafa; border-top:1px solid #eee;
+           font-size:13.5px; color:#333; }
+ .detail p { margin:0 0 10px; line-height:1.65; }
+ .detail a { color:#5b87e0; text-decoration:none; font-weight:600; font-size:13px; }
+ .detail a:hover { text-decoration:underline; }
+ .hero .detail { padding:16px 26px 22px; }
+
+ footer { margin-top:22px; padding-top:14px; border-top:1px solid rgba(0,0,0,0.07);
+          text-align:center; font-size:11.5px; color:#777; }
+
+ @media (max-width:1000px) {
+   .hero-row { grid-template-columns:1fr; }
+   .grid { grid-template-columns:repeat(2,1fr); }
+   .hero { min-height:320px; }
+   .hero > summary { min-height:320px; }
+ }
+ @media (max-width:600px) {
+   .grid { grid-template-columns:1fr; }
+   .wrap { padding:16px; margin:12px; border-radius:16px; }
+ }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-placeholder">TEi</div>
+    <div class="brand-text">
+      <h1>TEi Composites Corporation 國際新聞</h1>
+      <div class="sub">For 同仁 · 過去 24 小時 · 20 則頭條 · 2026-04-22 13:33</div>
+    </div>
+  </header>
+
+  <section class="hero-row">
+    <details class="card hero">
+  <summary>
+    <div class="hero-img" style="background-image:url('https://i.guim.co.uk/img/media/12e80382ef9e459ccffcb502e3f7c07f77326fe7/878_0_4940_3952/master/4940.jpg?width=140&amp;quality=85&amp;auto=format&amp;fit=max&amp;s=6e19055b8aef5384f76cbcff1b5afa51');background-size:cover;background-position:center;"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-caption">
+      <div class="tags">
+        <span class="tag" style="background:#e0556f">衝突</span>
+      </div>
+      <h2>中東危機直播：川普延長停火，但封鎖仍在繼續；伊朗襲擊阿曼海域的貨櫃船</h2>
+      <div class="meta">Guardian World · 04/22 13:20</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>美國財政部長 Scott Bessent 表示，伊朗的 Kharg Island 儲存設施將因封鎖而在短短幾天內爆滿，而其 「脆弱 」的油井也將因封鎖而關閉。儘管這次襲擊的擊擊擊者是以色列的軍隊，但這次襲擊的擊擊撃者並非以色列的軍隊，而是黎巴嫩的軍隊。繼續閱讀...</p>
+  </div>
+</details>
+    <aside class="card list">
+  <h3>重點追蹤</h3>
+  <details class="list-item">
+  <summary>
+    <div class="list-thumb" style="background-image:url('https://s.france24.com/media/display/68bed33e-3d9b-11f1-ac80-005056a90284/w:1024/p:16x9/EN-20260421-160646-160839-CS.jpg');background-size:cover;background-position:center;"></div>
+    <div class="list-caption">
+      <h4>黎巴嫩高級官員提出警告</h4>
+      <div class="meta">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+        France 24 · 04/22 00:10
+      </div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>據當地媒體L&#39;Orient-Le Jour報導，以色列週二在黎巴嫩南部的Wadi Houjeir山谷進行了一次空襲，儘管停戰協議已於週五生效。以色列軍方也指控真主黨違反停火，而這個伊朗支持的組織則表示，正在為在六個多星期的戰鬥中陣亡的 44 名戰士舉行集體葬禮。Eliza Herbert 報導當地的情況。</p>
+  </div>
+</details><details class="list-item">
+  <summary>
+    <div class="list-thumb" style="background:linear-gradient(135deg,#ff758c 0%,#ff9a7e 100%);"></div>
+    <div class="list-caption">
+      <h4>伊朗戰爭直播：特朗普稱停火延長，與德黑蘭的談判陷入僵局</h4>
+      <div class="meta">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+        Al Jazeera · 04/22 08:00
+      </div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>黎巴嫩災難管理單位將數週來以色列襲擊造成的死亡人數提高到 2,454 人，7,658 人受傷。</p>
+  </div>
+</details><details class="list-item">
+  <summary>
+    <div class="list-thumb" style="background-image:url('https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/c270/live/30946600-3ddb-11f1-9334-ed7ce6ee8e1f.jpg');background-size:cover;background-position:center;"></div>
+    <div class="list-caption">
+      <h4>川普延長伊朗戰爭停火期 油價下跌</h4>
+      <div class="meta">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+        BBC Business · 04/22 09:18
+      </div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>總統還說，美國將繼續封鎖伊朗的港口，直到和談取得進展。</p>
+  </div>
+</details><details class="list-item">
+  <summary>
+    <div class="list-thumb" style="background:linear-gradient(135deg,#ff758c 0%,#ff9a7e 100%);"></div>
+    <div class="list-caption">
+      <h4>黎巴嫩戰爭危及孕婦</h4>
+      <div class="meta">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+        Deutsche Welle · 04/22 03:30
+      </div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>儘管以色列與真主黨（Hezbollah）實施臨時停火，黎巴嫩的醫療保健系統仍面臨嚴重壓力。數以千計流離失所的孕婦正努力尋求醫療服務。</p>
+  </div>
+</details>
+</aside>
+    <aside class="card carbon">
+  <h3>碳纖維即時新聞 <span class="sub">10 則</span></h3>
+  <div class="carbon-list">
+    <details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>日本 eVTOL 開發商 SkyDrive 獲得 ADO 認證</h4>
+      <div class="meta">JEC Composites · 04/21</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>日本領先的電動垂直起降飛機製造商 SkyDrive 宣布，其已正式獲得國土交通省 (MLIT) 下屬的日本民航局 (JCAB) 的 ADO 認證。 ADO 狀態是 SkyDrive 擁有嚴格的品質控制和安全管理系統的官方公開證明 閱讀更多</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>BMW獲得專利的扁平儲存系統使用 CFRP 儲槽儲存 iX5 氫氣</h4>
+      <div class="meta">CompositesWorld · 04/21</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>20 Apr 2026 Advanced Air Mobility Eve 推進 eVTOL 飛行測試與原型演示 到目前為止，該測試專注於低速運行，並在推進力、效率和噪聲性能方面擴大其包圍，取得了令人鼓舞的早期結果。20 Apr 2026 壓力容器 BMW 的專利平面儲存系統使用 CFRP 儲槽來儲存 iX5 氫氣 七個 700 巴的 Type 4 儲槽平行連接，可儲存...</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>SHD Composites 為飛機座椅提供永續材料</h4>
+      <div class="meta">JEC Composites · 04/17</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>Cambium 旗下公司 SHD 將為飛機內飾提供新型 FR308 預浸料，這是一種完全符合易燃性、煙霧排放和毒性 (FST) 標準的樹脂系統，作為 EcoSuite 計劃的一部分，EcoSuite 計劃是一項重大項目，旨在使用可持續材料和先進製造技術開發下一代飛機座椅。生物基 FR308 閱讀更多</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>東麗複合材料美國公司與 Syensqo 簽署長期航空航太碳纖維供應協議</h4>
+      <div class="meta">CompositesWorld · 04/18</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>20 Apr 2026 Advanced Air Mobility Eve 推進 eVTOL 飛行測試與原型演示 到目前為止，該測試專注於低速運行，並在推進力、效率和噪聲性能方面擴大其包圍，取得了令人鼓舞的早期結果。20 Apr 2026 壓力容器 BMW 的專利平面儲存系統使用 CFRP 儲槽來儲存 iX5 氫氣 七個 700 巴的 Type 4 儲槽平行連接，可儲存...</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>Nova Carbon與賽峰集團合作回收碳纖維生產廢料</h4>
+      <div class="meta">CompositesWorld · 04/18</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>20 Apr 2026 Advanced Air Mobility Eve 推進 eVTOL 飛行測試與原型演示 到目前為止，該測試專注於低速運行，並在推進力、效率和噪聲性能方面擴大其包圍，取得了令人鼓舞的早期結果。20 Apr 2026 壓力容器 BMW 的專利平面儲存系統使用 CFRP 儲槽來儲存 iX5 氫氣 七個 700 巴的 Type 4 儲槽平行連接，可儲存...</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>法國公司 Nova Carbon 幫助賽峰集團回收碳纖維廢料</h4>
+      <div class="meta">JEC Composites · 04/15</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>Nova Carbon 正在與賽峰集團合作，回收後者的碳纖維廢料。這家法國新創公司提供碳纖維回收技術，可以保留回收纖維的結構和長度。這些是使用專有的重新調整和受控重塑過程進行重組的。該技術使所得材料能夠提供高機械性能閱讀更多</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>丹麥：世界上第一台配備減少二氧化碳塔和回收葉片的渦輪機</h4>
+      <div class="meta">JEC Composites · 04/14</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>到 2026 年底，總共將安裝 72 颱風力渦輪機，每台容量高達 15 兆瓦。其中一半將配備碳足跡較低的鋼塔，而 40 台渦輪機將配備總共 120 個可回收轉子葉片。 Sven Utermöhlen，萊茵集團執行長 閱讀更多</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>VAC Innovation 將在英國分銷東麗 AmberTool HX56 模具預浸料</h4>
+      <div class="meta">JEC Composites · 04/09</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>在最新一期的 JEC World 上，英國製造商 VAC Innovation 與 Toray Advanced Composites 簽署了一份諒解備忘錄，以分銷其商標 AmberTool HX56，這是一種低溫固化環氧樹脂模具預浸料，旨在促進複合材料模具的生產。這種預浸料旨在使製造商能夠生產耐用且尺寸合適的閱讀莫…</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>Slack &amp; Parr 計量幫浦在印度碳纖維廠投入使用</h4>
+      <div class="meta">JEC Composites · 04/09</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>Slack &amp; Parr 的高精度計量技術旨在為印度新的大型碳纖維工廠的加工線提供可靠且受控的聚合物流。將提供三種不同尺寸的泵浦——1,000cc/rev、1,500cc/rev 和 2,000cc/rev——用於新工廠內的各種應用。 19 閱讀更多</p>
+  </div>
+</details><details class="carbon-item">
+  <summary>
+    <span class="carbon-badge">CF</span>
+    <div class="carbon-line">
+      <h4>具有可調延遲的低足跡環氧樹脂可實現回收碳纖維墊的採用</h4>
+      <div class="meta">JEC Composites · 04/03</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>過去 20 年來，複合材料在減少車隊排放方面發揮了重要作用，這主要歸功於其卓越的強度重量比。透過使車輛減輕多餘的質量，複合材料直接有助於提高燃油效率和減少二氧化碳排放。美國能源部 2013 年發布的「汽車和卡車輕質材料」報告，閱讀更多</p>
+  </div>
+</details>
+  </div>
+</aside>
+  </section>
+
+  <section class="grid">
+    <details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://s.france24.com/media/display/d9523714-3dc1-11f1-a2cf-005056a97e36/w:1024/p:16x9/AP26111644890124.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0a040">市場</span>
+      </div>
+      <h3>烏克蘭重開受損的 Druzhba 輸油管，以釋放 900 億歐盟貸款</h3>
+      <div class="meta">France 24 · 04/22 05:04</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>烏克蘭總統澤倫斯基（Volodymyr Zelensky）向盟友施壓，要求加強對莫斯科的制裁。儘管烏克蘭總統澤連斯基（Volodymyr Zelensky）向盟友施壓，要求加強對莫斯科的制裁，但此舉仍迫使烏克蘭陷入恢復俄羅斯石油流向匈牙利和斯洛伐克的難堪境地。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/1061/live/76c625f0-3d63-11f1-a7f7-c90fc0a93ea1.png');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>伊朗戰爭「讓我們的燃料費增加了 10 萬英鎊</h3>
+      <div class="meta">BBC Business · 04/22 13:19</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>油價上漲對卡車司機、照護者和取暖油使用者有何影響？</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background:linear-gradient(135deg,#ff758c 0%,#ff9a7e 100%);"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>伊朗戰爭停火存疑，美元徘徊在一週高點附近 - Reuters</h3>
+      <div class="meta">Reuters · 04/22 08:35</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>伊朗戰爭停火存疑，美元徘徊於一週高位 Reuters</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://i.guim.co.uk/img/media/d32885bbde3fb6e2722dab137933ea32910f026d/1450_89_5528_4423/master/5528.jpg?width=140&amp;quality=85&amp;auto=format&amp;fit=max&amp;s=9cdc75ac1d3af733dd4192da88678db5');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#3ba374">經濟</span>
+      </div>
+      <h3>歐盟外長拒絕中止與以色列結盟協定的提案</h3>
+      <div class="meta">Guardian World · 04/22 02:46</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>愛爾蘭、西班牙和斯洛文尼亞提出部分暫停協議，但未獲得其他成員國的足夠支持 歐盟在對以色列實施制裁一事上仍然存在分歧，儘管一些成員國批評以色列在加沙的困境以及以色列定居者在西岸對巴勒斯坦人的暴力行為。歐盟外交政策主管 Kaja Kallas 表示，部分暫停歐盟與以色列聯盟協定的提案仍在討論中，但需要各國改變立場才能生效。繼續閱讀...</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://static01.nyt.com/images/2026/04/21/multimedia/21israel-iran-china-iran-tkfv/21israel-iran-china-iran-tkfv-mediumSquareAt3X.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#9966d4">外交</span>
+      </div>
+      <h3>中國平衡海灣利益，習近平呼籲重開霍爾木茲海峽</h3>
+      <div class="meta">NYT World · 04/22 04:18</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>中國領導人習近平對霍爾木玆海峽的評論反映出北京與伊朗及其他波斯灣國家的複雜關係。中國領導人習近平上週在北京與阿布扎比王儲會面。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://ichef.bbci.co.uk/ace/ws/240/cpsprodpb/dab8/live/9f9610b0-3dab-11f1-b377-d7765ac78768.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#9966d4">外交</span>
+      </div>
+      <h3>「非洲最後一塊拼圖」：賴清德臨時取消訪問史瓦帝尼，分析指北京對台灣「空中圍堵」</h3>
+      <div class="meta">BBC 中文 · 04/22 11:54</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>史瓦帝尼是台灣在非洲的唯一邦交國，賴清德臨時取消了出訪行程，稱原因涉及中國對航道途經第三國施壓。學者分析，北京此舉是前所未見的做法，試圖「空中圍堵」並進一步孤立台灣。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://static01.nyt.com/images/2026/04/21/multimedia/21dc-iran-deal-explainer-bjgl/21dc-iran-deal-explainer-bjgl-mediumSquareAt3X.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>2015 年伊朗核協議是什麼？</h3>
+      <div class="meta">NYT World · 04/22 09:05</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>川普總統曾嘲笑巴拉克‧奧巴馬總統和他在第一任期內退出的協定。他的批評者說，如果他保留該協議，就可以避免一場戰爭。2015 年，美國、伊朗和歐洲國家的談判人員在維也納開會討論核協議。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://ichef.bbci.co.uk/ace/ws/240/cpsprodpb/1062/live/da6149f0-3d90-11f1-92be-b5fcda70efcc.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>伊朗戰事迫使航班改道，機票價格飆升近25%</h3>
+      <div class="meta">BBC 中文 · 04/22 12:58</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>研究顯示，伊朗戰爭衝突所引發的空域限制推高了機票的價格。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/0aaf/live/c3ce2bd0-3d9b-11f1-92e4-6b980ce20915.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>價格上漲應變計劃「已準備就緒，以備不時之需」。</h3>
+      <div class="meta">BBC Business · 04/22 13:24</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>Manx 財政部表示，在伊朗戰爭之後，已制定計劃保護基本服務。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://s.rfi.fr/media/display/3f3f5cc2-1b09-11f1-8405-005056bfb2b6/w:1024/p:16x9/AP26059696114990.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>伊朗新的權力格局：在戰爭與談判之間尋求生存之道</h3>
+      <div class="meta">RFI 中文 · 04/22 06:09</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>在美國與以色列的持續軍事打擊中，伊朗最高領袖及其大批高層人物被清除，但這個伊斯蘭共和國的權力結構並未隨之崩塌。相反，一個新的領導格局正在形成，並在戰爭與談判的雙重壓力下接受考驗。特朗普4月21日宣布將與伊朗的停火期限無限期延長。該停火原本即將到期。他表示，此舉是為了讓與德黑蘭的談判得以繼續。不過，伊朗方面警告稱，將對華盛頓實施的海上封鎖作出回應，並將其稱為“戰爭行為”。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://s.rfi.fr/media/display/b2cdde08-3d77-11f1-9a1b-005056a97e36/w:1024/p:16x9/Rapport-annuel-Amnesty-2026-Photo-conf%C3%A9rence-de-presse-Amnesty-International.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>國際特赦點名美俄以，呼籲各國阻止掠奪性反人權秩序成型</h3>
+      <div class="meta">RFI 中文 · 04/21 22:15</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>持續的中東衝突也成為國際人權組織國際特赦年度人權報告關注的一大重點。該組織20日在倫敦發布年度報告時，特別點名美國總統特朗普、俄羅斯總統普京和以色列總理內塔尼亞胡，呼籲各國領導人抵制以戰爭取代外交的掠奪性破壞國際法的作為。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background:linear-gradient(135deg,#667eea 0%,#89b4fa 100%);"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#5b87e0">政治</span>
+      </div>
+      <h3>進入南黎巴嫩時的所見所聞</h3>
+      <div class="meta">NYT World · 04/22 07:27</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>我們的視覺記者 David Guttenfelder 在以色列與 Hezbollah 停戰之際，與流離失所的人們一同前往黎巴嫩南部，返回他們的家園。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/589a/live/4c6cd070-3de9-11f1-bd52-e755d604ece4.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>全球最大的安全套製造商將因伊朗戰爭而提價</h3>
+      <div class="meta">BBC Business · 04/22 11:28</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>總部位於馬來西亞的 Karex 每年生產超過 50 億個安全套，並供應杜蕾斯和特洛伊等全球品牌。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background-image:url('https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/fd4a/live/df3e79e0-3d8e-11f1-ac78-2112837ce2aa.jpg');background-size:cover;background-position:center;"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>伊朗認為與美國和以色列開戰會造成大量冗員</h3>
+      <div class="meta">BBC World · 04/22 00:05</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>製造商、零售商和數位產業都感受到這股衝擊，並警告如果戰爭再起，情況可能會更糟。</p>
+  </div>
+</details><details class="card tile">
+  <summary>
+    <div class="tile-img" style="background:linear-gradient(135deg,#ff758c 0%,#ff9a7e 100%);"></div>
+    <div class="tile-body">
+      <div class="tags">
+        <span class="tag tiny" style="background:#e0556f">衝突</span>
+      </div>
+      <h3>川普延長停火時間，希望能有「統一提案</h3>
+      <div class="meta">Al Jazeera · 04/22 08:51</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>川普總統在社交媒體發文，宣佈延長對伊朗戰爭的停火時間。</p>
+  </div>
+</details>
+  </section>
+
+  <footer>純 RSS + PowerShell · 無 API · 零費用 · 2026-04-22 13:33</footer>
+</div>
+</body>
+</html>
