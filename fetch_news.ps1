@@ -159,7 +159,7 @@ $CarbonSources = @(
     @{ Name='碳纖維(繁中)';     Url='https://news.google.com/rss/search?q=%E7%A2%B3%E7%BA%96%E7%B6%AD+(%E7%94%A2%E6%A5%AD+OR+%E5%B8%82%E5%A0%B4+OR+%E5%85%AC%E5%8F%B8+OR+%E7%94%A2%E8%83%BD+OR+%E5%B7%A5%E5%BB%A0)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
 )
 
-# ---------- 2b2. 碳紗／碳纖原料製造商官方新聞 ----------
+# ---------- 2b2. 碳纖製造商官方新聞 ----------
 $ManufacturerSources = @(
     @{ Name='Toray';              Url='https://news.google.com/rss/search?q=Toray+(carbon+fiber+OR+carbon+composite+OR+Torayca)&hl=en-US&gl=US&ceid=US:en';                            Lang='en'; Weight=1.2 }
     @{ Name='Hexcel';             Url='https://news.google.com/rss/search?q=Hexcel+(carbon+OR+composite+OR+HexTow+OR+HexPly+OR+prepreg)&hl=en-US&gl=US&ceid=US:en';                  Lang='en'; Weight=1.2 }
@@ -1015,7 +1015,7 @@ function Get-SecondaryPanel {
     return ,$picked.ToArray()
 }
 
-Write-Host "`n抓取碳紗製造商 RSS…"
+Write-Host "`n抓取碳纖製造商 RSS…"
 $mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 12 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
 Write-Host ("  → 挑出 {0} 則製造商新聞" -f $mfgPicked.Count)
 
@@ -1337,7 +1337,7 @@ foreach ($p in $mfgPicked)    { $mfgBody   += (Build-MiniTile $p) }
 
 $mfgHtml = if ($mfgPicked.Count -gt 0) { @"
 <section class="panel-section mfg-section" data-group="mfg">
-  <h2 class="panel-title">碳紗製造商 <span class="sub">Toray / Hexcel / Teijin / Mitsubishi / SGL / Syensqo · $($mfgPicked.Count) 則</span></h2>
+  <h2 class="panel-title">碳纖製造商 <span class="sub">Toray / Hexcel / Teijin / Mitsubishi / SGL / Syensqo · $($mfgPicked.Count) 則</span></h2>
   <div class="mini-grid">$mfgBody</div>
 </section>
 "@ } else { '' }
@@ -1554,7 +1554,7 @@ $htmlShell = @"
     <button type="button" class="tab active" data-tab="all">全部</button>
     <button type="button" class="tab" data-tab="main">國際要聞 <em>$($picked.Count)</em></button>
     <button type="button" class="tab" data-tab="carbon">碳纖維即時 <em>$($carbonPicked.Count)</em></button>
-    <button type="button" class="tab" data-tab="mfg">碳紗製造商 <em>$($mfgPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="mfg">碳纖製造商 <em>$($mfgPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="app">市場情報 <em>$($appPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="fiber">超級纖維 <em>$($fiberPicked.Count)</em></button>
   </nav>
