@@ -187,6 +187,24 @@ $ManufacturerSources = @(
     @{ Name='精功科技';            Url='https://news.google.com/rss/search?q=(%22Jingong%22+OR+%E7%B2%BE%E5%8A%9F%E7%A7%91%E6%8A%80)+carbon+fiber&hl=zh-TW&gl=TW&ceid=TW:zh-TW';       Lang='zh'; Weight=0.9 }
 )
 
+# ---------- 2b3. 複合材料技術新聞（製程／材料配方／R&D）----------
+$TechSources = @(
+    # 直接 RSS — 有圖片（og:image）
+    @{ Name='CompositesWorld (Tech)'; Url='https://www.compositesworld.com/rss/news';   Lang='en'; Weight=1.4 }
+    @{ Name='JEC Composites (Tech)';  Url='https://www.jeccomposites.com/feed/';        Lang='en'; Weight=1.4 }
+    # Google News — 主題式搜尋
+    @{ Name='自動疊層／AFP';     Url='https://news.google.com/rss/search?q=(%22automated+fiber+placement%22+OR+AFP+composite+OR+%22automated+tape+laying%22+OR+ATL+composite)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='樹脂傳遞成型';      Url='https://news.google.com/rss/search?q=(RTM+composite+OR+VARTM+OR+%22resin+transfer+molding%22+OR+%22resin+infusion%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='熱塑性複材';        Url='https://news.google.com/rss/search?q=(%22thermoplastic+composite%22+OR+%22thermoplastic+matrix%22+OR+TPC+composite+OR+%22PEEK+composite%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Out-of-Autoclave';  Url='https://news.google.com/rss/search?q=(%22out-of-autoclave%22+OR+%22OOA+composite%22+OR+%22snap-cure%22+OR+%22fast+cure+composite%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='3D列印複材';        Url='https://news.google.com/rss/search?q=(%22composite+3D+printing%22+OR+%22composite+additive+manufacturing%22+OR+%22carbon+fiber+3D%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='複材回收';          Url='https://news.google.com/rss/search?q=(%22carbon+fiber+recycling%22+OR+%22composite+recycling%22+OR+%22recycled+carbon+fiber%22+OR+%22closed-loop+composite%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='生物基複材';        Url='https://news.google.com/rss/search?q=(%22bio-based+composite%22+OR+biocomposite+OR+%22natural+fiber+composite%22+OR+%22sustainable+composite%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='石墨烯／奈米複材';   Url='https://news.google.com/rss/search?q=(%22graphene+composite%22+OR+nanocomposite+OR+%22CNT+composite%22+OR+%22carbon+nanotube+composite%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='複材研究／突破';    Url='https://news.google.com/rss/search?q=(%22composite+research%22+OR+%22composite+breakthrough%22+OR+%22composite+innovation%22+OR+%22composite+technology%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Digital / AI 複材'; Url='https://news.google.com/rss/search?q=(%22digital+composite%22+OR+%22AI+composite%22+OR+%22machine+learning+composite%22+OR+%22composite+simulation%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=0.9 }
+)
+
 # ---------- 2c. 複材應用新聞來源（8 個細分領域）----------
 $AppSources = @(
     # Runner's World 直接 RSS（有圖＋真實 URL）
@@ -466,6 +484,20 @@ function Get-ArticleImage {
         if ($m.Success) { return $m.Groups[1].Value }
     } catch { }
     return ''
+}
+
+# 副面板補圖（只對非 Google News 的直接 URL 有機會成功）
+function Add-PanelImages {
+    param($items, [string]$label)
+    $before = @($items | Where-Object { $_.Image }).Count
+    foreach ($p in $items) {
+        if ($p.Image) { continue }
+        $img = Get-ArticleImage $p.Link
+        if ($img) { $p.Image = $img }
+        Start-Sleep -Milliseconds 150
+    }
+    $after = @($items | Where-Object { $_.Image }).Count
+    Write-Host ("  → {0} 圖片：{1} → {2}" -f $label, $before, $after) -ForegroundColor DarkGray
 }
 
 function Get-ArticleText {
@@ -1034,6 +1066,18 @@ Write-Host "`n抓取碳纖製造商 RSS…"
 $mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 100 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
 Write-Host ("  → 挑出 {0} 則製造商新聞" -f $mfgPicked.Count)
 
+Write-Host "`n抓取複材技術 RSS…"
+# 先挑 35 則候選，再補圖＋排序（有圖優先），最後取 20
+$techRaw = Get-SecondaryPanel -sources $TechSources -maxItems 35 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
+Write-Host ("  → 候選 {0} 則，補圖中…" -f $techRaw.Count)
+if ($techRaw.Count -gt 0) { Add-PanelImages $techRaw '複材技術候選' }
+# 有圖優先，同權重再依時間新舊
+$techPicked = @($techRaw | Sort-Object `
+    @{Expression={ if ($_.Image) { 0 } else { 1 } }}, `
+    @{Expression={ $_.Pub }; Descending=$true} | Select-Object -First 20)
+$techImgN = @($techPicked | Where-Object { $_.Image }).Count
+Write-Host ("  → 挑出 {0} 則複材技術新聞（含圖 {1}）" -f $techPicked.Count, $techImgN)
+
 Write-Host "`n抓取市場情報 RSS…"
 $appPicked = Get-SecondaryPanel -sources $AppSources -maxItems 15 -days 90 -descCap 180 -requireSignals $ConsumerProductPatterns
 Write-Host ("  → 挑出 {0} 則市場情報新聞" -f $appPicked.Count)
@@ -1065,19 +1109,6 @@ if ($carbonPicked.Count -gt 0) {
     }
 }
 
-# 副面板補圖（只對非 Google News 的直接 URL 有機會成功）
-function Add-PanelImages {
-    param($items, [string]$label)
-    $before = @($items | Where-Object { $_.Image }).Count
-    foreach ($p in $items) {
-        if ($p.Image) { continue }
-        $img = Get-ArticleImage $p.Link
-        if ($img) { $p.Image = $img }
-        Start-Sleep -Milliseconds 150
-    }
-    $after = @($items | Where-Object { $_.Image }).Count
-    Write-Host ("  → {0} 圖片：{1} → {2}" -f $label, $before, $after) -ForegroundColor DarkGray
-}
 Add-PanelImages $appPicked '市場情報'
 Add-PanelImages $fiberPicked '超級纖維'
 
@@ -1086,6 +1117,7 @@ $allToTranslate = New-Object System.Collections.Generic.List[object]
 foreach ($p in $picked)       { [void]$allToTranslate.Add($p) }
 foreach ($p in $carbonPicked) { [void]$allToTranslate.Add($p) }
 foreach ($p in $mfgPicked)    { [void]$allToTranslate.Add($p) }
+foreach ($p in $techPicked)   { [void]$allToTranslate.Add($p) }
 foreach ($p in $appPicked)    { [void]$allToTranslate.Add($p) }
 foreach ($p in $fiberPicked)  { [void]$allToTranslate.Add($p) }
 $needTranslate  = @($allToTranslate | Where-Object { -not (Test-IsChinese $_.Title) }).Count
@@ -1112,6 +1144,9 @@ foreach ($p in $carbonPicked) {
     if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
 }
 foreach ($p in $mfgPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
+}
+foreach ($p in $techPicked) {
     if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
 }
 foreach ($p in $appPicked) {
@@ -1357,6 +1392,16 @@ $mfgHtml = if ($mfgPicked.Count -gt 0) { @"
 </section>
 "@ } else { '' }
 
+$techBody = ''
+foreach ($p in $techPicked)   { $techBody  += (Build-MiniTile $p) }
+
+$techHtml = if ($techPicked.Count -gt 0) { @"
+<section class="panel-section tech-section" data-group="tech">
+  <h2 class="panel-title">複材技術 <span class="sub">Composite Technology · AFP / RTM / 熱塑性 / 3D列印 / 回收 / 生物基 · $($techPicked.Count) 則</span></h2>
+  <div class="mini-grid">$techBody</div>
+</section>
+"@ } else { '' }
+
 $appHtml = if ($appPicked.Count -gt 0) { @"
 <section class="panel-section app-section" data-group="app">
   <h2 class="panel-title">市場情報 <span class="sub">Market Intelligence · $($appPicked.Count) 則</span></h2>
@@ -1495,6 +1540,7 @@ $htmlShell = @"
  .app-section .panel-title   { border-bottom-color:#0891b2; }
  .fiber-section .panel-title { border-bottom-color:#d97706; }
  .mfg-section .panel-title   { border-bottom-color:#6d4aff; }
+ .tech-section .panel-title  { border-bottom-color:#059669; }
  .panel-title .sub { font-size:12.5px; color:#666; font-weight:400; letter-spacing:0.02em; }
  .mini-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
  .mini-tile { background:#fff; border-radius:10px; overflow:hidden;
@@ -1570,6 +1616,7 @@ $htmlShell = @"
     <button type="button" class="tab" data-tab="main">國際要聞 <em>$($picked.Count)</em></button>
     <button type="button" class="tab" data-tab="carbon">碳纖維即時 <em>$($carbonPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="mfg">碳纖製造商 <em>$($mfgPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="tech">複材技術 <em>$($techPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="app">市場情報 <em>$($appPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="fiber">超級纖維 <em>$($fiberPicked.Count)</em></button>
   </nav>
@@ -1586,6 +1633,8 @@ $htmlShell = @"
   $carbonHtml
 
   $mfgHtml
+
+  $techHtml
 
   $appHtml
 
