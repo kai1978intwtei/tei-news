@@ -159,6 +159,20 @@ $CarbonSources = @(
     @{ Name='碳纖維(繁中)';     Url='https://news.google.com/rss/search?q=%E7%A2%B3%E7%BA%96%E7%B6%AD+(%E7%94%A2%E6%A5%AD+OR+%E5%B8%82%E5%A0%B4+OR+%E5%85%AC%E5%8F%B8+OR+%E7%94%A2%E8%83%BD+OR+%E5%B7%A5%E5%BB%A0)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
 )
 
+# ---------- 2b2. 碳紗／碳纖原料製造商官方新聞 ----------
+$ManufacturerSources = @(
+    @{ Name='Toray';              Url='https://news.google.com/rss/search?q=Toray+(carbon+fiber+OR+carbon+composite+OR+Torayca)&hl=en-US&gl=US&ceid=US:en';                            Lang='en'; Weight=1.2 }
+    @{ Name='Hexcel';             Url='https://news.google.com/rss/search?q=Hexcel+(carbon+OR+composite+OR+HexTow+OR+HexPly+OR+prepreg)&hl=en-US&gl=US&ceid=US:en';                  Lang='en'; Weight=1.2 }
+    @{ Name='Teijin';             Url='https://news.google.com/rss/search?q=Teijin+(carbon+fiber+OR+Tenax+OR+composite+OR+Sereebo)&hl=en-US&gl=US&ceid=US:en';                       Lang='en'; Weight=1.2 }
+    @{ Name='Mitsubishi Chemical';Url='https://news.google.com/rss/search?q=%22Mitsubishi+Chemical%22+(carbon+fiber+OR+Grafil+OR+DIALEAD+OR+Pyrofil)&hl=en-US&gl=US&ceid=US:en';      Lang='en'; Weight=1.2 }
+    @{ Name='SGL Carbon';         Url='https://news.google.com/rss/search?q=%22SGL+Carbon%22+(carbon+fiber+OR+composite+OR+SIGRAFIL)&hl=en-US&gl=US&ceid=US:en';                     Lang='en'; Weight=1.1 }
+    @{ Name='Solvay / Syensqo';   Url='https://news.google.com/rss/search?q=(Solvay+OR+Syensqo)+(carbon+OR+composite+OR+prepreg+OR+thermoset)&hl=en-US&gl=US&ceid=US:en';            Lang='en'; Weight=1.1 }
+    @{ Name='Formosa / TAIRYFIL'; Url='https://news.google.com/rss/search?q=(%22Formosa+Plastics%22+OR+TAIRYFIL)+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';             Lang='en'; Weight=1.1 }
+    @{ Name='Hyosung';            Url='https://news.google.com/rss/search?q=Hyosung+(carbon+fiber+OR+TANSOME+OR+TANFOCUS+OR+composite)&hl=en-US&gl=US&ceid=US:en';                  Lang='en'; Weight=1.1 }
+    @{ Name='DowAksa';            Url='https://news.google.com/rss/search?q=DowAksa+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';                                           Lang='en'; Weight=1.0 }
+    @{ Name='中國碳纖維業者';      Url='https://news.google.com/rss/search?q=(%22Jilin+Chemical+Fiber%22+OR+%22Zhongfu+Shenying%22+OR+%22Sinofibers%22)+carbon&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+)
+
 # ---------- 2c. 複材應用新聞來源（8 個細分領域）----------
 $AppSources = @(
     # Runner's World 直接 RSS（有圖＋真實 URL）
@@ -1001,6 +1015,10 @@ function Get-SecondaryPanel {
     return ,$picked.ToArray()
 }
 
+Write-Host "`n抓取碳紗製造商 RSS…"
+$mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 12 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
+Write-Host ("  → 挑出 {0} 則製造商新聞" -f $mfgPicked.Count)
+
 Write-Host "`n抓取市場情報 RSS…"
 $appPicked = Get-SecondaryPanel -sources $AppSources -maxItems 15 -days 90 -descCap 180 -requireSignals $ConsumerProductPatterns
 Write-Host ("  → 挑出 {0} 則市場情報新聞" -f $appPicked.Count)
@@ -1052,6 +1070,7 @@ Add-PanelImages $fiberPicked '超級纖維'
 $allToTranslate = New-Object System.Collections.Generic.List[object]
 foreach ($p in $picked)       { [void]$allToTranslate.Add($p) }
 foreach ($p in $carbonPicked) { [void]$allToTranslate.Add($p) }
+foreach ($p in $mfgPicked)    { [void]$allToTranslate.Add($p) }
 foreach ($p in $appPicked)    { [void]$allToTranslate.Add($p) }
 foreach ($p in $fiberPicked)  { [void]$allToTranslate.Add($p) }
 $needTranslate  = @($allToTranslate | Where-Object { -not (Test-IsChinese $_.Title) }).Count
@@ -1075,6 +1094,9 @@ foreach ($p in $picked) {
     if ($p.Desc -and $p.Desc.Length -gt 500) { $p.Desc = $p.Desc.Substring(0, 500).TrimEnd() + '…' }
 }
 foreach ($p in $carbonPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
+}
+foreach ($p in $mfgPicked) {
     if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
 }
 foreach ($p in $appPicked) {
@@ -1310,6 +1332,15 @@ $appBody = ''
 foreach ($p in $appPicked)    { $appBody   += (Build-MiniTile $p) }
 $fiberBody = ''
 foreach ($p in $fiberPicked)  { $fiberBody += (Build-MiniTile $p) }
+$mfgBody = ''
+foreach ($p in $mfgPicked)    { $mfgBody   += (Build-MiniTile $p) }
+
+$mfgHtml = if ($mfgPicked.Count -gt 0) { @"
+<section class="panel-section mfg-section" data-group="mfg">
+  <h2 class="panel-title">碳紗製造商 <span class="sub">Toray / Hexcel / Teijin / Mitsubishi / SGL / Syensqo · $($mfgPicked.Count) 則</span></h2>
+  <div class="mini-grid">$mfgBody</div>
+</section>
+"@ } else { '' }
 
 $appHtml = if ($appPicked.Count -gt 0) { @"
 <section class="panel-section app-section" data-group="app">
@@ -1448,6 +1479,7 @@ $htmlShell = @"
                 padding-bottom:10px; border-bottom:3px solid transparent; }
  .app-section .panel-title   { border-bottom-color:#0891b2; }
  .fiber-section .panel-title { border-bottom-color:#d97706; }
+ .mfg-section .panel-title   { border-bottom-color:#6d4aff; }
  .panel-title .sub { font-size:12.5px; color:#666; font-weight:400; letter-spacing:0.02em; }
  .mini-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
  .mini-tile { background:#fff; border-radius:10px; overflow:hidden;
@@ -1522,6 +1554,7 @@ $htmlShell = @"
     <button type="button" class="tab active" data-tab="all">全部</button>
     <button type="button" class="tab" data-tab="main">國際要聞 <em>$($picked.Count)</em></button>
     <button type="button" class="tab" data-tab="carbon">碳纖維即時 <em>$($carbonPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="mfg">碳紗製造商 <em>$($mfgPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="app">市場情報 <em>$($appPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="fiber">超級纖維 <em>$($fiberPicked.Count)</em></button>
   </nav>
@@ -1536,6 +1569,8 @@ $htmlShell = @"
   </section>
 
   $carbonHtml
+
+  $mfgHtml
 
   $appHtml
 
