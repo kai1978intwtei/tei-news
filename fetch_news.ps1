@@ -943,6 +943,60 @@ $ConsumerProductPatterns = @(
     '卡西歐', '耐吉', '愛迪達', '特斯拉', '寶馬'
 )
 
+# 技術層面訊號（複材技術面板專用，需含技術／工藝／材料／研發語言）
+$TechOnlySignals = @(
+    # 製程／工藝
+    'automated\s+fiber\s+placement', '\bAFP\b', 'automated\s+tape\s+laying', '\bATL\b',
+    'resin\s+transfer\s+molding', '\bRTM\b', 'VARTM', 'resin\s+infusion',
+    'prepreg\b', 'preform\b', 'filament\s+winding', 'pultru(?:sion|ded)',
+    'autoclave', 'out-of-autoclave', 'OOA\b', 'vacuum\s+bag',
+    'cur(?:e|es|ed|ing)\s+(?:cycle|process|system|technology)', 'snap-?cure', 'fast-?cure', 'UV\s+cure', 'oven\s+cure',
+    'molding\s+(?:process|technology|compound)', 'compression\s+molding', 'injection\s+molding',
+    'layup\b', 'lamina(?:te|tion)', 'ply\s+(?:drop|layup|stack)',
+    'braid(?:ing|ed)', 'weave\s+(?:pattern|design)', 'woven\s+(?:fabric|composite)', 'non-crimp\s+fabric', '\bNCF\b',
+    # 材料／配方
+    'resin\s+(?:formulation|chemistry|system|matrix)', 'epoxy\s+(?:resin|system|formulation)',
+    'thermoplastic\s+(?:composite|matrix|resin)', 'thermoset\s+(?:composite|matrix|resin)',
+    'PEEK\b', 'PEKK\b', 'PPS\b', 'PAEK\b', 'polyetheretherketone',
+    '\b(?:bio-?based|biocomposite|natural\s+fiber)\b', 'sustainable\s+(?:composite|resin|matrix)',
+    'matrix\s+(?:material|system)', 'fiber\s+sizing', 'interphase', 'fiber-matrix',
+    'nanotub(?:e|es)', 'nanoparticle', 'nanocomposite', 'graphene', 'carbon\s+nanotube', '\bCNT\b',
+    'recycl(?:e|ed|ing)\s+(?:carbon|composite|fiber)', 'pyrolysis', 'solvolysis', 'chemical\s+recycling',
+    # 機械性能／特性
+    'tensile\s+(?:strength|modulus|property)', 'compressive\s+(?:strength|property)',
+    'flexural\s+(?:strength|modulus)', 'shear\s+(?:strength|modulus)', 'impact\s+(?:strength|resistance)',
+    'fatigue\s+(?:life|testing|resistance)', 'fracture\s+(?:toughness|behavior)',
+    'stiffness', 'modulus\b', 'Young''?s\s+modulus', 'damage\s+tolerance', 'delamination',
+    'mechanical\s+(?:properties|performance|testing)', 'thermal\s+(?:properties|stability|conductivity)',
+    # 研發／學術／模擬
+    'research(?:er|ers)?\s+(?:at|from|team|group|develop|show)',
+    'stud(?:y|ies)\s+(?:finds|shows|demonstrates|reveals)',
+    'publish(?:ed)?\s+in\s+(?:journal|nature|science)', 'peer-reviewed',
+    'universit(?:y|ies)\s+(?:of|research)', '\binstitute\b', 'laborator(?:y|ies)',
+    'PhD\b', 'professor\b', 'scientist(?:s)?\b',
+    'finite\s+element\s+(?:analysis|method)', '\bFEA\b', 'FEM\b',
+    'simulation', 'modeling', 'digital\s+twin', 'machine\s+learning', '\bAI-driven',
+    # 檢測／分析
+    'testing\s+(?:method|technique|protocol)', 'characteri[sz]ation',
+    'microscop(?:y|ic)', 'scanning\s+electron', '\bSEM\b', 'X-ray\s+(?:CT|tomography|diffraction)',
+    'spectroscop(?:y|ic)', '\bFTIR\b', 'ultrasound', 'non-destructive\s+(?:testing|evaluation)', '\bNDT\b',
+    'defect\s+detection',
+    # 突破／改良語言
+    'breakthrough', 'novel\s+(?:material|process|technique|approach|method)',
+    '(?:improve|enhance|boost|increase|reduce)(?:s|d|ing)?\s+(?:strength|stiffness|toughness|performance|cure|cycle)',
+    'patent(?:ed|s)?\s+(?:technology|process|material)', 'first[-\s]of[-\s]its[-\s]kind',
+    # 3D 列印／積層
+    '3D[-\s]print(?:ed|ing)', 'additive\s+manufactur(?:e|ing)', 'FDM\b', 'FFF\b', 'stereolithography',
+    # 中文技術語言
+    '工藝', '製程', '成型', '固化', '熱壓罐', '真空袋', '預浸料', '樹脂灌注',
+    '熱塑性', '熱固性', '纖維上漿', '界面', '基體',
+    '奈米', '石墨烯', '碳奈米管', '回收技術', '裂解',
+    '抗拉強度', '剛性', '韌性', '疲勞', '衝擊',
+    '模擬', '有限元素', '機器學習',
+    '研究團隊', '學者', '實驗', '論文', '期刊', '突破', '新技術', '新工藝', '專利技術',
+    '層壓', '鋪層', '編織', '纖維束'
+)
+
 # URL 域名黑名單（電商／產品站）
 $BadDomains = @(
     'amazon\.', 'ebay\.', 'walmart\.', 'aliexpress\.', 'alibaba\.',
@@ -1067,8 +1121,8 @@ $mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 100 -day
 Write-Host ("  → 挑出 {0} 則製造商新聞" -f $mfgPicked.Count)
 
 Write-Host "`n抓取複材技術 RSS…"
-# 先挑 35 則候選，再補圖＋排序（有圖優先），最後取 20
-$techRaw = Get-SecondaryPanel -sources $TechSources -maxItems 35 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
+# 先挑 40 則候選（嚴格技術訊號），再補圖＋排序（有圖優先），最後取 20
+$techRaw = Get-SecondaryPanel -sources $TechSources -maxItems 40 -days 120 -descCap 180 -requireSignals $TechOnlySignals
 Write-Host ("  → 候選 {0} 則，補圖中…" -f $techRaw.Count)
 if ($techRaw.Count -gt 0) { Add-PanelImages $techRaw '複材技術候選' }
 # 有圖優先，同權重再依時間新舊
