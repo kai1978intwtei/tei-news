@@ -161,16 +161,30 @@ $CarbonSources = @(
 
 # ---------- 2b2. 碳纖製造商官方新聞 ----------
 $ManufacturerSources = @(
+    # ---- 日本 ----
     @{ Name='Toray';              Url='https://news.google.com/rss/search?q=Toray+(carbon+fiber+OR+carbon+composite+OR+Torayca)&hl=en-US&gl=US&ceid=US:en';                            Lang='en'; Weight=1.2 }
-    @{ Name='Hexcel';             Url='https://news.google.com/rss/search?q=Hexcel+(carbon+OR+composite+OR+HexTow+OR+HexPly+OR+prepreg)&hl=en-US&gl=US&ceid=US:en';                  Lang='en'; Weight=1.2 }
-    @{ Name='Teijin';             Url='https://news.google.com/rss/search?q=Teijin+(carbon+fiber+OR+Tenax+OR+composite+OR+Sereebo)&hl=en-US&gl=US&ceid=US:en';                       Lang='en'; Weight=1.2 }
+    @{ Name='ZOLTEK';             Url='https://news.google.com/rss/search?q=ZOLTEK+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';                                             Lang='en'; Weight=1.1 }
+    @{ Name='Teijin / TOHO Tenax';Url='https://news.google.com/rss/search?q=(Teijin+OR+%22TOHO+Tenax%22+OR+%22Teijin+Carbon%22)+(carbon+fiber+OR+Tenax+OR+Sereebo+OR+composite)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
     @{ Name='Mitsubishi Chemical';Url='https://news.google.com/rss/search?q=%22Mitsubishi+Chemical%22+(carbon+fiber+OR+Grafil+OR+DIALEAD+OR+Pyrofil)&hl=en-US&gl=US&ceid=US:en';      Lang='en'; Weight=1.2 }
+    @{ Name='Nippon Graphite';    Url='https://news.google.com/rss/search?q=(%22Nippon+Graphite+Fiber%22+OR+%22Nippon+Graphite%22+NGF)+carbon&hl=en-US&gl=US&ceid=US:en';              Lang='en'; Weight=1.0 }
+    @{ Name='Kureha';             Url='https://news.google.com/rss/search?q=Kureha+(carbon+fiber+OR+%22KF+carbon%22)&hl=en-US&gl=US&ceid=US:en';                                       Lang='en'; Weight=0.9 }
+    # ---- 美國／歐洲 ----
+    @{ Name='Hexcel';             Url='https://news.google.com/rss/search?q=Hexcel+(carbon+OR+composite+OR+HexTow+OR+HexPly+OR+prepreg)&hl=en-US&gl=US&ceid=US:en';                  Lang='en'; Weight=1.2 }
     @{ Name='SGL Carbon';         Url='https://news.google.com/rss/search?q=%22SGL+Carbon%22+(carbon+fiber+OR+composite+OR+SIGRAFIL)&hl=en-US&gl=US&ceid=US:en';                     Lang='en'; Weight=1.1 }
     @{ Name='Solvay / Syensqo';   Url='https://news.google.com/rss/search?q=(Solvay+OR+Syensqo)+(carbon+OR+composite+OR+prepreg+OR+thermoset)&hl=en-US&gl=US&ceid=US:en';            Lang='en'; Weight=1.1 }
-    @{ Name='Formosa / TAIRYFIL'; Url='https://news.google.com/rss/search?q=(%22Formosa+Plastics%22+OR+TAIRYFIL)+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';             Lang='en'; Weight=1.1 }
-    @{ Name='Hyosung';            Url='https://news.google.com/rss/search?q=Hyosung+(carbon+fiber+OR+TANSOME+OR+TANFOCUS+OR+composite)&hl=en-US&gl=US&ceid=US:en';                  Lang='en'; Weight=1.1 }
-    @{ Name='DowAksa';            Url='https://news.google.com/rss/search?q=DowAksa+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';                                           Lang='en'; Weight=1.0 }
-    @{ Name='中國碳纖維業者';      Url='https://news.google.com/rss/search?q=(%22Jilin+Chemical+Fiber%22+OR+%22Zhongfu+Shenying%22+OR+%22Sinofibers%22)+carbon&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Cytec / Syensqo';    Url='https://news.google.com/rss/search?q=(Cytec+OR+%22Cytec+Solvay%22)+(carbon+OR+composite)&hl=en-US&gl=US&ceid=US:en';                            Lang='en'; Weight=0.9 }
+    @{ Name='DowAksa / Aksa';     Url='https://news.google.com/rss/search?q=(DowAksa+OR+%22Aksa+Akrilik%22)+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';                    Lang='en'; Weight=1.0 }
+    @{ Name='Eurocarbon';         Url='https://news.google.com/rss/search?q=Eurocarbon+(fiber+OR+composite+OR+carbon)&hl=en-US&gl=US&ceid=US:en';                                       Lang='en'; Weight=0.9 }
+    # ---- 台灣／韓國 ----
+    @{ Name='Formosa / TAIRYFIL'; Url='https://news.google.com/rss/search?q=(%22Formosa+Plastics%22+OR+TAIRYFIL+OR+%E5%8F%B0%E5%A1%91)+(carbon+fiber+OR+composite+OR+%E7%A2%B3%E7%BA%96%E7%B6%AD)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+    @{ Name='Hyosung Advanced';   Url='https://news.google.com/rss/search?q=(Hyosung+OR+%22Hyosung+Advanced+Materials%22)+(carbon+fiber+OR+TANSOME+OR+TANFOCUS)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    # ---- 中國大陸業者 ----
+    @{ Name='中復神鷹';            Url='https://news.google.com/rss/search?q=(%22Zhongfu+Shenying%22+OR+%E4%B8%AD%E5%BE%A9%E7%A5%9E%E9%B7%B9)+carbon&hl=en-US&gl=US&ceid=US:en';        Lang='en'; Weight=1.0 }
+    @{ Name='吉林化纖';            Url='https://news.google.com/rss/search?q=(%22Jilin+Chemical+Fiber%22+OR+%22Jilin+Carbon%22+OR+%E5%90%89%E6%9E%97%E5%8C%96%E7%BA%96)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='光威復材';            Url='https://news.google.com/rss/search?q=(%22Weihai+Guangwei%22+OR+%22Guangwei+Composites%22+OR+%E5%85%89%E5%A8%81%E5%A4%8D%E6%9D%90)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Sinofibers';         Url='https://news.google.com/rss/search?q=Sinofibers+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';                                         Lang='en'; Weight=0.9 }
+    @{ Name='康得複材';            Url='https://news.google.com/rss/search?q=(%22Kangde+Composite%22+OR+Kangde+carbon+OR+%E5%BA%B7%E5%BE%97%E8%A4%87%E6%9D%90)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=0.9 }
+    @{ Name='精功科技';            Url='https://news.google.com/rss/search?q=(%22Jingong%22+OR+%E7%B2%BE%E5%8A%9F%E7%A7%91%E6%8A%80)+carbon+fiber&hl=zh-TW&gl=TW&ceid=TW:zh-TW';       Lang='zh'; Weight=0.9 }
 )
 
 # ---------- 2c. 複材應用新聞來源（8 個細分領域）----------
@@ -1016,7 +1030,8 @@ function Get-SecondaryPanel {
 }
 
 Write-Host "`n抓取碳纖製造商 RSS…"
-$mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 12 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
+# 不限數量，把所有通過過濾的製造商新聞全收
+$mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 100 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
 Write-Host ("  → 挑出 {0} 則製造商新聞" -f $mfgPicked.Count)
 
 Write-Host "`n抓取市場情報 RSS…"
