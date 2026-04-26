@@ -44,10 +44,20 @@ function Install-DailyTask {
         if (-not $PSCommandPath) { return }
 
         # 排程跑背景不打開瀏覽器（用戶的分頁會自動 refresh）
-        $action = New-ScheduledTaskAction `
-            -Execute 'powershell.exe' `
-            -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
-            -WorkingDirectory (Split-Path $PSCommandPath)
+        # 用 wscript.exe 呼叫 silent_runner.vbs，避免 PowerShell 黑視窗閃出
+        $vbsPath = Join-Path (Split-Path $PSCommandPath) 'silent_runner.vbs'
+        if (Test-Path $vbsPath) {
+            $action = New-ScheduledTaskAction `
+                -Execute 'wscript.exe' `
+                -Argument "`"$vbsPath`"" `
+                -WorkingDirectory (Split-Path $PSCommandPath)
+        } else {
+            # 後備方案：直接用 powershell（會閃黑視窗）
+            $action = New-ScheduledTaskAction `
+                -Execute 'powershell.exe' `
+                -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+                -WorkingDirectory (Split-Path $PSCommandPath)
+        }
 
         # 立即開始，每 10 分鐘執行一次（每天循環 24 小時不間斷）
         $startAt = (Get-Date).AddMinutes(2)  # 2 分鐘後開始第一次
