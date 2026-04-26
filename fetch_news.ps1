@@ -3060,5 +3060,11 @@ function Publish-ToGitHub {
     }
 }
 
-Publish-ToGitHub -LocalFile $outFile
-if ($OpenBrowser) { Start-Process $outFile }
+# 只在手動執行（-OpenBrowser）時才上傳到 GitHub。
+# 排程背景執行時不上傳，避免和雲端 Actions 同時 push 造成衝突 → 雲端每 10 分鐘負責更新 GitHub Pages。
+if ($OpenBrowser) {
+    Publish-ToGitHub -LocalFile $outFile
+    Start-Process $outFile
+} else {
+    Write-Host '[發佈] 排程背景執行，跳過 GitHub 上傳（交由 GitHub Actions 雲端每 10 分鐘自動發佈）' -ForegroundColor DarkGray
+}
