@@ -2984,7 +2984,7 @@ Write-Host ("`n已產出 {0}" -f $outFile) -ForegroundColor Green
 
 # ---------- 7. 自動發佈到 GitHub Pages ----------
 function Publish-FileToGitHub {
-    # 把單一本地檔案推到 GitHub repo（PUT /contents/<path>）
+    # 把單一本地檔案推到 GitHub repo（PUT /contents/<path>），支援 409/422 衝突自動重試
     param([string]$LocalFile, [string]$RepoPath, [string]$Token, [string]$Repo, [string]$CommitMsg)
     $apiBase = "https://api.github.com/repos/$Repo/contents"
     $headers = @{
@@ -2992,32 +2992,48 @@ function Publish-FileToGitHub {
         'User-Agent'  = 'TEi-News-Publisher'
         Accept        = 'application/vnd.github+json'
     }
-    try {
-        $bytes = [IO.File]::ReadAllBytes($LocalFile)
-        $b64   = [Convert]::ToBase64String($bytes)
+    $bytes = [IO.File]::ReadAllBytes($LocalFile)
+    $b64   = [Convert]::ToBase64String($bytes)
 
-        $sha = $null
+    # 最多重試 6 次（雲端 Actions 同時推時可能撞 sha）
+    for ($attempt = 1; $attempt -le 6; $attempt++) {
         try {
-            $existing = Invoke-RestMethod -Uri "$apiBase/$RepoPath" -Headers $headers -Method Get -ErrorAction Stop
-            $sha = $existing.sha
-            # 內容相同就不推
-            if ($existing.content -and (($existing.content -replace '\s','') -eq $b64)) { return $true }
-        } catch { }
+            # 每次重試都重新抓最新 sha，避免再次撞牆
+            $sha = $null
+            try {
+                $existing = Invoke-RestMethod -Uri "$apiBase/$RepoPath" -Headers $headers -Method Get -ErrorAction Stop
+                $sha = $existing.sha
+                if ($existing.content -and (($existing.content -replace '\s','') -eq $b64)) { return $true }
+            } catch { }
 
-        $body = @{
-            message = $CommitMsg
-            content = $b64
-            branch  = 'main'
+            $body = @{
+                message = $CommitMsg
+                content = $b64
+                branch  = 'main'
+            }
+            if ($sha) { $body.sha = $sha }
+            $json = ($body | ConvertTo-Json -Compress)
+            $jsonBytes = [Text.Encoding]::UTF8.GetBytes($json)
+            Invoke-RestMethod -Uri "$apiBase/$RepoPath" -Headers $headers -Method Put -Body $jsonBytes -ContentType 'application/json; charset=utf-8' | Out-Null
+            return $true
+        } catch {
+            $msg = $_.Exception.Message
+            $status = $null
+            if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
+            # 409 衝突 / 422 sha 過期 → 重抓 sha 重試
+            if ($status -eq 409 -or $status -eq 422) {
+                Start-Sleep -Milliseconds (300 + (Get-Random -Maximum 700))
+                continue
+            }
+            # 其他錯誤直接結束
+            if ($attempt -eq 6) {
+                Write-Host ("  [失敗] {0}: {1}" -f $RepoPath, $msg) -ForegroundColor Yellow
+            }
+            return $false
         }
-        if ($sha) { $body.sha = $sha }
-        $json = ($body | ConvertTo-Json -Compress)
-        $jsonBytes = [Text.Encoding]::UTF8.GetBytes($json)
-        Invoke-RestMethod -Uri "$apiBase/$RepoPath" -Headers $headers -Method Put -Body $jsonBytes -ContentType 'application/json; charset=utf-8' | Out-Null
-        return $true
-    } catch {
-        Write-Host ("  [失敗] {0}: {1}" -f $RepoPath, $_.Exception.Message) -ForegroundColor Yellow
-        return $false
     }
+    Write-Host ("  [失敗] {0}: 超過 6 次衝突重試" -f $RepoPath) -ForegroundColor Yellow
+    return $false
 }
 
 function Publish-ToGitHub {
@@ -3061,11 +3077,8 @@ function Publish-ToGitHub {
     }
 }
 
-# 只在手動執行（-OpenBrowser）時才上傳到 GitHub。
-# 排程背景執行時不上傳，避免和雲端 Actions 同時 push 造成衝突 → 雲端每 10 分鐘負責更新 GitHub Pages。
-if ($OpenBrowser) {
-    Publish-ToGitHub -LocalFile $outFile
-    Start-Process $outFile
-} else {
-    Write-Host '[發佈] 排程背景執行，跳過 GitHub 上傳（交由 GitHub Actions 雲端每 10 分鐘自動發佈）' -ForegroundColor DarkGray
-}
+# 每次都推 GitHub（Publish-FileToGitHub 已內建 409/422 衝突自動重試 6 次）
+# 因為實測 GitHub Actions cron 在免費版會被嚴重 throttle，
+# 本機 Task Scheduler 才是 10 分鐘準時更新的主力。
+Publish-ToGitHub -LocalFile $outFile
+if ($OpenBrowser) { Start-Process $outFile }
