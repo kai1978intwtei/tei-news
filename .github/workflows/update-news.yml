@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# 同一時間只允許一個 run，避免和本機推送或前一次未完的 run 衝突
+concurrency:
+  group: auto-update-tei-news
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: windows-latest
@@ -16,7 +21,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0   # 完整歷史，pull --rebase 才能正常運作
 
       - name: Restore translate cache
         uses: actions/cache@v4
@@ -39,7 +44,7 @@ jobs:
         shell: pwsh
         run: Copy-Item output/latest.html -Destination index.html -Force
 
-      - name: Commit & push changes
+      - name: Commit & push changes (with rebase + retry)
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -47,7 +52,18 @@ jobs:
           git add index.html .translate_cache.json
           if git diff --cached --quiet; then
             echo "No changes."
-          else
-            git commit -m "auto-update $(date -u +'%Y-%m-%d %H:%M UTC')"
-            git push
+            exit 0
           fi
+          git commit -m "auto-update $(date -u +'%Y-%m-%d %H:%M UTC')"
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git pull --rebase origin main || git rebase --abort || true
+            if git push origin HEAD:main; then
+              echo "pushed on try $i"
+              exit 0
+            fi
+            echo "push failed (attempt $i), waiting 5s..."
+            sleep 5
+          done
+          echo "all retries failed"
+          exit 1
