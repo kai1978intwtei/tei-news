@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
 
-# 同一時間只允許一個 run，避免和本機推送或前一次未完的 run 衝突
+# 同一時間只允許一個 run，避免和前一次未完的 run 衝突
 concurrency:
   group: auto-update-tei-news
   cancel-in-progress: false
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # 完整歷史，pull --rebase 才能正常運作
+          fetch-depth: 0
 
       - name: Restore translate cache
         uses: actions/cache@v4
@@ -44,26 +44,43 @@ jobs:
         shell: pwsh
         run: Copy-Item output/latest.html -Destination index.html -Force
 
-      - name: Commit & push changes (with rebase + retry)
+      - name: Commit & push (reset-on-conflict pattern)
         shell: bash
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html .translate_cache.json
-          if git diff --cached --quiet; then
-            echo "No changes."
-            exit 0
-          fi
-          git commit -m "auto-update $(date -u +'%Y-%m-%d %H:%M UTC')"
-          for i in 1 2 3 4 5; do
+
+          # 把我們剛產生的最新 index.html / cache 暫存到 /tmp，避免 reset 時被覆蓋
+          mkdir -p /tmp/ours
+          cp -f index.html /tmp/ours/ 2>/dev/null || true
+          cp -f .translate_cache.json /tmp/ours/ 2>/dev/null || true
+
+          # 嘗試最多 8 次：每次都 reset 到 origin/main 最新狀態 → 還原我們的檔案 → push
+          for i in 1 2 3 4 5 6 7 8; do
+            echo "=== Attempt $i ==="
             git fetch origin main
-            git pull --rebase origin main || git rebase --abort || true
-            if git push origin HEAD:main; then
-              echo "pushed on try $i"
+            git reset --hard origin/main
+
+            # 把暫存的我方最新檔案還原回工作目錄
+            cp -f /tmp/ours/index.html . 2>/dev/null || true
+            cp -f /tmp/ours/.translate_cache.json . 2>/dev/null || true
+
+            git add index.html .translate_cache.json
+            if git diff --cached --quiet; then
+              echo "Remote already up-to-date with our content. No commit needed."
               exit 0
             fi
-            echo "push failed (attempt $i), waiting 5s..."
-            sleep 5
+            git commit -m "auto-update $(date -u +'%Y-%m-%d %H:%M UTC')"
+
+            if git push origin HEAD:main; then
+              echo "Pushed successfully on attempt $i"
+              exit 0
+            fi
+
+            echo "push failed on attempt $i, will retry after 4s..."
+            sleep 4
           done
-          echo "all retries failed"
+
+          echo "All retries exhausted."
           exit 1
