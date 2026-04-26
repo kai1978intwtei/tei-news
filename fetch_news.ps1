@@ -49,27 +49,33 @@ function Install-DailyTask {
             -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
             -WorkingDirectory (Split-Path $PSCommandPath)
 
-        # 早上 07:00 + 下午 14:00 各一次（每天兩趟）
-        $trigger1 = New-ScheduledTaskTrigger -Daily -At 7am
-        $trigger2 = New-ScheduledTaskTrigger -Daily -At 2pm
+        # 每天 06:00 開始，每 10 分鐘執行一次（持續 24 小時，等同全日不間斷）
+        $startAt = (Get-Date).Date.AddHours(6)
+        if ((Get-Date) -gt $startAt) { $startAt = $startAt.AddDays(1) }
+        $trigger = New-ScheduledTaskTrigger -Daily -At $startAt
+        $repTrig = New-ScheduledTaskTrigger -Once -At $startAt `
+                       -RepetitionInterval (New-TimeSpan -Minutes 10) `
+                       -RepetitionDuration (New-TimeSpan -Hours 24)
+        $trigger.Repetition = $repTrig.Repetition
 
         $settings = New-ScheduledTaskSettingsSet `
             -StartWhenAvailable `
             -AllowStartIfOnBatteries `
             -DontStopIfGoingOnBatteries `
             -RunOnlyIfNetworkAvailable `
-            -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+            -ExecutionTimeLimit (New-TimeSpan -Minutes 8) `
+            -MultipleInstances IgnoreNew
 
         $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive
 
         Register-ScheduledTask `
             -TaskName $taskName `
             -Action $action `
-            -Trigger @($trigger1, $trigger2) `
+            -Trigger $trigger `
             -Settings $settings `
             -Principal $principal | Out-Null
 
-        Write-Host '[setup] 已設定每日 07:00 與 14:00 自動執行（工作排程器）' -ForegroundColor Green
+        Write-Host '[setup] 已設定每 10 分鐘自動更新（工作排程器，06:00 起 24 小時）' -ForegroundColor Green
     } catch {
         Write-Host "[setup] 排程建立失敗（可能需要先手動執行一次）: $_" -ForegroundColor Yellow
     }
@@ -82,8 +88,10 @@ $Sources = @(
     @{ Name='BBC 中文';       Url='https://feeds.bbci.co.uk/zhongwen/trad/rss.xml';                                              Lang='zh'; Weight=1.2 }
     @{ Name='Al Jazeera';     Url='https://www.aljazeera.com/xml/rss/all.xml';                                                   Lang='en'; Weight=1.0 }
     @{ Name='Deutsche Welle'; Url='https://rss.dw.com/rdf/rss-en-all';                                                           Lang='en'; Weight=1.0 }
-    @{ Name='NYT World';      Url='https://rss.nytimes.com/services/xml/rss/nyt/World.xml';                                      Lang='en'; Weight=1.1 }
-    @{ Name='NYT Business';   Url='https://rss.nytimes.com/services/xml/rss/nyt/Business.xml';                                   Lang='en'; Weight=1.1 }
+    # NYT 已移除：付費牆常擋同仁，改用 NPR／CNN 替代
+    @{ Name='NPR World';      Url='https://feeds.npr.org/1004/rss.xml';                                                          Lang='en'; Weight=1.1 }
+    @{ Name='NPR Business';   Url='https://feeds.npr.org/1006/rss.xml';                                                          Lang='en'; Weight=1.1 }
+    @{ Name='AP News';        Url='https://news.google.com/rss/search?q=when:1d+site:apnews.com&hl=en-US&gl=US&ceid=US:en';        Lang='en'; Weight=1.0 }
     @{ Name='Guardian World'; Url='https://www.theguardian.com/world/rss';                                                       Lang='en'; Weight=1.0 }
     @{ Name='France 24';      Url='https://www.france24.com/en/rss';                                                             Lang='en'; Weight=0.9 }
     @{ Name='Reuters';        Url='https://news.google.com/rss/search?q=when:1d+site:reuters.com&hl=en-US&gl=US&ceid=US:en';     Lang='en'; Weight=1.1 }
@@ -185,6 +193,327 @@ $ManufacturerSources = @(
     @{ Name='Sinofibers';         Url='https://news.google.com/rss/search?q=Sinofibers+(carbon+fiber+OR+composite)&hl=en-US&gl=US&ceid=US:en';                                         Lang='en'; Weight=0.9 }
     @{ Name='康得複材';            Url='https://news.google.com/rss/search?q=(%22Kangde+Composite%22+OR+Kangde+carbon+OR+%E5%BA%B7%E5%BE%97%E8%A4%87%E6%9D%90)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=0.9 }
     @{ Name='精功科技';            Url='https://news.google.com/rss/search?q=(%22Jingong%22+OR+%E7%B2%BE%E5%8A%9F%E7%A7%91%E6%8A%80)+carbon+fiber&hl=zh-TW&gl=TW&ceid=TW:zh-TW';       Lang='zh'; Weight=0.9 }
+)
+
+# ---------- 2b3b. 塑膠大廠新聞 ----------
+$PlasticSources = @(
+    # 美／歐 大廠
+    @{ Name='Dow Chemical';        Url='https://news.google.com/rss/search?q=(%22Dow+Chemical%22+OR+%22Dow+Inc%22)+(plastic+OR+polymer+OR+resin+OR+polyethylene)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='LyondellBasell';      Url='https://news.google.com/rss/search?q=LyondellBasell+(plastic+OR+polymer+OR+polyolefin+OR+polypropylene+OR+HDPE)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='BASF';                Url='https://news.google.com/rss/search?q=BASF+(plastic+OR+polymer+OR+polyurethane+OR+polyamide+OR+engineering+plastic)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='SABIC';               Url='https://news.google.com/rss/search?q=SABIC+(plastic+OR+polymer+OR+polyethylene+OR+polypropylene+OR+polycarbonate+OR+Noryl)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='Covestro';            Url='https://news.google.com/rss/search?q=Covestro+(plastic+OR+polymer+OR+polycarbonate+OR+Makrolon+OR+polyurethane)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='ExxonMobil Chemical'; Url='https://news.google.com/rss/search?q=%22ExxonMobil+Chemical%22+(plastic+OR+polymer+OR+polyethylene+OR+polypropylene)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='INEOS';               Url='https://news.google.com/rss/search?q=INEOS+(plastic+OR+polymer+OR+polyethylene+OR+polypropylene+OR+styrene+OR+ABS)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Chevron Phillips';    Url='https://news.google.com/rss/search?q=%22Chevron+Phillips%22+(plastic+OR+polymer+OR+polyethylene+OR+HDPE)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 歐洲特化 / 工程塑膠
+    @{ Name='Arkema';              Url='https://news.google.com/rss/search?q=Arkema+(plastic+OR+polymer+OR+polyamide+OR+PVDF+OR+Rilsan)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Evonik';              Url='https://news.google.com/rss/search?q=Evonik+(plastic+OR+polymer+OR+PEEK+OR+polyamide+OR+VESTAMID)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Lanxess';             Url='https://news.google.com/rss/search?q=Lanxess+(plastic+OR+polymer+OR+polyamide+OR+Durethan+OR+Pocan)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='DSM / Envalior';      Url='https://news.google.com/rss/search?q=(%22Royal+DSM%22+OR+Envalior+OR+%22DSM+Engineering%22)+(plastic+OR+polymer+OR+engineering)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Celanese';            Url='https://news.google.com/rss/search?q=Celanese+(plastic+OR+polymer+OR+POM+OR+acetal+OR+engineering)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Eastman Chemical';    Url='https://news.google.com/rss/search?q=%22Eastman+Chemical%22+(plastic+OR+polymer+OR+copolyester+OR+Tritan)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Victrex';             Url='https://news.google.com/rss/search?q=Victrex+(PEEK+OR+polymer+OR+high-performance+plastic)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 日本
+    @{ Name='Mitsui Chemicals';    Url='https://news.google.com/rss/search?q=%22Mitsui+Chemicals%22+(plastic+OR+polymer+OR+resin+OR+polyolefin)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Mitsubishi Chem 塑膠';Url='https://news.google.com/rss/search?q=%22Mitsubishi+Chemical%22+(engineering+plastic+OR+polycarbonate+OR+PBT+OR+ABS)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Sumitomo Chemical';   Url='https://news.google.com/rss/search?q=%22Sumitomo+Chemical%22+(plastic+OR+polymer+OR+resin+OR+polypropylene)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Asahi Kasei';         Url='https://news.google.com/rss/search?q=%22Asahi+Kasei%22+(plastic+OR+polymer+OR+resin+OR+Leona+OR+Xyron)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 南韓
+    @{ Name='LG Chem';             Url='https://news.google.com/rss/search?q=%22LG+Chem%22+(plastic+OR+polymer+OR+ABS+OR+PC+OR+resin)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Hanwha Solutions';    Url='https://news.google.com/rss/search?q=%22Hanwha+Solutions%22+(plastic+OR+polymer+OR+PVC+OR+resin)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 台灣
+    @{ Name='台塑 / 南亞塑膠';     Url='https://news.google.com/rss/search?q=(%E5%8F%B0%E5%A1%91+OR+%E5%8D%97%E4%BA%9E%E5%A1%91%E8%86%A0+OR+%22Formosa+Plastics%22+OR+%22Nan+Ya+Plastics%22)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+    # 巴西
+    @{ Name='Braskem';             Url='https://news.google.com/rss/search?q=Braskem+(plastic+OR+polymer+OR+polyethylene+OR+polypropylene+OR+bio-based)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 直接 RSS — 塑膠產業雜誌
+    @{ Name='Plastics Today';      Url='https://www.plasticstoday.com/rss.xml';                                                                                                         Lang='en'; Weight=1.2 }
+)
+
+# ---------- 2b3c. 世界金屬市場（鋼／鋁／銅／鋰／稀土／關鍵礦物）----------
+$MetalSources = @(
+    # 鋼鐵大廠
+    @{ Name='ArcelorMittal';       Url='https://news.google.com/rss/search?q=ArcelorMittal+(steel+OR+production+OR+market+OR+green+steel)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='Nippon Steel';        Url='https://news.google.com/rss/search?q=%22Nippon+Steel%22+(steel+OR+production+OR+%22US+Steel%22+OR+Pittsburgh)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='POSCO';               Url='https://news.google.com/rss/search?q=POSCO+(steel+OR+hot-rolled+OR+production+OR+market+OR+battery)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Thyssenkrupp';        Url='https://news.google.com/rss/search?q=Thyssenkrupp+(steel+OR+production+OR+green+OR+decarbon)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Baowu / China Steel'; Url='https://news.google.com/rss/search?q=(Baowu+OR+%22China+Baowu%22+OR+%22China+Steel+Corp%22+OR+Shougang)+steel&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='JFE / Kobe';          Url='https://news.google.com/rss/search?q=(%22JFE+Steel%22+OR+%22Kobe+Steel%22+OR+%22Kobelco%22)+(steel+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 鋁業
+    @{ Name='Alcoa';               Url='https://news.google.com/rss/search?q=Alcoa+(aluminum+OR+smelter+OR+production+OR+market)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='Novelis';             Url='https://news.google.com/rss/search?q=Novelis+(aluminum+OR+recycled+OR+rolling+OR+sheet)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Norsk Hydro';         Url='https://news.google.com/rss/search?q=%22Norsk+Hydro%22+(aluminum+OR+smelter+OR+green)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='China Hongqiao';      Url='https://news.google.com/rss/search?q=(%22China+Hongqiao%22+OR+Hongqiao+aluminum)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 多金屬綜合礦業巨頭
+    @{ Name='Rio Tinto';           Url='https://news.google.com/rss/search?q=%22Rio+Tinto%22+(iron+ore+OR+copper+OR+aluminum+OR+lithium+OR+mine+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='BHP';                 Url='https://news.google.com/rss/search?q=BHP+(iron+ore+OR+copper+OR+nickel+OR+coal+OR+mine+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='Glencore';            Url='https://news.google.com/rss/search?q=Glencore+(copper+OR+zinc+OR+cobalt+OR+nickel+OR+coal+OR+mine)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Vale';                Url='https://news.google.com/rss/search?q=%22Vale+SA%22+(iron+ore+OR+nickel+OR+copper+OR+mine+OR+Brazil)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='Anglo American';      Url='https://news.google.com/rss/search?q=%22Anglo+American%22+(copper+OR+platinum+OR+iron+OR+mine+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 銅
+    @{ Name='Freeport-McMoRan';    Url='https://news.google.com/rss/search?q=Freeport-McMoRan+(copper+OR+gold+OR+mine+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Codelco';             Url='https://news.google.com/rss/search?q=Codelco+copper+(production+OR+market+OR+Chile)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 鋰 / 電池金屬
+    @{ Name='Albemarle';           Url='https://news.google.com/rss/search?q=Albemarle+(lithium+OR+battery+OR+production+OR+Greenbushes)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.1 }
+    @{ Name='SQM';                 Url='https://news.google.com/rss/search?q=(%22SQM+Lithium%22+OR+%22Sociedad+Qu%C3%ADmica%22)+(lithium+OR+Chile+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='Ganfeng Lithium';     Url='https://news.google.com/rss/search?q=(%22Ganfeng+Lithium%22+OR+Ganfeng)+(lithium+OR+battery+OR+mine)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 稀土 / 磁鐵
+    @{ Name='Lynas Rare Earths';   Url='https://news.google.com/rss/search?q=(Lynas+OR+%22Lynas+Rare+Earths%22)+(rare+earth+OR+neodymium+OR+mine+OR+production)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='MP Materials';        Url='https://news.google.com/rss/search?q=%22MP+Materials%22+(rare+earth+OR+neodymium+OR+magnet+OR+Mountain+Pass)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 金屬市場 / 價格
+    @{ Name='LME 金屬交易';        Url='https://news.google.com/rss/search?q=(LME+OR+%22London+Metal+Exchange%22)+(price+OR+market+OR+stock+OR+inventory)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='鋼價市場';            Url='https://news.google.com/rss/search?q=(%22steel+price%22+OR+%22steel+market%22+OR+%22steel+demand%22+OR+%22hot-rolled+coil%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='鋁價市場';            Url='https://news.google.com/rss/search?q=(%22aluminum+price%22+OR+%22aluminium+price%22+OR+%22aluminum+market%22+OR+%22aluminum+demand%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='銅價 / 鎳價';         Url='https://news.google.com/rss/search?q=(%22copper+price%22+OR+%22nickel+price%22+OR+%22copper+market%22+OR+%22nickel+market%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='關鍵礦物';            Url='https://news.google.com/rss/search?q=(%22critical+minerals%22+OR+%22rare+earth+market%22+OR+%22strategic+metals%22+OR+%22battery+metals%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    # 台灣 / 中文
+    @{ Name='中鋼 / 台灣金屬';      Url='https://news.google.com/rss/search?q=(%E4%B8%AD%E9%8B%BC+OR+%22China+Steel%22+OR+%E5%8F%B0%E9%8B%81+OR+%E7%87%9F%E9%8B%BC)+(%E9%8B%BC%E9%90%B5+OR+%E5%83%B9%E6%A0%BC+OR+%E5%B8%82%E5%A0%B4+OR+%E9%8B%81%E5%93%81)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
+)
+
+# ---------- 2b3d. 娛樂新聞（音樂 + 電影）----------
+$EntertainmentSources = @(
+    @{ Name='Variety';           Url='https://variety.com/feed/';                                                             Lang='en'; Weight=1.2 }
+    @{ Name='Billboard';         Url='https://www.billboard.com/feed/';                                                       Lang='en'; Weight=1.2 }
+    @{ Name='Rolling Stone';     Url='https://www.rollingstone.com/feed/';                                                    Lang='en'; Weight=1.1 }
+    @{ Name='Hollywood Reporter';Url='https://www.hollywoodreporter.com/feed/';                                               Lang='en'; Weight=1.1 }
+    @{ Name='Pitchfork';         Url='https://pitchfork.com/rss/news/';                                                       Lang='en'; Weight=1.0 }
+    @{ Name='音樂新聞';          Url='https://news.google.com/rss/search?q=(%22new+album%22+OR+%22music+release%22+OR+%22concert+tour%22+OR+%22music+video%22+OR+Grammy+OR+Billboard)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='電影新聞';          Url='https://news.google.com/rss/search?q=(%22box+office%22+OR+%22movie+release%22+OR+%22film+premiere%22+OR+Oscar+OR+%22Cannes+Festival%22+OR+%22movie+trailer%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='串流平台';          Url='https://news.google.com/rss/search?q=(Netflix+OR+%22Disney+Plus%22+OR+%22Apple+TV%22+OR+HBO+OR+%22Prime+Video%22)+(series+OR+show+OR+release+OR+launch)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='華語娛樂';          Url='https://news.google.com/rss/search?q=(%E9%9F%B3%E6%A8%82+OR+%E6%BC%94%E5%94%B1%E6%9C%83+OR+%E5%B0%88%E8%BC%AF+OR+%E9%9B%BB%E5%BD%B1+OR+%E9%87%91%E6%9B%B2%E7%8D%8E+OR+%E9%87%91%E9%A6%AC%E7%8D%8E)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
+)
+
+$EntertainmentSignals = @(
+    # 音樂
+    'album(?:s)?\b', 'song(?:s)?\b', '\bmusic\b', 'concert(?:s)?', 'tour(?:s|ed|ing)?',
+    'festival(?:s)?\b', 'artist(?:s)?\b', 'band(?:s)?\b', 'singer(?:s)?\b',
+    'Grammy', 'Billboard', 'chart(?:s|-topping)?', 'hit(?:s|ting)?\s+(?:single|the\s+charts)',
+    # 電影／影視
+    '\bmovie\b', '\bfilm\b', 'director', 'actor', 'actress', 'star(?:s|ring)?',
+    'premier(?:e|es|ed)', 'debut(?:s|ed|ing)?', 'release(?:s|d|ing)?',
+    'Oscar(?:s)?', 'Golden\s+Globe', 'Emmy(?:s)?', 'Academy\s+Award', 'Cannes',
+    'box\s+office', 'stream(?:ing|er)?', 'Netflix', 'Disney', 'HBO', 'Prime\s+Video',
+    'TV\s+(?:show|series)', 'season\s+\d', 'episode', 'trailer',
+    'launch(?:es|ed|ing)?', 'announc(?:e|es|ed|ement)',
+    # 中文
+    '專輯', '歌曲', '音樂', '演唱會', '巡演', '藝人', '歌手', '樂團',
+    '電影', '影片', '導演', '男星', '女星', '明星', '主演', '影帝', '影后',
+    '發行', '上映', '首映', '金曲獎', '金馬獎', '奧斯卡', '坎城',
+    '票房', '串流', '劇集', '連續劇', '綜藝', '節目',
+    '推出', '發布', '宣布'
+)
+
+# ---------- 2b3e. 美食新聞 ----------
+$FoodSources = @(
+    @{ Name='Eater';            Url='https://www.eater.com/rss/index.xml';                                                       Lang='en'; Weight=1.5 }
+    @{ Name='Bon Appetit';      Url='https://www.bonappetit.com/feed/rss';                                                       Lang='en'; Weight=1.4 }
+    @{ Name='Serious Eats';     Url='https://www.seriouseats.com/latest.rss';                                                    Lang='en'; Weight=1.3 }
+    @{ Name='The Spruce Eats';  Url='https://www.thespruceeats.com/rss';                                                         Lang='en'; Weight=1.2 }
+    @{ Name='Food52';           Url='https://food52.com/blog.rss';                                                               Lang='en'; Weight=1.2 }
+    @{ Name='Tasting Table';    Url='https://www.tastingtable.com/feed.rss';                                                     Lang='en'; Weight=1.2 }
+    @{ Name='The Kitchn';       Url='https://www.thekitchn.com/main.rss';                                                        Lang='en'; Weight=1.2 }
+    @{ Name='Food & Wine';      Url='https://news.google.com/rss/search?q=site:foodandwine.com&hl=en-US&gl=US&ceid=US:en';         Lang='en'; Weight=1.1 }
+    @{ Name='Michelin Guide';   Url='https://news.google.com/rss/search?q=(Michelin+OR+%22Michelin+Guide%22+OR+%22Michelin+star%22)+restaurant&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.2 }
+    @{ Name='新餐廳／開幕';      Url='https://news.google.com/rss/search?q=(%22new+restaurant%22+OR+%22restaurant+opens%22+OR+%22chef+launches%22+OR+%22tasting+menu%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='美食趨勢';          Url='https://news.google.com/rss/search?q=(%22food+trend%22+OR+%22culinary+trend%22+OR+%22best+restaurants%22+OR+%22World%27s+50+Best%22)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='飲品 / 咖啡 / 酒';  Url='https://news.google.com/rss/search?q=(%22new+coffee%22+OR+%22specialty+coffee%22+OR+%22craft+beer%22+OR+%22natural+wine%22+OR+cocktail+bar)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=1.0 }
+    @{ Name='華語美食';          Url='https://news.google.com/rss/search?q=(%E7%B1%B3%E5%85%B6%E6%9E%97+OR+%E7%BE%8E%E9%A3%9F+OR+%E9%A4%90%E5%BB%B3+OR+%E5%A4%A7%E5%BB%9A+OR+%E4%B8%BB%E5%BB%9A+OR+%E5%BF%85%E6%AF%94%E7%99%BB)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
+    @{ Name='甜點 / 烘焙';       Url='https://news.google.com/rss/search?q=(bakery+OR+pastry+OR+dessert+OR+%22new+ice+cream%22+OR+patisserie)&hl=en-US&gl=US&ceid=US:en'; Lang='en'; Weight=0.9 }
+)
+
+# ---------- 2b3f. 台中咖啡好去處（只推薦咖啡）----------
+$LocalFoodSources = @(
+    @{ Name='台中咖啡推薦'; Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+%E5%92%96%E5%95%A1+(%E6%8E%A8%E8%96%A6+OR+%E5%BA%97+OR+%E5%BB%B3+OR+%E9%A4%A8+OR+%E5%BF%85%E5%96%9D)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.4 }
+    @{ Name='台中咖啡館';   Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E5%92%96%E5%95%A1%E9%A4%A8+OR+%E5%92%96%E5%95%A1%E5%BB%B3+OR+%E5%92%96%E5%95%A1%E5%BA%97+OR+cafe+OR+coffee)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.4 }
+    @{ Name='台中新開咖啡'; Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+%E5%92%96%E5%95%A1+(%E6%96%B0%E9%96%8B+OR+%E9%96%8B%E5%B9%95+OR+%E5%85%A5%E9%A7%90+OR+%E9%96%8B%E5%BA%97)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.3 }
+    @{ Name='台中精品咖啡'; Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E7%B2%BE%E5%93%81%E5%92%96%E5%95%A1+OR+%E8%87%AA%E5%AE%B6%E7%83%98%E7%84%99+OR+%E7%8D%A8%E7%AB%8B%E5%92%96%E5%95%A1+OR+specialty+coffee)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.3 }
+    @{ Name='台中咖啡地圖'; Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E5%92%96%E5%95%A1%E5%9C%B0%E5%9C%96+OR+%E5%92%96%E5%95%A1%E5%B7%A1%E7%A6%AE+OR+%E5%92%96%E5%95%A1%E6%8E%A8%E8%96%A6+OR+%E5%92%96%E5%95%A1%E6%B8%85%E5%96%AE)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+    @{ Name='台中拿鐵手沖'; Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E6%8B%BF%E9%90%B5+OR+%E6%89%8B%E6%B2%96+OR+%E6%BF%83%E7%B8%AE+OR+%E8%99%B9%E5%90%B8+OR+%E5%8D%A1%E5%B8%83%E5%A5%87%E8%AB%BE+OR+%E9%82%A3%E4%B8%8D%E5%8B%92)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+)
+
+# 必須含「咖啡」相關詞才納入（嚴格限定咖啡主題）
+$LocalFoodSignals = @(
+    '咖啡', '咖啡館', '咖啡店', '咖啡廳', '咖啡廳', '咖啡地圖', '咖啡巡禮',
+    '拿鐵', '卡布奇諾', '美式', '濃縮', '手沖', '虹吸', '義式', '冷萃', '冰滴',
+    '那不勒斯', '單品', '耶加雪菲', '曼特寧', '藝伎', '肯亞',
+    '烘豆', '烘焙', '自家烘焙', '淺焙', '中焙', '深焙',
+    '拉花', '精品咖啡', '獨立咖啡', 'specialty', 'coffee', 'cafe', 'latte', 'espresso'
+)
+
+# ---------- 2b3i. 天氣預報 + 空氣品質 ----------
+$WeatherSources = @(
+    @{ Name='天氣預報';     Url='https://news.google.com/rss/search?q=(%E5%A4%A9%E6%B0%A3+OR+%E6%B0%A3%E8%B1%A1+OR+%E9%8B%92%E9%9D%A2+OR+%E9%A2%B1%E9%A2%A8+OR+%E5%AF%92%E6%B5%81+OR+%E9%AB%98%E6%BA%AB+OR+%E8%B1%AA%E9%9B%A8)+%E5%8F%B0%E7%81%A3&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.3 }
+    @{ Name='空氣品質';     Url='https://news.google.com/rss/search?q=(%E7%A9%BA%E6%B0%A3%E5%93%81%E8%B3%AA+OR+AQI+OR+PM2.5+OR+%E7%B4%B0%E7%A9%BA%E6%B0%A3%E6%B1%99%E6%9F%93+OR+%E6%9D%B1%E5%8C%97%E5%AD%A3%E9%A2%A8)+%E5%8F%B0%E7%81%A3&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+    @{ Name='中央氣象局';    Url='https://news.google.com/rss/search?q=(%E4%B8%AD%E5%A4%AE%E6%B0%A3%E8%B1%A1%E7%BD%B2+OR+%E6%B0%A3%E8%B1%A1%E7%BD%B2)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+)
+$WeatherSignals = @(
+    '天氣', '氣象', '氣溫', '降雨', '降雪', '颱風', '鋒面', '寒流', '寒潮',
+    '高溫', '熱浪', '豪雨', '陣雨', '梅雨', '午後雷陣雨',
+    '空氣', '空品', 'AQI', 'PM2.5', 'PM10', '霾', '東北季風', '西南氣流',
+    '預報', '警報', '特報', '預估', '預測', '氣候', '極端'
+)
+
+# WMO 氣象代碼 → 中文
+function Get-WeatherCodeLabel {
+    param([int]$code)
+    if ($code -eq 0) { return '晴朗' }
+    if ($code -eq 1) { return '大致晴朗' }
+    if ($code -eq 2) { return '局部多雲' }
+    if ($code -eq 3) { return '陰天' }
+    if ($code -in 45,48) { return '霧' }
+    if ($code -in 51,53,55) { return '毛毛雨' }
+    if ($code -in 56,57) { return '凍雨' }
+    if ($code -in 61,63,65) { return '下雨' }
+    if ($code -in 66,67) { return '凍雨' }
+    if ($code -in 71,73,75,77) { return '下雪' }
+    if ($code -in 80,81,82) { return '陣雨' }
+    if ($code -in 85,86) { return '陣雪' }
+    if ($code -in 95,96,99) { return '雷雨' }
+    return '—'
+}
+
+function Get-WeatherCodeEmoji {
+    param([int]$code)
+    if ($code -eq 0) { return '☀️' }
+    if ($code -in 1,2) { return '🌤️' }
+    if ($code -eq 3) { return '☁️' }
+    if ($code -in 45,48) { return '🌫️' }
+    if ($code -in 51,53,55,61,63,65,80,81,82) { return '🌧️' }
+    if ($code -in 71,73,75,77,85,86) { return '❄️' }
+    if ($code -in 95,96,99) { return '⛈️' }
+    return '🌡️'
+}
+
+function Get-WeatherDashboard {
+    param([double]$lat = 24.104, [double]$lon = 120.503)
+    try {
+        $url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=Asia%2FTaipei&forecast_days=5"
+        return Invoke-RestMethod -Uri $url -TimeoutSec 15
+    } catch {
+        Write-Host "  天氣 API 取得失敗: $_" -ForegroundColor Yellow
+        return $null
+    }
+}
+
+function Get-AQI {
+    # 多城市查詢 waqi.info 免費公開端點（demo token，台灣各城市各抓一筆）
+    $cities = @(
+        @{ key='hemei';     name='和美' }
+        @{ key='changhua';  name='彰化' }
+        @{ key='lukang';    name='鹿港' }
+        @{ key='taichung';  name='台中' }
+        @{ key='taichung-xitun';     name='台中西屯' }
+        @{ key='taichung-fengyuan';  name='台中豐原' }
+        @{ key='nantou';    name='南投' }
+        @{ key='miaoli';    name='苗栗' }
+        @{ key='taipei';    name='台北' }
+        @{ key='taoyuan';   name='桃園' }
+        @{ key='hsinchu';   name='新竹' }
+        @{ key='kaohsiung'; name='高雄' }
+        @{ key='tainan';    name='台南' }
+        @{ key='chiayi';    name='嘉義' }
+        @{ key='yilan';     name='宜蘭' }
+        @{ key='hualien';   name='花蓮' }
+    )
+    $results = New-Object System.Collections.Generic.List[object]
+    foreach ($c in $cities) {
+        try {
+            $url = "https://api.waqi.info/feed/$($c.key)/?token=demo"
+            $r = Invoke-RestMethod -Uri $url -TimeoutSec 8 -UserAgent 'Mozilla/5.0'
+            if ($r.status -eq 'ok' -and $r.data -and $r.data.aqi -and ($r.data.aqi -ne '-')) {
+                $aqi = [int]$r.data.aqi
+                $status = if ($aqi -le 50) {'良好'}
+                          elseif ($aqi -le 100) {'普通'}
+                          elseif ($aqi -le 150) {'敏感族群不健康'}
+                          elseif ($aqi -le 200) {'不健康'}
+                          elseif ($aqi -le 300) {'非常不健康'}
+                          else {'危害'}
+                $results.Add([pscustomobject]@{
+                    sitename = $c.name
+                    aqi      = $aqi
+                    status   = $status
+                })
+            }
+        } catch { }
+    }
+    return ,$results.ToArray()
+}
+
+# ---------- 2b3h. 親子週末好去處（有孩子同仁）----------
+$KidSources = @(
+    @{ Name='親子景點';     Url='https://news.google.com/rss/search?q=%E8%A6%AA%E5%AD%90+(%E6%99%AF%E9%BB%9E+OR+%E6%B4%BB%E5%8B%95+OR+%E6%8E%A8%E8%96%A6+OR+%E5%A5%BD%E5%8E%BB%E8%99%95)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.3 }
+    @{ Name='週末親子';     Url='https://news.google.com/rss/search?q=%E9%80%B1%E6%9C%AB+%E8%A6%AA%E5%AD%90+(%E5%A5%BD%E5%8E%BB%E8%99%95+OR+%E6%B4%BB%E5%8B%95+OR+%E8%A1%8C%E7%A8%8B+OR+%E6%BA%9C%E5%B0%8F%E5%AD%A9)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.3 }
+    @{ Name='親子餐廳';     Url='https://news.google.com/rss/search?q=%E8%A6%AA%E5%AD%90%E9%A4%90%E5%BB%B3+(%E6%8E%A8%E8%96%A6+OR+%E6%96%B0%E9%96%8B+OR+%E9%81%8A%E6%A8%82%E5%8D%80)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+    @{ Name='兒童樂園';     Url='https://news.google.com/rss/search?q=(%E9%81%8A%E6%A8%82%E5%9C%92+OR+%E6%B8%B8%E6%A8%82%E5%A0%B4+OR+%E4%B8%BB%E9%A1%8C%E6%A8%82%E5%9C%92+OR+%E5%85%92%E7%AB%A5)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+    @{ Name='博物館動物園'; Url='https://news.google.com/rss/search?q=(%E5%8B%95%E7%89%A9%E5%9C%92+OR+%E6%B0%B4%E6%97%8F%E9%A4%A8+OR+%E5%8D%9A%E7%89%A9%E9%A4%A8+OR+%E7%A7%91%E5%AD%B8%E9%A4%A8+OR+%E8%BE%B2%E5%A0%B4)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+    @{ Name='中部親子';     Url='https://news.google.com/rss/search?q=(%E5%8F%B0%E4%B8%AD+OR+%E5%BD%B0%E5%8C%96+OR+%E5%8D%97%E6%8A%95+OR+%E8%8B%97%E6%A0%97)+%E8%A6%AA%E5%AD%90&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+    @{ Name='全台親子';     Url='https://news.google.com/rss/search?q=%E5%85%A8%E5%8F%B0+%E8%A6%AA%E5%AD%90+(%E6%99%AF%E9%BB%9E+OR+%E6%B4%BB%E5%8B%95+OR+%E9%80%B1%E6%9C%AB)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+    @{ Name='戶外親子';     Url='https://news.google.com/rss/search?q=(%E9%9C%B2%E7%87%9F+OR+%E6%AD%A5%E9%81%93+OR+%E8%BE%B2%E5%A0%B4+OR+%E6%A3%AE%E6%9E%97%E9%81%8A%E6%A8%82%E5%8D%80)+%E8%A6%AA%E5%AD%90&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
+)
+
+$KidSignals = @(
+    '親子', '小孩', '兒童', '孩子', '家庭',
+    '週末', '假日', '連假', '暑假', '寒假', '出遊', '溜小孩', '放電',
+    '景點', '活動', '推薦', '必去', '必玩', '好去處',
+    '遊樂園', '遊樂場', '主題樂園', '樂園', '農場', '牧場', '森林', '步道',
+    '動物園', '水族館', '博物館', '美術館', '兒童館', '科博館', '科工館',
+    '公園', '野餐', '露營', '親水', '共融',
+    '親子餐廳', '親子友善', '親子民宿', '親子飯店', '遊樂區',
+    'DIY', '手作', '課程', '體驗', '展覽', '市集',
+    '免費', '優惠', '新開', '開幕'
+)
+
+# ---------- 2b3j. 台中啤酒好地方 ----------
+$BeerSources = @(
+    @{ Name='台中精釀啤酒';  Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E7%B2%BE%E9%87%80+OR+%E7%B2%BE%E9%87%80%E5%95%A4%E9%85%92+OR+%E7%B2%BE%E9%87%80%E5%95%A4%E5%90%A7+OR+%E5%95%A4%E9%85%92%E5%90%A7+OR+craft+beer)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.3 }
+    @{ Name='台中酒吧';      Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E9%85%92%E5%90%A7+OR+%E9%85%92%E9%A4%A8+OR+%E5%B0%8F%E9%85%92%E9%A4%A8+OR+%E8%AA%BF%E9%85%92+OR+cocktail+bar)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+    @{ Name='台中居酒屋';    Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E5%B1%85%E9%85%92%E5%B1%8B+OR+%E7%86%B1%E7%82%92+OR+%E7%83%8F%E9%BE%8D%E9%BA%B5+OR+%E7%87%92%E9%B3%A5)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.2 }
+    @{ Name='台中餐酒館';    Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E9%A4%90%E9%85%92%E9%A4%A8+OR+%E9%A4%90%E9%85%92+OR+bistro+OR+tapas)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+    @{ Name='台中微醺';      Url='https://news.google.com/rss/search?q=%E5%8F%B0%E4%B8%AD+(%E5%BE%AE%E9%86%BA+OR+%E5%A4%9C%E6%99%9A+OR+%E6%B0%A3%E6%B0%9B+OR+%E6%B7%B1%E5%A4%9C%E9%A3%9F%E5%A0%82)+(%E9%85%92+OR+%E5%95%A4%E9%85%92)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
+    @{ Name='中部精釀啤酒';  Url='https://news.google.com/rss/search?q=%E7%B2%BE%E9%87%80+%E5%95%A4%E9%85%92+(%E5%8F%B0%E4%B8%AD+OR+%E4%B8%AD%E9%83%A8+OR+%E5%BD%B0%E5%8C%96)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.1 }
+)
+$BeerSignals = @(
+    '台中', '彰化', '精釀', '啤酒', '酒吧', '酒館', '居酒屋', '餐酒館',
+    '調酒', '雞尾酒', '單一麥芽', '威士忌', '清酒', '生啤', '拉格', '艾爾',
+    '熱炒', '深夜食堂', '下酒菜', '微醺', '消夜', '宵夜',
+    '推薦', '必喝', '必去', '新開', '開幕', '排隊', '隱藏', '打卡',
+    'bar', 'beer', 'brewery', 'cocktail', 'whisky', 'sake'
+)
+
+# ---------- 2b3g. 和美搖飲(忍) ----------
+$RenSources = @(
+    # 限定在 和美 + 飲料/手搖 範圍，避免抓到其他 "忍" 相關無關文章
+    @{ Name='和美手搖飲料';  Url='https://news.google.com/rss/search?q=%E5%92%8C%E7%BE%8E+(%E6%89%8B%E6%91%87%E9%A3%B2+OR+%E6%89%8B%E6%91%87%E6%9D%AF+OR+%E9%A3%B2%E6%96%99%E5%BA%97+OR+%E6%90%96%E9%A3%B2+OR+%E6%89%8B%E6%91%87%E9%A3%B2%E6%96%99)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.5 }
+    @{ Name='和美忍飲料';    Url='https://news.google.com/rss/search?q=%22%E5%92%8C%E7%BE%8E%22+%22%E5%BF%8D%22+(%E9%A3%B2+OR+%E8%8C%B6+OR+%E5%A5%B6)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.4 }
+    @{ Name='彰化手搖';      Url='https://news.google.com/rss/search?q=%E5%BD%B0%E5%8C%96+(%E6%89%8B%E6%91%87%E9%A3%B2+OR+%E6%89%8B%E6%91%87%E6%9D%AF+OR+%E9%A3%B2%E6%96%99%E5%BA%97+OR+%E6%90%96%E9%A3%B2)&hl=zh-TW&gl=TW&ceid=TW:zh-TW'; Lang='zh'; Weight=1.0 }
+)
+
+# 必須同時含「和美/彰化」+「飲料類」關鍵字才納入
+$RenSignals = @(
+    '手搖', '手搖杯', '手搖飲', '手搖飲料', '飲料店', '搖飲',
+    '珍珠', '珍奶', '奶茶', '紅茶', '綠茶', '果茶', '茶飲', '茶店',
+    '波霸', '粉圓', '椰果', '仙草'
+)
+
+$FoodSignals = @(
+    'restaurant(?:s)?\b', 'cafe\b', 'bistro\b', 'eatery', 'diner',
+    'recipe(?:s)?\b', 'chef(?:s)?\b', 'cook(?:s|ing|ed|book)?\b',
+    'Michelin\s+(?:star|guide)', 'Bib\s+Gourmand', '50\s+Best',
+    'dining', 'meal(?:s)?\b', 'dish(?:es)?\b', 'cuisine', 'menu(?:s)?\b',
+    '\bfood(?:ie)?\b', 'bakery', 'patisserie', 'pastry', 'dessert', 'ice\s+cream',
+    'drink(?:s)?\b', 'beverage', '\bwine\b', '\bcoffee\b', '\btea\b',
+    'cocktail(?:s)?', '\bbeer\b', 'craft\s+(?:beer|spirits)',
+    'pizza', 'sushi', 'ramen', 'burger', 'taco', 'dim\s+sum', 'bbq',
+    'seasonal', 'flavor(?:s)?', 'ingredient(?:s)?', 'gastronomy', 'culinary',
+    'award(?:s|ed)?', 'open(?:s|ed|ing)?\b', 'launch(?:es|ed|ing)?',
+    'new\s+(?:restaurant|menu|spot|chef|bar|cafe)', 'pop[-\s]?up',
+    # 中文
+    '餐廳', '餐館', '咖啡', '食譜', '主廚', '大廚', '廚師',
+    '米其林', '美食', '料理', '菜單', '菜色', '菜品', '佳餚',
+    '甜點', '烘焙', '麵包', '披薩', '壽司', '拉麵', '火鍋',
+    '燒肉', '燉肉', '便當', '早餐', '午餐', '晚餐', '宵夜',
+    '口味', '食材', '飲品', '葡萄酒', '啤酒',
+    '必比登', '星級', '開幕', '新開', '新店', '推出', '新推出'
 )
 
 # ---------- 2b3. 複合材料技術新聞（製程／材料配方／R&D）----------
@@ -486,6 +815,20 @@ function Get-ArticleImage {
     return ''
 }
 
+# 無圖項目套用主題隨機圖（LoremFlickr 免費，依關鍵字挑 Flickr 圖）
+function Set-FallbackImages {
+    param($items, [string]$keywords)
+    $cleanKw = ($keywords -replace '\s+','').ToLower()
+    foreach ($p in $items) {
+        if (-not $p.Image) {
+            $hash = 0
+            foreach ($c in ($p.Title + $p.Link).ToCharArray()) { $hash = ($hash * 31 + [int]$c) -band 0x7fffffff }
+            $lock = $hash % 10000
+            $p.Image = "https://loremflickr.com/400/225/$cleanKw`?lock=$lock"
+        }
+    }
+}
+
 # 副面板補圖（只對非 Google News 的直接 URL 有機會成功）
 function Add-PanelImages {
     param($items, [string]$label)
@@ -648,12 +991,40 @@ if (-not $env:GITHUB_ACTIONS) {
 }
 
 Write-Host "`n抓取 RSS…"
+# URL 域名黑名單（電商／產品站／付費牆）— 先在這邊定義，後續所有 panel 都能用
+$BadDomains = @(
+    # 電商
+    'amazon\.', 'ebay\.', 'walmart\.', 'aliexpress\.', 'alibaba\.',
+    'etsy\.', 'shopee\.', 'lazada\.', 'wish\.com',
+    'aplusme', 'bikesdirect\.', 'competitivecyclist',
+    'backcountry\.', 'rei\.com', 'dickssportinggoods',
+    'monoprice\.', 'vevor\.', 'temu\.',
+    'gsm\w*arena', 'notebookcheck\.',
+    # 付費牆
+    'nytimes\.com', 'wsj\.com', 'washingtonpost\.com', 'ft\.com',
+    'bloomberg\.com', 'economist\.com', 'barrons\.com',
+    'businessinsider\.com', 'theinformation\.com',
+    'thetimes\.co\.uk', 'telegraph\.co\.uk', 'spectator\.co\.uk',
+    'investors\.com', 'marketwatch\.com',
+    'nikkei\.com', 'asahi\.com', 'mainichi\.jp', 'yomiuri\.co\.jp',
+    'theatlantic\.com', 'newyorker\.com', 'vanityfair\.com',
+    'bostonglobe\.com', 'latimes\.com',
+    'seekingalpha\.com', 'morningstar\.com',
+    'afr\.com', 'smh\.com\.au'
+)
+
 $all = New-Object System.Collections.Generic.List[object]
 foreach ($src in $Sources) {
     $items = Get-RssItems $src
     foreach ($it in $items) {
         $pub = Parse-Date $it.Pub
         if ($pub -and ((Get-Date).ToUniversalTime() - $pub).TotalHours -gt 24) { continue }
+        # 過濾付費牆與電商
+        $skipDomain = $false
+        foreach ($d in $BadDomains) {
+            if ($it.Link -imatch $d) { $skipDomain = $true; break }
+        }
+        if ($skipDomain) { continue }
         $desc = $it.Desc
         # 截至 600 英文字，翻譯後約 400–500 中文字，內容完整清晰
         if ($desc.Length -gt 600) { $desc = $desc.Substring(0, 600).TrimEnd() + '…' }
@@ -997,15 +1368,7 @@ $TechOnlySignals = @(
     '層壓', '鋪層', '編織', '纖維束'
 )
 
-# URL 域名黑名單（電商／產品站）
-$BadDomains = @(
-    'amazon\.', 'ebay\.', 'walmart\.', 'aliexpress\.', 'alibaba\.',
-    'etsy\.', 'shopee\.', 'lazada\.', 'wish\.com',
-    'aplusme', 'bikesdirect\.', 'competitivecyclist',
-    'backcountry\.', 'rei\.com', 'dickssportinggoods',
-    'monoprice\.', 'vevor\.', 'temu\.',
-    'gsm\w*arena', 'notebookcheck\.'  # 科技產品評測站
-)
+# BadDomains 已移到主流程前定義
 
 # 正式新聞訊號（標題或描述必須至少含一個）
 $NewsworthyPatterns = @(
@@ -1088,12 +1451,20 @@ function Get-SecondaryPanel {
             $all.Add([pscustomobject]@{
                 Source = $src.Name; Lang = $src.Lang; Title = $it.Title
                 Desc = $desc; Link = $it.Link; Pub = $pub; Image = $it.Image
+                Weight = $src.Weight
             })
         }
     }
     if ($all.Count -eq 0) { return ,@() }
     $unique = @($all | Group-Object Link | ForEach-Object { $_.Group | Select-Object -First 1 })
-    $sorted = @($unique | Where-Object { $_.Pub -is [datetime] } | Sort-Object Pub -Descending)
+    # 排序：直接 RSS（Weight 高）優先 + 近期度
+    $sorted = @($unique | Where-Object { $_.Pub -is [datetime] } | Sort-Object -Property @{
+        Expression = {
+            $ageDays = ((Get-Date).ToUniversalTime() - $_.Pub).TotalDays
+            $recency = [math]::Max(0, 60 - $ageDays) / 60
+            ($_.Weight * 3) + $recency
+        }
+    } -Descending)
 
     $picked = New-Object System.Collections.Generic.List[object]
     $keys   = New-Object System.Collections.Generic.List[object]
@@ -1119,6 +1490,104 @@ Write-Host "`n抓取碳纖製造商 RSS…"
 # 不限數量，把所有通過過濾的製造商新聞全收
 $mfgPicked = Get-SecondaryPanel -sources $ManufacturerSources -maxItems 100 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
 Write-Host ("  → 挑出 {0} 則製造商新聞" -f $mfgPicked.Count)
+
+Write-Host "`n抓取塑膠消息 RSS…"
+$plasticPicked = Get-SecondaryPanel -sources $PlasticSources -maxItems 25 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
+Write-Host ("  → 挑出 {0} 則塑膠消息" -f $plasticPicked.Count)
+
+Write-Host "`n抓取世界金屬市場 RSS…"
+$metalPicked = Get-SecondaryPanel -sources $MetalSources -maxItems 30 -days 90 -descCap 180 -requireSignals $MarketSignalPatterns
+Write-Host ("  → 挑出 {0} 則金屬市場新聞" -f $metalPicked.Count)
+
+Write-Host "`n抓取娛樂新聞 RSS…"
+$funRaw = Get-SecondaryPanel -sources $EntertainmentSources -maxItems 80 -days 30 -descCap 180 -requireSignals $EntertainmentSignals
+if ($funRaw.Count -gt 0) { Add-PanelImages $funRaw '來點好心情候選' }
+# 只留有圖，取前 20
+$funPicked = @($funRaw | Where-Object { $_.Image } | Sort-Object -Property @{Expression={ ($_.Weight * 3) + [math]::Max(0, 60 - ((Get-Date).ToUniversalTime() - $_.Pub).TotalDays) / 60 }} -Descending | Select-Object -First 20)
+Write-Host ("  → 挑出 {0} 則娛樂新聞（全部含圖）" -f $funPicked.Count)
+
+Write-Host "`n抓取美食新聞 RSS…"
+$foodRaw = Get-SecondaryPanel -sources $FoodSources -maxItems 80 -days 45 -descCap 180 -requireSignals $FoodSignals
+if ($foodRaw.Count -gt 0) { Add-PanelImages $foodRaw '給你的美食候選' }
+$foodPicked = @($foodRaw | Where-Object { $_.Image } | Sort-Object -Property @{Expression={ ($_.Weight * 3) + [math]::Max(0, 60 - ((Get-Date).ToUniversalTime() - $_.Pub).TotalDays) / 60 }} -Descending | Select-Object -First 20)
+Write-Host ("  → 挑出 {0} 則美食新聞（全部含圖）" -f $foodPicked.Count)
+
+Write-Host "`n抓取台中咖啡好去處 RSS…"
+$localFoodRaw = Get-SecondaryPanel -sources $LocalFoodSources -maxItems 80 -days 90 -descCap 180 -requireSignals $LocalFoodSignals
+if ($localFoodRaw.Count -gt 0) { Add-PanelImages $localFoodRaw '台中咖啡候選' }
+$localFoodWithImg = @($localFoodRaw | Where-Object { $_.Image } | Sort-Object Pub -Descending | Select-Object -First 20)
+if ($localFoodWithImg.Count -lt 15) {
+    $localFoodNoImg = @($localFoodRaw | Where-Object { -not $_.Image } | Sort-Object Pub -Descending | Select-Object -First (20 - $localFoodWithImg.Count))
+    $localFoodPicked = @($localFoodWithImg) + @($localFoodNoImg)
+} else {
+    $localFoodPicked = $localFoodWithImg
+}
+# 嚴格過濾：必須明確提到台中 + 咖啡
+$taichungLocations = '台中|北屯|西屯|南屯|大里|太平|豐原|潭子|霧峰|神岡|沙鹿|清水|梧棲|大甲|大雅|烏日|龍井|外埔|后里|新社|東勢|石岡|東區|西區|南區|北區|中區|臺中'
+$localFoodPicked = @($localFoodPicked | Where-Object {
+    $t = "$($_.Title) $($_.Desc)"
+    ($t -match $taichungLocations) -and ($t -match '咖啡|cafe|coffee|latte|espresso')
+})
+Set-FallbackImages $localFoodPicked 'coffee,cafe,latte,espresso'
+Write-Host ("  → 挑出 {0} 則台中咖啡好去處" -f $localFoodPicked.Count)
+
+Write-Host "`n取即時天氣 + AQI…"
+$weatherPicked = @()  # 不再抓天氣新聞，只留儀表板
+$weatherData = Get-WeatherDashboard
+$aqiData = Get-AQI
+Write-Host ("  → 氣象: {0} · AQI 測站: {1}" -f ($null -ne $weatherData), @($aqiData).Count)
+
+Write-Host "`n抓取親子週末好去處 RSS…"
+$kidRaw = Get-SecondaryPanel -sources $KidSources -maxItems 80 -days 45 -descCap 180 -requireSignals $KidSignals
+if ($kidRaw.Count -gt 0) { Add-PanelImages $kidRaw '親子候選' }
+$kidWithImg = @($kidRaw | Where-Object { $_.Image } | Sort-Object Pub -Descending | Select-Object -First 20)
+if ($kidWithImg.Count -lt 15) {
+    $kidNoImg = @($kidRaw | Where-Object { -not $_.Image } | Sort-Object Pub -Descending | Select-Object -First (20 - $kidWithImg.Count))
+    $kidPicked = @($kidWithImg) + @($kidNoImg)
+} else {
+    $kidPicked = $kidWithImg
+}
+# 親子出遊推薦 + 台灣限定：放寬為 (台灣地名出現) OR (沒提國外地名)
+$outingKeywords = '景點|活動|出遊|好去處|好玩|景色|樂園|遊樂|主題樂園|農場|牧場|森林|步道|動物園|水族館|博物館|美術館|兒童館|科博館|公園|野餐|露營|親水|玩水|親子餐廳|觀光|體驗|DIY|手作|展覽|市集|渡假|溜小孩|放電|賞花|賞楓|親子飯店|親子民宿|一日遊|兩日遊|小旅行|行程|遊記|旅遊|旅行|玩法|攻略|去哪玩|好地方|推薦|親子共遊|親子旅遊|必去|必玩'
+$taiwanLocations = '台灣|臺灣|台北|臺北|新北|基隆|桃園|新竹|宜蘭|花蓮|台東|臺東|苗栗|台中|臺中|彰化|南投|雲林|嘉義|台南|臺南|高雄|屏東|澎湖|金門|馬祖|全台|全臺|北部|中部|南部|東部|墾丁|日月潭|阿里山|太魯閣|九份|烏來|陽明山|野柳|北投|淡水|鹿港|礁溪|三峽|八里|林口|汐止|板橋|新店|蘆洲|五股|泰山|中和|永和|土城|樹林|鶯歌|三重|安平|關子嶺|溪頭|清境|合歡山|梨山|大雪山|桃機|松山|林口'
+$foreignKeywords = '日本|東京|大阪|京都|沖繩|北海道|韓國|首爾|釜山|美國|紐約|洛杉磯|歐洲|巴黎|倫敦|泰國|曼谷|新加坡|越南|印尼|峇里島|馬來西亞|吉隆坡|澳洲|雪梨|墨爾本|紐西蘭|中國大陸|北京|上海|廣州|深圳|香港|澳門'
+$excludeKeywords = '教育|教學|補習|升學|安親|家教|幼兒園|幼教|課綱|學測|國中|高中|醫療|疫苗|生病|過敏|保險|理財|基金|虐待|受傷|霸凌|家暴|離婚|監護|綁架|犯罪|司法|法律|判刑|性侵|猥褻|失蹤|兇殺|走失'
+$kidPicked = @($kidPicked | Where-Object {
+    $t = "$($_.Title) $($_.Desc)"
+    $hasKid     = $t -match '親子|小孩|兒童|孩子|家庭|帶小孩|遛小孩|爸媽|爸爸|媽媽|全家'
+    $hasOuting  = $t -match $outingKeywords
+    $hasTaiwan  = $t -match $taiwanLocations
+    $hasForeign = $t -match $foreignKeywords
+    $inExclude  = $t -match $excludeKeywords
+    # 必須：親子 + 出遊 + 非排除類；且（台灣地名出現 OR 沒提到國外）
+    $hasKid -and $hasOuting -and (-not $inExclude) -and ($hasTaiwan -or (-not $hasForeign))
+})
+Set-FallbackImages $kidPicked 'kids,family,playground,park'
+Write-Host ("  → 挑出 {0} 則親子出遊推薦（嚴格過濾）" -f $kidPicked.Count)
+
+Write-Host "`n抓取台中啤酒好地方 RSS…"
+$beerRaw = Get-SecondaryPanel -sources $BeerSources -maxItems 60 -days 60 -descCap 180 -requireSignals $BeerSignals
+if ($beerRaw.Count -gt 0) { Add-PanelImages $beerRaw '台中啤酒候選' }
+$beerPicked = @($beerRaw | Sort-Object Pub -Descending | Select-Object -First 15)
+Set-FallbackImages $beerPicked 'beer,bar,craftbeer,pub'
+Write-Host ("  → 挑出 {0} 則台中啤酒（全部含圖）" -f $beerPicked.Count)
+
+Write-Host "`n讀取和美搖飲店家資料（ren-shops.json）…"
+$renShopsFile = Join-Path $PSScriptRoot 'ren-shops.json'
+$renShops = @()
+if (Test-Path $renShopsFile) {
+    try {
+        $json = Get-Content $renShopsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+        $renShops = @($json)
+        Write-Host ("  → 讀到 {0} 家店" -f $renShops.Count) -ForegroundColor Green
+    } catch {
+        Write-Host "  JSON 格式錯誤: $_" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  沒有 ren-shops.json，面板會顯示設定說明" -ForegroundColor DarkGray
+}
+# 不再抓新聞，用空陣列以免其他地方出錯
+$renPicked = @()
 
 Write-Host "`n抓取複材技術 RSS…"
 # 先挑 40 則候選（嚴格技術訊號），再補圖＋排序（有圖優先），最後取 20
@@ -1166,12 +1635,50 @@ if ($carbonPicked.Count -gt 0) {
 Add-PanelImages $appPicked '市場情報'
 Add-PanelImages $fiberPicked '超級纖維'
 
+# ---------- 5aZ. 跨面板去重（同一 URL 只保留最先出現的面板）----------
+function Filter-DuplicateAcross {
+    param($items, $seenUrls)
+    $out = New-Object System.Collections.Generic.List[object]
+    foreach ($it in $items) {
+        if ($it.Link -and -not $seenUrls.Contains($it.Link)) {
+            [void]$seenUrls.Add($it.Link)
+            $out.Add($it)
+        }
+    }
+    return ,$out.ToArray()
+}
+$seenUrls = New-Object System.Collections.Generic.HashSet[string]
+foreach ($p in $picked) { if ($p.Link) { [void]$seenUrls.Add($p.Link) } }
+$carbonPicked    = Filter-DuplicateAcross $carbonPicked    $seenUrls
+$mfgPicked       = Filter-DuplicateAcross $mfgPicked       $seenUrls
+$techPicked      = Filter-DuplicateAcross $techPicked      $seenUrls
+$appPicked       = Filter-DuplicateAcross $appPicked       $seenUrls
+$fiberPicked     = Filter-DuplicateAcross $fiberPicked     $seenUrls
+$plasticPicked   = Filter-DuplicateAcross $plasticPicked   $seenUrls
+$metalPicked     = Filter-DuplicateAcross $metalPicked     $seenUrls
+$funPicked       = Filter-DuplicateAcross $funPicked       $seenUrls
+$foodPicked      = Filter-DuplicateAcross $foodPicked      $seenUrls
+$localFoodPicked = Filter-DuplicateAcross $localFoodPicked $seenUrls
+$kidPicked       = Filter-DuplicateAcross $kidPicked       $seenUrls
+$beerPicked      = Filter-DuplicateAcross $beerPicked      $seenUrls
+$renPicked       = Filter-DuplicateAcross $renPicked       $seenUrls
+Write-Host ("  → 跨面板去重後累計 {0} 個不重複 URL" -f $seenUrls.Count) -ForegroundColor Cyan
+
 # ---------- 5b. 翻譯英文內容為中文（主新聞 + 碳纖維新聞）----------
 $allToTranslate = New-Object System.Collections.Generic.List[object]
 foreach ($p in $picked)       { [void]$allToTranslate.Add($p) }
 foreach ($p in $carbonPicked) { [void]$allToTranslate.Add($p) }
 foreach ($p in $mfgPicked)    { [void]$allToTranslate.Add($p) }
 foreach ($p in $techPicked)   { [void]$allToTranslate.Add($p) }
+foreach ($p in $plasticPicked){ [void]$allToTranslate.Add($p) }
+foreach ($p in $metalPicked)  { [void]$allToTranslate.Add($p) }
+foreach ($p in $funPicked)    { [void]$allToTranslate.Add($p) }
+foreach ($p in $foodPicked)   { [void]$allToTranslate.Add($p) }
+foreach ($p in $localFoodPicked) { [void]$allToTranslate.Add($p) }
+foreach ($p in $kidPicked)    { [void]$allToTranslate.Add($p) }
+foreach ($p in $weatherPicked){ [void]$allToTranslate.Add($p) }
+foreach ($p in $beerPicked)   { [void]$allToTranslate.Add($p) }
+foreach ($p in $renPicked)    { [void]$allToTranslate.Add($p) }
 foreach ($p in $appPicked)    { [void]$allToTranslate.Add($p) }
 foreach ($p in $fiberPicked)  { [void]$allToTranslate.Add($p) }
 $needTranslate  = @($allToTranslate | Where-Object { -not (Test-IsChinese $_.Title) }).Count
@@ -1202,6 +1709,33 @@ foreach ($p in $mfgPicked) {
 }
 foreach ($p in $techPicked) {
     if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
+}
+foreach ($p in $plasticPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
+}
+foreach ($p in $metalPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 400) { $p.Desc = $p.Desc.Substring(0, 400).TrimEnd() + '…' }
+}
+foreach ($p in $funPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 300) { $p.Desc = $p.Desc.Substring(0, 300).TrimEnd() + '…' }
+}
+foreach ($p in $foodPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 300) { $p.Desc = $p.Desc.Substring(0, 300).TrimEnd() + '…' }
+}
+foreach ($p in $localFoodPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 300) { $p.Desc = $p.Desc.Substring(0, 300).TrimEnd() + '…' }
+}
+foreach ($p in $kidPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 300) { $p.Desc = $p.Desc.Substring(0, 300).TrimEnd() + '…' }
+}
+foreach ($p in $weatherPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 250) { $p.Desc = $p.Desc.Substring(0, 250).TrimEnd() + '…' }
+}
+foreach ($p in $beerPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 300) { $p.Desc = $p.Desc.Substring(0, 300).TrimEnd() + '…' }
+}
+foreach ($p in $renPicked) {
+    if ($p.Desc -and $p.Desc.Length -gt 300) { $p.Desc = $p.Desc.Substring(0, 300).TrimEnd() + '…' }
 }
 foreach ($p in $appPicked) {
     if ($p.Desc -and $p.Desc.Length -gt 250) { $p.Desc = $p.Desc.Substring(0, 250).TrimEnd() + '…' }
@@ -1448,6 +1982,335 @@ $mfgHtml = if ($mfgPicked.Count -gt 0) { @"
 
 $techBody = ''
 foreach ($p in $techPicked)   { $techBody  += (Build-MiniTile $p) }
+$plasticBody = ''
+foreach ($p in $plasticPicked) { $plasticBody += (Build-MiniTile $p) }
+$metalBody = ''
+foreach ($p in $metalPicked)   { $metalBody += (Build-MiniTile $p) }
+$funBody = ''
+foreach ($p in $funPicked)     { $funBody   += (Build-MiniTile $p) }
+$foodBody = ''
+foreach ($p in $foodPicked)    { $foodBody  += (Build-MiniTile $p) }
+$localFoodBody = ''
+foreach ($p in $localFoodPicked) { $localFoodBody += (Build-MiniTile $p) }
+$kidBody = ''
+foreach ($p in $kidPicked)       { $kidBody += (Build-MiniTile $p) }
+
+# ---- 天氣儀表板卡 ----
+$weatherCard = ''
+if ($weatherData) {
+    $cur = $weatherData.current
+    $curLabel = Get-WeatherCodeLabel ([int]$cur.weather_code)
+    $curEmoji = Get-WeatherCodeEmoji ([int]$cur.weather_code)
+
+    $dailyHtml = ''
+    $dayCount = [math]::Min(5, $weatherData.daily.time.Count)
+    for ($i = 0; $i -lt $dayCount; $i++) {
+        $t = [datetime]$weatherData.daily.time[$i]
+        $dayName = switch ($t.DayOfWeek.ToString()) {
+            'Monday'    { '週一' } 'Tuesday'  { '週二' } 'Wednesday'{ '週三' }
+            'Thursday'  { '週四' } 'Friday'   { '週五' } 'Saturday' { '週六' }
+            'Sunday'    { '週日' } default { '' }
+        }
+        $maxT = [math]::Round([double]$weatherData.daily.temperature_2m_max[$i])
+        $minT = [math]::Round([double]$weatherData.daily.temperature_2m_min[$i])
+        $rain = [int]$weatherData.daily.precipitation_probability_max[$i]
+        $dailyLabel = Get-WeatherCodeLabel ([int]$weatherData.daily.weather_code[$i])
+        $dailyEmoji = Get-WeatherCodeEmoji ([int]$weatherData.daily.weather_code[$i])
+        $dailyHtml += @"
+<div class="weather-day">
+  <div class="day-name">$dayName</div>
+  <div class="day-icon">$dailyEmoji</div>
+  <div class="day-temp">$maxT&deg; / $minT&deg;</div>
+  <div class="day-label">$dailyLabel</div>
+  <div class="day-rain">&#x2614; $rain%</div>
+</div>
+"@
+    }
+} else {
+    $dailyHtml = '<div class="weather-day">天氣資料取得失敗</div>'
+    $curLabel = '—'; $curEmoji = '🌡️'
+    $cur = @{ temperature_2m = '—'; apparent_temperature = '—'; relative_humidity_2m = '—'; wind_speed_10m = '—' }
+}
+
+# AQI 表格：直接列出所有成功取得的測站
+$aqiRows = ''
+$aqiShown = 0
+foreach ($r in $aqiData) {
+    if ($aqiShown -ge 16) { break }
+    $aqiVal = [int]$r.aqi
+    $status = [string]$r.status
+    $colorClass = if ($aqiVal -le 50) { 'aqi-good' }
+                  elseif ($aqiVal -le 100) { 'aqi-moderate' }
+                  elseif ($aqiVal -le 150) { 'aqi-unhealthy-sg' }
+                  elseif ($aqiVal -le 200) { 'aqi-unhealthy' }
+                  elseif ($aqiVal -le 300) { 'aqi-very-unhealthy' }
+                  else { 'aqi-hazardous' }
+    $aqiRows += "<div class=""aqi-row $colorClass""><span class=""site"">$([System.Net.WebUtility]::HtmlEncode($r.sitename))</span><strong>$aqiVal</strong><span class=""status"">$([System.Net.WebUtility]::HtmlEncode($status))</span></div>"
+    $aqiShown++
+}
+if ($aqiShown -eq 0) {
+    $aqiRows = '<div class="aqi-row">AQI 資料暫時無法取得（稍後自動重試）</div>'
+}
+
+$curTemp = if ($weatherData) { [math]::Round([double]$cur.temperature_2m) } else { '—' }
+$curFeel = if ($weatherData) { [math]::Round([double]$cur.apparent_temperature) } else { '—' }
+
+$weatherCard = @"
+<div class="weather-card">
+  <div class="weather-current">
+    <div class="weather-emoji">$curEmoji</div>
+    <div class="weather-temp">${curTemp}&deg;C</div>
+    <div class="weather-info">
+      <div class="weather-label">$curLabel</div>
+      <div class="weather-sub">體感 ${curFeel}&deg;C &middot; 濕度 $($cur.relative_humidity_2m)% &middot; 風速 $([math]::Round([double]$cur.wind_speed_10m, 1)) km/h</div>
+    </div>
+    <div class="weather-loc">&#128205; 和美 · 彰化</div>
+  </div>
+  <div class="weather-forecast">$dailyHtml</div>
+  <div class="aqi-section">
+    <h3>空氣品質 AQI &middot; 即時監測</h3>
+    <div class="aqi-list">$aqiRows</div>
+  </div>
+</div>
+"@
+
+$weatherBody = ''
+foreach ($p in $weatherPicked) { $weatherBody += (Build-MiniTile $p) }
+
+$beerBody = ''
+foreach ($p in $beerPicked)    { $beerBody += (Build-MiniTile $p) }
+
+# 飲料店品牌 → 官網 domain 對應，用於自動取 logo
+$brandDomains = @{
+    '得正'             = 'dejhengtea.com'
+    '果冉'             = ''
+    '杯子洪了'          = ''
+    '茗沏'             = ''
+    '就是橘子樹'        = ''
+    '龜記'             = 'kueimemory.com.tw'
+    '什麼茶'           = ''
+    '幸福味'           = ''
+    '紅茶巴士'         = 'blackteabus.com'
+    'Black Tea Bus'    = 'blackteabus.com'
+    '回憶小時候'        = ''
+    '思饗茶'           = ''
+    'TEA TOP'          = 'teatop.com.tw'
+    '第一味'           = 'teatop.com.tw'
+    '鹿兒角'           = ''
+    '先喝道'           = 'shineroad.com.tw'
+    '普樂'             = ''
+    '萬波'             = 'wanpotea.com'
+    'Wanpo'            = 'wanpotea.com'
+    '十二韻'           = ''
+    '迷客夏'           = 'milkshoptea.com'
+    'Milksha'          = 'milkshoptea.com'
+    'Milk shop'        = 'milkshoptea.com'
+    '可不可'           = 'kebuke.com'
+    '大雪山'           = ''
+    '南海茶道'         = ''
+    '清心福全'         = 'chingshin.com.tw'
+    '清心'             = 'chingshin.com.tw'
+    '大碗公'           = ''
+    '功夫茶'           = 'kungfutea.com'
+    'KUNGFUTEA'        = 'kungfutea.com'
+    '鶴茶樓'           = 'hechalou.com'
+    '50嵐'             = '50lan.com'
+    '50lan'            = '50lan.com'
+    '85度C'            = '85cafe.com.tw'
+    '85cafe'           = '85cafe.com.tw'
+    'CoCo都可'         = 'coco-tea.com'
+    'CoCo'             = 'coco-tea.com'
+    '麻古茶坊'         = 'macutea.com'
+    '麻古'             = 'macutea.com'
+    '老賴茶棧'         = 'lailai-tea.com'
+    '老賴'             = 'lailai-tea.com'
+    '黑堂'             = ''
+    '杯樂'             = ''
+    '茶湯會'           = 'tp-tea.com'
+    '大苑子'           = 'dayungs.com'
+    '一沐日'           = 'yimuri.com.tw'
+    '八曜和茶'         = 'yashantea.com.tw'
+    '鮮茶道'           = 'presotea.com'
+    '御私藏'           = 'tea-yu.com.tw'
+    '一手私藏'         = 'tea-1.com.tw'
+    '茶の魔手'         = 'magicians.com.tw'
+    '茶之魔手'         = 'magicians.com.tw'
+}
+
+function Get-ShopLogo {
+    param([string]$name)
+    foreach ($key in $brandDomains.Keys) {
+        if ($name -match [regex]::Escape($key)) {
+            $d = $brandDomains[$key]
+            if ($d) { return "https://www.google.com/s2/favicons?domain=$d&sz=128" }
+        }
+    }
+    return ''
+}
+
+# 店家色塊：法式色票 — 巴黎藍／勃艮第／鼠尾草／古銅金／玫瑰粉
+$brandStyles = [ordered]@{
+    'Black Tea Bus' = @{ bg = '#7c3a3a'; text = '紅茶巴士' }
+    '紅茶巴士'      = @{ bg = '#7c3a3a'; text = '紅茶巴士' }
+    '萬波島嶼'      = @{ bg = '#3d5a80'; text = '萬波' }
+    '萬波'          = @{ bg = '#3d5a80'; text = '萬波' }
+    'TEA TOP'       = @{ bg = '#7a2a3a'; text = 'TEA·TOP' }
+    '第一味'        = @{ bg = '#7a2a3a'; text = 'TEA·TOP' }
+    'Milksha'       = @{ bg = '#7a8a5a'; text = '迷客夏' }
+    'Milk shop'     = @{ bg = '#7a8a5a'; text = '迷客夏' }
+    '迷客夏'        = @{ bg = '#7a8a5a'; text = '迷客夏' }
+    '85度C'         = @{ bg = '#5a6a3a'; text = '85°C' }
+    'CoCo都可'      = @{ bg = '#7c3a3a'; text = 'CoCo' }
+    'CoCo'          = @{ bg = '#7c3a3a'; text = 'CoCo' }
+    '清心福全'      = @{ bg = '#7c3a3a'; text = '清心' }
+    '清心'          = @{ bg = '#7c3a3a'; text = '清心' }
+    '麻古茶坊'      = @{ bg = '#2d2d2a'; text = '麻古' }
+    '麻古'          = @{ bg = '#2d2d2a'; text = '麻古' }
+    '老賴茶棧'      = @{ bg = '#7a2a3a'; text = '老賴' }
+    '老賴'          = @{ bg = '#7a2a3a'; text = '老賴' }
+    '可不可熟成'    = @{ bg = '#5a3a2a'; text = '可不可' }
+    '可不可'        = @{ bg = '#5a3a2a'; text = '可不可' }
+    '龜記茗品'      = @{ bg = '#b8956b'; text = '龜記' }
+    '龜記'          = @{ bg = '#b8956b'; text = '龜記' }
+    '50嵐'          = @{ bg = '#7c3a3a'; text = '50嵐' }
+    '茶湯會'        = @{ bg = '#a07a5a'; text = '茶湯會' }
+    '大苑子'        = @{ bg = '#7a8a5a'; text = '大苑子' }
+    '一沐日'        = @{ bg = '#7a6f5a'; text = '一沐日' }
+    '八曜和茶'      = @{ bg = '#5a6a70'; text = '八曜' }
+    '鮮茶道'        = @{ bg = '#7a5a8a'; text = '鮮茶道' }
+    '御私藏'        = @{ bg = '#7a8a5a'; text = '御私藏' }
+    '一手私藏'      = @{ bg = '#1d3557'; text = '一手' }
+    '鶴茶樓'        = @{ bg = '#c4a04a'; text = '鶴茶樓' }
+    '功夫茶'        = @{ bg = '#2d2d2a'; text = '功夫茶' }
+    'KUNGFUTEA'     = @{ bg = '#2d2d2a'; text = '功夫茶' }
+    '茶の魔手'      = @{ bg = '#7a5a8a'; text = '魔手' }
+    '茶之魔手'      = @{ bg = '#7a5a8a'; text = '魔手' }
+    '得正'          = @{ bg = '#7a8a5a'; text = '得正' }
+    'Oolong'        = @{ bg = '#7a8a5a'; text = '得正' }
+    '十二韻'        = @{ bg = '#5a3a2a'; text = '十二韻' }
+    '幸福味'        = @{ bg = '#c47a8c'; text = '幸福味' }
+    '思饗茶'        = @{ bg = '#7a8a5a'; text = '思饗茶' }
+    '飲茶屋'        = @{ bg = '#7a6f5a'; text = '飲茶屋' }
+    '果冉'          = @{ bg = '#b8895c'; text = '果冉' }
+    '什麼茶'        = @{ bg = '#5a7a90'; text = '什麼茶' }
+    '南海茶道'      = @{ bg = '#3d5a80'; text = '南海' }
+    '鹿兒角'        = @{ bg = '#a07a5a'; text = '鹿兒角' }
+    '杯子洪了'      = @{ bg = '#7a5a8a'; text = '杯子洪了' }
+    '杯樂'          = @{ bg = '#b8895c'; text = '杯樂' }
+    '黑堂'          = @{ bg = '#2d2d2a'; text = '黑堂' }
+    '大碗公'        = @{ bg = '#3d5a80'; text = '大碗公' }
+    '回憶小時候'    = @{ bg = '#7a5a8a'; text = '回憶' }
+    '就是橘子樹'    = @{ bg = '#b8895c'; text = '橘子樹' }
+    '大雪山'        = @{ bg = '#3d5a80'; text = '大雪山' }
+    '茗沏'          = @{ bg = '#7a8a5a'; text = '茗沏' }
+    '普樂'          = @{ bg = '#5a7a90'; text = '普樂' }
+    '先喝道'        = @{ bg = '#5a7a90'; text = '先喝道' }
+}
+
+function Get-BrandStyle {
+    param([string]$shopName)
+    foreach ($key in $brandStyles.Keys) {
+        if ($shopName -match [regex]::Escape($key)) {
+            return $brandStyles[$key]
+        }
+    }
+    return @{ bg = 'linear-gradient(135deg,#5a4a3a,#7a5b3a)'; text = '🍵' }
+}
+
+# 和美搖飲(忍) — 優先顯示菜單圖（menu-ren.jpg / menu-ren.png），再列新聞
+$renMenuCard = ''
+foreach ($ext in 'jpg','jpeg','png','webp') {
+    $mp = Join-Path $PSScriptRoot "menu-ren.$ext"
+    if (Test-Path $mp) {
+        $mime = if ($ext -eq 'jpg' -or $ext -eq 'jpeg') { 'image/jpeg' } else { "image/$ext" }
+        $b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($mp))
+        $renMenuCard = @"
+<details class="mini-tile" open>
+  <summary>
+    <div class="mini-img" style="background-image:url('data:$mime;base64,$b64');background-size:contain;background-position:center;background-repeat:no-repeat;background-color:#f8fafc;aspect-ratio:auto;min-height:340px;"></div>
+    <div class="mini-body">
+      <h4>📋 和美搖飲(忍) 菜單</h4>
+      <div class="meta">店家菜單 · 點擊查看完整資訊</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>和美搖飲 忍 — 彰化縣和美鎮。完整品項參考上方菜單圖。</p>
+  </div>
+</details>
+"@
+        Write-Host "  → 找到菜單圖 menu-ren.$ext，已嵌入" -ForegroundColor Green
+        break
+    }
+}
+# 無菜單圖就不顯示占位卡，完全讓店家卡獨立呈現
+$renBody = $renMenuCard
+
+# 店家卡片
+if ($renShops.Count -gt 0) {
+    foreach ($shop in $renShops) {
+        # 優先順序：手動填的 image > 品牌色塊 logo
+        if ($shop.image) {
+            $imgStyle = "background-image:url('$(HtmlEsc $shop.image)');background-size:cover;background-position:center;"
+            $imgContent = ''
+        } else {
+            $brand = Get-BrandStyle $shop.name
+            $imgStyle = "background:$($brand.bg);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800;letter-spacing:1px;text-shadow:0 2px 8px rgba(0,0,0,0.35);text-align:center;padding:8px;"
+            $imgContent = $brand.text
+        }
+        $mapsLink = if ($shop.maps) { "<a class=""read-more"" href=""$(HtmlEsc $shop.maps)"" target=""_blank"" rel=""noopener"">📍 Google Maps</a>" } else { '' }
+        $fbLink   = if ($shop.fb)   { "<a class=""read-more-alt"" href=""$(HtmlEsc $shop.fb)"" target=""_blank"" rel=""noopener"">Facebook</a>" } else { '' }
+        $igLink   = if ($shop.ig)   { "<a class=""read-more-alt"" href=""$(HtmlEsc $shop.ig)"" target=""_blank"" rel=""noopener"">Instagram</a>" } else { '' }
+        $renBody += @"
+<details class="mini-tile" open>
+  <summary>
+    <div class="mini-img" style="$imgStyle">$imgContent</div>
+    <div class="mini-body">
+      <h4>$(HtmlEsc $shop.name)</h4>
+      <div class="meta">📍 $(HtmlEsc $shop.address)</div>
+    </div>
+  </summary>
+  <div class="detail">
+    $(if ($shop.phone) { "<p>📞 $(HtmlEsc $shop.phone)</p>" })
+    $(if ($shop.hours) { "<p>🕐 $(HtmlEsc $shop.hours)</p>" })
+    $(if ($shop.signature) { "<p>⭐ 招牌：$(HtmlEsc $shop.signature)</p>" })
+    $(if ($shop.note) { "<p style='color:#888;font-size:12px'>$(HtmlEsc $shop.note)</p>" })
+    <div class="read-more-group">$mapsLink $fbLink $igLink</div>
+  </div>
+</details>
+"@
+    }
+} else {
+    $renBody += @"
+<details class="mini-tile" open>
+  <summary>
+    <div class="mini-img" style="background:linear-gradient(135deg,#14b8a6,#06b6d4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:40px;aspect-ratio:auto;min-height:160px;">📝</div>
+    <div class="mini-body">
+      <h4>請編輯 ren-shops.json 填入店家資訊</h4>
+      <div class="meta">和美手搖店家目錄</div>
+    </div>
+  </summary>
+  <div class="detail">
+    <p>檔案位置：<code>$PSScriptRoot\ren-shops.json</code></p>
+    <p>JSON 格式範例（每間店一個物件）：</p>
+    <pre style="background:#f1f5f9;padding:10px;border-radius:6px;font-size:11px;overflow:auto;">[
+  {
+    "name": "店名",
+    "address": "地址",
+    "phone": "電話",
+    "hours": "營業時間",
+    "maps": "Google Maps 連結",
+    "fb": "Facebook 連結",
+    "ig": "Instagram 連結",
+    "image": "店家照片 URL",
+    "signature": "招牌飲品",
+    "note": "備註"
+  }
+]</pre>
+    <p>編輯完存檔，下次執行會自動顯示店家卡片。</p>
+  </div>
+</details>
+"@
+}
 
 $techHtml = if ($techPicked.Count -gt 0) { @"
 <section class="panel-section tech-section" data-group="tech">
@@ -1455,6 +2318,69 @@ $techHtml = if ($techPicked.Count -gt 0) { @"
   <div class="mini-grid">$techBody</div>
 </section>
 "@ } else { '' }
+
+$plasticHtml = if ($plasticPicked.Count -gt 0) { @"
+<section class="panel-section plastic-section" data-group="plastic">
+  <h2 class="panel-title">塑膠消息 <span class="sub">Plastics · Dow / BASF / SABIC / LyondellBasell / Covestro / Arkema · $($plasticPicked.Count) 則</span></h2>
+  <div class="mini-grid">$plasticBody</div>
+</section>
+"@ } else { '' }
+
+$metalHtml = if ($metalPicked.Count -gt 0) { @"
+<section class="panel-section metal-section" data-group="metal">
+  <h2 class="panel-title">世界金屬市場 <span class="sub">Metals · 鋼鐵／鋁／銅／鋰／稀土 · ArcelorMittal / Alcoa / Rio Tinto / BHP · $($metalPicked.Count) 則</span></h2>
+  <div class="mini-grid">$metalBody</div>
+</section>
+"@ } else { '' }
+
+$funHtml = if ($funPicked.Count -gt 0) { @"
+<section class="panel-section fun-section" data-group="fun">
+  <h2 class="panel-title">來點好心情 <span class="sub">音樂 &amp; 電影 · Variety / Billboard / Rolling Stone / Hollywood Reporter · $($funPicked.Count) 則</span></h2>
+  <div class="mini-grid">$funBody</div>
+</section>
+"@ } else { '' }
+
+$foodHtml = if ($foodPicked.Count -gt 0) { @"
+<section class="panel-section food-section" data-group="food">
+  <h2 class="panel-title">給你的美食 <span class="sub">Food &amp; Dining · Eater / Bon Appétit / Michelin · $($foodPicked.Count) 則</span></h2>
+  <div class="mini-grid">$foodBody</div>
+</section>
+"@ } else { '' }
+
+$localFoodHtml = if ($localFoodPicked.Count -gt 0) { @"
+<section class="panel-section local-section" data-group="local">
+  <h2 class="panel-title">台中咖啡好去處 <span class="sub">☕ 台中在地咖啡館 / 手沖 / 精品咖啡 / 獨立咖啡 · $($localFoodPicked.Count) 則</span></h2>
+  <div class="mini-grid">$localFoodBody</div>
+</section>
+"@ } else { '' }
+
+$kidHtml = if ($kidPicked.Count -gt 0) { @"
+<section class="panel-section kid-section" data-group="kid">
+  <h2 class="panel-title">親子週末 <span class="sub">有孩子同仁 · 週末好去處 · 景點 / 樂園 / 動物園 / 親子餐廳 · $($kidPicked.Count) 則</span></h2>
+  <div class="mini-grid">$kidBody</div>
+</section>
+"@ } else { '' }
+
+$weatherHtml = @"
+<section class="panel-section weather-section" data-group="weather">
+  <h2 class="panel-title">天氣預報 <span class="sub">即時氣象 + 空氣品質 AQI · 和美／彰化／台中</span></h2>
+  $weatherCard
+</section>
+"@
+
+$beerHtml = if ($beerPicked.Count -gt 0) { @"
+<section class="panel-section beer-section" data-group="beer">
+  <h2 class="panel-title">台中啤酒好地方 <span class="sub">精釀啤酒 / 酒吧 / 居酒屋 / 餐酒館 · ⚠️ 嚴禁酒駕 · $($beerPicked.Count) 則</span></h2>
+  <div class="mini-grid">$beerBody</div>
+</section>
+"@ } else { '' }
+
+$renHtml = @"
+<section class="panel-section ren-section" data-group="ren">
+  <h2 class="panel-title">和美搖飲(忍) <span class="sub">彰化和美 · 手搖飲店家資訊 + 菜單 · $($renShops.Count) 家店</span></h2>
+  <div class="mini-grid">$renBody</div>
+</section>
+"@
 
 $appHtml = if ($appPicked.Count -gt 0) { @"
 <section class="panel-section app-section" data-group="app">
@@ -1476,60 +2402,205 @@ $htmlShell = @"
 <html lang="zh-TW">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="1800">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="refresh" content="600">
+<meta name="theme-color" content="#81d8d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
 <title>TEi Composites · 國際新聞 · $dateStr</title>
 <style>
  * { box-sizing: border-box; }
- body { margin:0; min-height:100vh; color:#1a1d24; line-height:1.5;
-        font-family:"Microsoft JhengHei","PingFang TC",-apple-system,"Segoe UI",sans-serif;
-        background:linear-gradient(135deg,#c9d6ff 0%,#e2dbf5 50%,#ffd8e5 100%);
-        background-attachment:fixed; }
- .wrap { max-width:1320px; margin:28px auto; padding:28px;
+ html, body { overscroll-behavior-y:none; }
+ body { margin:0; min-height:100vh; color:#1d1d1f; line-height:1.5;
+        font-family:"SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Helvetica Neue",sans-serif;
+        background:
+          radial-gradient(1200px 820px at 8% -10%, rgba(255,255,255,0.55), transparent 60%),
+          radial-gradient(1000px 720px at 92% 0%, rgba(255,255,255,0.30), transparent 65%),
+          radial-gradient(900px 700px at 50% 110%, rgba(10,186,181,0.25), transparent 60%),
+          linear-gradient(180deg, #b4e6e1 0%, #81d8d0 55%, #5fc7be 100%);
+        background-attachment:fixed;
+        letter-spacing:-0.003em;
+        -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+ .wrap { max-width:1320px; margin:24px auto; padding:32px;
          background:rgba(255,255,255,0.72);
-         backdrop-filter:blur(28px) saturate(180%);
-         -webkit-backdrop-filter:blur(28px) saturate(180%);
-         border-radius:22px; box-shadow:0 12px 48px rgba(60,50,110,0.14);
-         border:1px solid rgba(255,255,255,0.5); }
+         backdrop-filter:saturate(180%) blur(28px);
+         -webkit-backdrop-filter:saturate(180%) blur(28px);
+         border-radius:22px;
+         box-shadow:
+           0 1px 0 rgba(255,255,255,0.9) inset,
+           0 1px 2px rgba(0,0,0,0.04),
+           0 18px 50px rgba(60,70,90,0.12),
+           0 6px 18px rgba(60,70,90,0.06);
+         border:1px solid rgba(255,255,255,0.6); }
+ .wrap::before { display:none; }
  header { display:flex; align-items:center; gap:16px; margin-bottom:22px;
           padding-bottom:18px; border-bottom:1px solid rgba(0,0,0,0.06); }
- header .logo { height:52px; width:auto; flex-shrink:0; }
- header .logo-placeholder { height:52px; min-width:52px; border-radius:10px;
+ header .logo { height:48px; width:auto; flex-shrink:0; }
+ header .logo-placeholder { height:48px; min-width:48px; border-radius:10px;
           background:linear-gradient(135deg,#3a3a3a,#1a1a1a); color:#fff;
           display:flex; align-items:center; justify-content:center;
-          font-weight:800; font-size:22px; letter-spacing:0.04em; padding:0 14px; }
- header .brand-text { display:flex; flex-direction:column; gap:2px; }
- header h1 { font-size:22px; margin:0; font-weight:700; letter-spacing:-0.01em; line-height:1.2; }
- header .sub { color:#666; font-size:12.5px; }
+          font-weight:800; font-size:20px; letter-spacing:0.04em; padding:0 12px; flex-shrink:0; }
+ header .brand-text { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+ header h1 { font-size:24px; margin:0; font-weight:600; letter-spacing:-0.02em; line-height:1.25; color:#1d1d1f; }
+ header .sub { color:#6e6e73; font-size:12.5px; line-height:1.4; }
 
- /* 頁籤導覽 */
- .tabs { display:flex; gap:6px; padding:8px; margin:0 0 18px; border-radius:12px;
-         background:rgba(255,255,255,0.85); backdrop-filter:blur(12px);
-         box-shadow:0 2px 10px rgba(0,0,0,0.06); flex-wrap:wrap;
-         position:sticky; top:10px; z-index:50; }
- .tab { padding:9px 16px; border-radius:8px; font-size:14px; font-weight:600;
-        color:#555; cursor:pointer; border:none; background:transparent;
-        font-family:inherit; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
- .tab em { font-style:normal; font-weight:400; font-size:12px;
-           color:#999; padding:1px 7px; border-radius:99px; background:#f0f0f4; }
- .tab:hover { background:#f4f6fa; color:#222; }
- .tab.active { background:#0891b2; color:#fff; box-shadow:0 2px 8px rgba(8,145,178,0.3); }
- .tab.active em { background:rgba(255,255,255,0.25); color:#fff; }
+ /* 頁籤導覽 — 彩色玻璃方格 */
+ .tabs { display:flex; gap:8px; padding:10px; margin:0 0 24px; border-radius:18px;
+         background:rgba(255,255,255,0.55);
+         backdrop-filter:saturate(180%) blur(24px);
+         -webkit-backdrop-filter:saturate(180%) blur(24px);
+         border:1px solid rgba(255,255,255,0.7);
+         flex-wrap:wrap;
+         position:sticky; top:10px; z-index:50;
+         box-shadow:
+           0 1px 0 rgba(255,255,255,0.8) inset,
+           0 4px 14px rgba(60,70,90,0.08),
+           0 1px 3px rgba(0,0,0,0.04); }
+ .tab { padding:10px 16px; border-radius:14px; font-size:13px; font-weight:600;
+        cursor:pointer; border:1px solid rgba(255,255,255,0.55);
+        font-family:inherit;
+        transition:transform .35s cubic-bezier(0.34,1.56,0.64,1),
+                   box-shadow .35s cubic-bezier(0.34,1.56,0.64,1),
+                   background .25s, color .2s;
+        letter-spacing:-0.003em;
+        color:#1d1d1f;
+        min-height:40px;
+        display:inline-flex; align-items:center; gap:8px;
+        white-space:nowrap;
+        backdrop-filter:saturate(160%) blur(14px);
+        -webkit-backdrop-filter:saturate(160%) blur(14px);
+        box-shadow:
+          0 1px 0 rgba(255,255,255,0.85) inset,
+          0 1px 2px rgba(0,0,0,0.05),
+          0 4px 10px rgba(60,70,90,0.06);
+        position:relative; overflow:hidden; }
+ /* 玻璃高光 — 模擬液態流動 */
+ .tab::after { content:''; position:absolute; top:0; left:-30%; width:30%; height:100%;
+               background:linear-gradient(115deg, transparent, rgba(255,255,255,0.55), transparent);
+               transform:skewX(-20deg);
+               transition:left .7s ease;
+               pointer-events:none; }
+ .tab:hover::after { left:130%; }
+ .tab em { font-style:normal; font-weight:600; font-size:11.5px;
+           color:rgba(0,0,0,0.55); padding:1px 7px; border-radius:99px;
+           background:rgba(255,255,255,0.7); margin-left:2px;
+           border:1px solid rgba(0,0,0,0.04); }
+ /* 頁籤小色點 — 強化辨識 */
+ .tab::before { content:''; display:inline-block; width:9px; height:9px;
+                border-radius:50%; flex-shrink:0; background:#cbd5e1;
+                box-shadow:0 0 0 2px rgba(255,255,255,0.6),
+                           0 1px 2px rgba(0,0,0,0.15); }
+
+ /* 每個 tab 自己的玻璃漸層底色 */
+ .tab[data-tab="all"]     { background:linear-gradient(135deg, rgba(232,236,242,0.75), rgba(214,220,230,0.55)); }
+ .tab[data-tab="main"]    { background:linear-gradient(135deg, rgba(186,213,243,0.75), rgba(146,184,228,0.55)); }
+ .tab[data-tab="carbon"]  { background:linear-gradient(135deg, rgba(190,228,200,0.75), rgba(154,206,170,0.55)); }
+ .tab[data-tab="mfg"]     { background:linear-gradient(135deg, rgba(214,200,235,0.75), rgba(184,164,218,0.55)); }
+ .tab[data-tab="tech"]    { background:linear-gradient(135deg, rgba(216,228,178,0.75), rgba(186,206,142,0.55)); }
+ .tab[data-tab="plastic"] { background:linear-gradient(135deg, rgba(244,202,222,0.75), rgba(228,164,196,0.55)); }
+ .tab[data-tab="metal"]   { background:linear-gradient(135deg, rgba(232,212,178,0.75), rgba(206,180,140,0.55)); }
+ .tab[data-tab="app"]     { background:linear-gradient(135deg, rgba(176,222,222,0.75), rgba(132,194,194,0.55)); }
+ .tab[data-tab="fiber"]   { background:linear-gradient(135deg, rgba(244,196,168,0.75), rgba(226,158,124,0.55)); }
+ .tab[data-tab="fun"]     { background:linear-gradient(135deg, rgba(248,228,158,0.75), rgba(232,202,118,0.55)); }
+ .tab[data-tab="food"]    { background:linear-gradient(135deg, rgba(240,178,178,0.75), rgba(216,134,134,0.55)); }
+ .tab[data-tab="local"]   { background:linear-gradient(135deg, rgba(220,196,170,0.75), rgba(192,162,128,0.55)); }
+ .tab[data-tab="ren"]     { background:linear-gradient(135deg, rgba(238,210,168,0.75), rgba(218,182,128,0.55)); }
+ .tab[data-tab="kid"]     { background:linear-gradient(135deg, rgba(248,206,200,0.75), rgba(228,168,156,0.55)); }
+ .tab[data-tab="weather"] { background:linear-gradient(135deg, rgba(180,210,240,0.75), rgba(140,182,224,0.55)); }
+ .tab[data-tab="beer"]    { background:linear-gradient(135deg, rgba(240,214,170,0.75), rgba(218,184,128,0.55)); }
+
+ /* 對應的色點 */
+ .tab[data-tab="all"]::before     { background:#5a6478; }
+ .tab[data-tab="main"]::before    { background:#3b6fb6; }
+ .tab[data-tab="carbon"]::before  { background:#3f8f5a; }
+ .tab[data-tab="mfg"]::before     { background:#8a5fb8; }
+ .tab[data-tab="tech"]::before    { background:#7c9230; }
+ .tab[data-tab="plastic"]::before { background:#c64a8c; }
+ .tab[data-tab="metal"]::before   { background:#a07a3a; }
+ .tab[data-tab="app"]::before     { background:#2d8a8a; }
+ .tab[data-tab="fiber"]::before   { background:#c45a2a; }
+ .tab[data-tab="fun"]::before     { background:#c49a2a; }
+ .tab[data-tab="food"]::before    { background:#b03a3a; }
+ .tab[data-tab="local"]::before   { background:#7a5a3a; }
+ .tab[data-tab="ren"]::before     { background:#a07a3a; }
+ .tab[data-tab="kid"]::before     { background:#c47565; }
+ .tab[data-tab="weather"]::before { background:#3d72b8; }
+ .tab[data-tab="beer"]::before    { background:#a87a3a; }
+
+ /* hover / 觸控放大感 */
+ .tab:hover {
+   transform:translateY(-2px) scale(1.06);
+   box-shadow:
+     0 1px 0 rgba(255,255,255,0.9) inset,
+     0 4px 8px rgba(0,0,0,0.08),
+     0 14px 28px rgba(60,70,90,0.18);
+ }
+ .tab:active { transform:translateY(0) scale(0.98); transition-duration:.1s; }
+
+ /* Active：飽和加深 + 更強陰影飄浮 */
+ .tab.active {
+   color:#0d0d0f !important;
+   transform:translateY(-1px) scale(1.04);
+   box-shadow:
+     0 1px 0 rgba(255,255,255,0.95) inset,
+     0 0 0 2px rgba(255,255,255,0.7),
+     0 6px 14px rgba(0,0,0,0.10),
+     0 16px 32px rgba(60,70,90,0.20);
+   border-color:rgba(255,255,255,0.8);
+ }
+ .tab.active::before {
+   transform:scale(1.2);
+   box-shadow:0 0 0 2px rgba(255,255,255,0.85), 0 1px 3px rgba(0,0,0,0.25);
+ }
 
  .hero-row { display:grid; grid-template-columns:1.5fr 1fr; gap:14px; margin-bottom:14px; }
 
  /* 碳纖維專屬 grid（獨立區塊用） */
  .carbon-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
- .carbon-section .carbon-item { background:#fff; border-radius:10px; padding:14px 18px;
-                                 box-shadow:0 1px 6px rgba(0,0,0,0.05);
-                                 transition:transform .15s, box-shadow .15s; }
- .carbon-section .carbon-item:hover { transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,0.08); }
+ .carbon-section .carbon-item { background:rgba(255,255,255,0.82);
+                                 backdrop-filter:saturate(160%) blur(14px);
+                                 -webkit-backdrop-filter:saturate(160%) blur(14px);
+                                 border:1px solid rgba(255,255,255,0.6);
+                                 border-radius:14px; padding:14px 18px;
+                                 box-shadow:
+                                   0 1px 0 rgba(255,255,255,0.85) inset,
+                                   0 1px 2px rgba(0,0,0,0.04),
+                                   0 6px 16px rgba(60,70,90,0.08);
+                                 transition:transform .35s cubic-bezier(0.34,1.56,0.64,1),
+                                            box-shadow .35s cubic-bezier(0.34,1.56,0.64,1); }
+ .carbon-section .carbon-item:hover {
+   transform:translateY(-4px) scale(1.02);
+   box-shadow:
+     0 1px 0 rgba(255,255,255,0.95) inset,
+     0 2px 4px rgba(0,0,0,0.05),
+     0 14px 28px rgba(60,70,90,0.16),
+     0 24px 48px rgba(60,70,90,0.10);
+ }
+ .carbon-section .carbon-item:active { transform:translateY(-1px) scale(1.005); transition-duration:.15s; }
  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
 
- .card { background:#fff; border-radius:14px; overflow:hidden;
-         box-shadow:0 2px 10px rgba(0,0,0,0.05);
-         transition:transform .18s, box-shadow .18s; }
- .card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.1); }
+ .card { background:rgba(255,255,255,0.85);
+         backdrop-filter:saturate(160%) blur(18px);
+         -webkit-backdrop-filter:saturate(160%) blur(18px);
+         border-radius:20px; overflow:hidden;
+         box-shadow:
+           0 1px 0 rgba(255,255,255,0.9) inset,
+           0 1px 2px rgba(0,0,0,0.04),
+           0 8px 22px rgba(60,70,90,0.10),
+           0 22px 44px rgba(60,70,90,0.06);
+         border:1px solid rgba(255,255,255,0.65);
+         transition:transform .4s cubic-bezier(0.34,1.56,0.64,1),
+                    box-shadow .4s cubic-bezier(0.34,1.56,0.64,1); }
+ .card:hover, .card:focus-within {
+   transform:translateY(-6px) scale(1.025);
+   box-shadow:
+     0 1px 0 rgba(255,255,255,0.95) inset,
+     0 2px 4px rgba(0,0,0,0.05),
+     0 16px 36px rgba(60,70,90,0.18),
+     0 36px 64px rgba(60,70,90,0.14);
+ }
+ .card:active { transform:translateY(-2px) scale(1.01); transition-duration:.15s; }
  details { cursor:pointer; }
  details > summary { list-style:none; cursor:pointer; display:block; }
  details > summary::-webkit-details-marker { display:none; }
@@ -1549,16 +2620,16 @@ $htmlShell = @"
  /* List */
  .list { padding:18px 20px; }
  .list h3, .carbon h3 { margin:0 0 12px; font-size:14.5px; font-weight:700; display:flex; align-items:baseline; gap:8px; }
- .list h3 .sub, .carbon h3 .sub { font-size:11px; color:#999; font-weight:400; }
- .list-item { border-bottom:1px solid #eee; padding:10px 0; }
+ .list h3 .sub, .carbon h3 .sub { font-size:11px; color:#86868b; font-weight:400; }
+ .list-item { border-bottom:1px solid rgba(0,0,0,0.06); padding:10px 0; }
  .list-item:last-of-type { border-bottom:none; padding-bottom:0; }
  .list-item summary { display:flex; gap:12px; align-items:flex-start; }
  .list-thumb { width:68px; height:68px; flex-shrink:0; border-radius:8px;
                background-size:cover; background-position:center; }
  .list-caption { flex:1; min-width:0; }
- .list-caption h4 { font-size:13.5px; margin:0 0 5px; line-height:1.4; font-weight:600; color:#1a1d24;
+ .list-caption h4 { font-size:13.5px; margin:0 0 5px; line-height:1.4; font-weight:600; color:#1d1d1f;
                     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
- .list-caption .meta { font-size:11px; color:#666; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+ .list-caption .meta { font-size:11px; color:#6e6e73; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 
  /* Carbon Fiber 右側面板 */
  .carbon { padding:18px 18px 14px; display:flex; flex-direction:column; min-height:0; }
@@ -1566,40 +2637,115 @@ $htmlShell = @"
  .carbon-list::-webkit-scrollbar { width:5px; }
  .carbon-list::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.15); border-radius:3px; }
  .carbon-list::-webkit-scrollbar-track { background:transparent; }
- .carbon-item { border-bottom:1px solid #eee; padding:8px 0; }
+ .carbon-item { border-bottom:1px solid rgba(0,0,0,0.06); padding:8px 0; }
  .carbon-item:last-of-type { border-bottom:none; }
  .carbon-item summary { display:flex; gap:10px; align-items:flex-start; }
  .carbon-badge { flex-shrink:0; font-size:10px; font-weight:700; padding:2px 6px;
                  background:linear-gradient(135deg,#2a2a2a,#555); color:#fff;
                  border-radius:4px; letter-spacing:0.04em; margin-top:2px; }
  .carbon-line { flex:1; min-width:0; }
- .carbon-line h4 { font-size:12.5px; margin:0 0 3px; line-height:1.4; font-weight:600; color:#1a1d24;
+ .carbon-line h4 { font-size:12.5px; margin:0 0 3px; line-height:1.4; font-weight:600; color:#1d1d1f;
                    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
- .carbon-line .meta { font-size:10.5px; color:#666; }
- .carbon-empty { font-size:12px; color:#999; padding:20px 4px; text-align:center; }
- .carbon-item .detail { padding:10px 4px 4px; background:transparent; border-top:1px dashed #ddd; margin-top:8px; font-size:12px; }
+ .carbon-line .meta { font-size:10.5px; color:#6e6e73; }
+ .carbon-empty { font-size:12px; color:#86868b; padding:20px 4px; text-align:center; }
+ .carbon-item .detail { padding:10px 4px 4px; background:transparent; border-top:1px dashed rgba(184,149,107,0.30); margin-top:8px; font-size:12px; }
 
  /* Tile */
  .tile-img { width:100%; aspect-ratio:16/9; background-size:cover; background-position:center; }
  .tile-body { padding:12px 14px 14px; }
- .tile-body h3 { font-size:14.5px; margin:8px 0 6px; line-height:1.45; font-weight:600; color:#1a1d24;
+ .tile-body h3 { font-size:14.5px; margin:8px 0 6px; line-height:1.45; font-weight:600; color:#1d1d1f;
                  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
- .tile-body .meta { font-size:11.5px; color:#666; }
+ .tile-body .meta { font-size:11.5px; color:#6e6e73; }
 
  /* 複材應用／超級纖維面板 */
  .panel-section { margin-top:34px; }
+ .panel-section:first-of-type { margin-top:0; }
  .panel-title { font-size:18px; margin:0 0 14px; font-weight:700;
                 display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
                 padding-bottom:10px; border-bottom:3px solid transparent; }
- .app-section .panel-title   { border-bottom-color:#0891b2; }
- .fiber-section .panel-title { border-bottom-color:#d97706; }
- .mfg-section .panel-title   { border-bottom-color:#6d4aff; }
- .tech-section .panel-title  { border-bottom-color:#059669; }
- .panel-title .sub { font-size:12.5px; color:#666; font-weight:400; letter-spacing:0.02em; }
+ .app-section .panel-title   { border-bottom-color:#5a7a90; }
+ .fiber-section .panel-title { border-bottom-color:#a85a3a; }
+ .mfg-section .panel-title   { border-bottom-color:#7c3a3a; }
+ .tech-section .panel-title  { border-bottom-color:#7a8a5a; }
+ .plastic-section .panel-title { border-bottom-color:#c47a8c; }
+ .metal-section .panel-title   { border-bottom-color:#b8956b; }
+ .fun-section .panel-title     { border-bottom-color:#c4a04a; }
+ .food-section .panel-title    { border-bottom-color:#7a2a3a; }
+ .local-section .panel-title   { border-bottom-color:#5a3a2a; }
+ .ren-section .panel-title     { border-bottom-color:#a07a5a; }
+ .kid-section .panel-title     { border-bottom-color:#c48899; }
+ .weather-section .panel-title { border-bottom-color:#3d5a80; }
+ .beer-section .panel-title    { border-bottom-color:#b8895c; }
+
+ /* 天氣儀表板卡片 */
+ .weather-card { background:linear-gradient(180deg,rgba(254,250,240,0.92) 0%,rgba(248,242,228,0.82) 100%);
+                 backdrop-filter:blur(20px) saturate(120%);
+                 -webkit-backdrop-filter:blur(20px) saturate(120%);
+                 border-radius:6px; padding:22px 26px; margin:0 0 14px;
+                 border:1px solid rgba(184,149,107,0.32);
+                 box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),0 6px 20px rgba(80,60,30,0.10); }
+ .weather-current { display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+                    padding-bottom:18px; border-bottom:1px solid rgba(184,149,107,0.25); }
+ .weather-emoji { font-size:52px; line-height:1; }
+ .weather-temp { font-size:54px; font-weight:700; color:#3d5a80; line-height:1;
+                 letter-spacing:-0.02em; }
+ .weather-info { flex:1; min-width:200px; }
+ .weather-label { font-size:18px; font-weight:600; color:#1d1d1f; }
+ .weather-sub { font-size:13px; color:#6e6e73; margin-top:4px; }
+ .weather-loc { color:#6e6e73; font-size:13px; font-weight:600; }
+ .weather-forecast { display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+                     padding:16px 0; border-bottom:1px solid rgba(184,149,107,0.25); }
+ .weather-day { text-align:center; padding:12px 8px;
+                background:linear-gradient(180deg,rgba(255,255,255,0.6),rgba(248,242,228,0.4));
+                border-radius:4px;
+                border:1px solid rgba(184,149,107,0.20); }
+ .day-name { font-weight:700; font-size:13.5px; color:#3d5a80; }
+ .day-icon { font-size:24px; margin:4px 0; }
+ .day-temp { font-size:13px; font-weight:600; color:#1d1d1f; }
+ .day-label { font-size:11.5px; color:#6e6e73; margin-top:2px; }
+ .day-rain { font-size:11px; color:#5a7a90; margin-top:2px; }
+ .aqi-section { padding-top:14px; }
+ .aqi-section h3 { font-size:13px; color:#6e6e73; margin:0 0 10px; font-weight:600; }
+ .aqi-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; }
+ .aqi-row { display:grid; grid-template-columns:1fr auto auto; gap:6px;
+            padding:6px 10px; border-radius:6px; align-items:center; font-size:12px; }
+ .aqi-row .site { font-weight:600; }
+ .aqi-row strong { font-size:15px; }
+ .aqi-row .status { font-size:11px; }
+ .aqi-good           { background:#dcfce7; color:#166534; }
+ .aqi-moderate       { background:#fef9c3; color:#854d0e; }
+ .aqi-unhealthy-sg   { background:#fed7aa; color:#9a3412; }
+ .aqi-unhealthy      { background:#fecaca; color:#991b1b; }
+ .aqi-very-unhealthy { background:#e9d5ff; color:#6b21a8; }
+ .aqi-hazardous      { background:#4c0519; color:#fff; }
+
+ @media (max-width:700px) {
+   .weather-forecast { grid-template-columns:repeat(3,1fr); }
+   .weather-temp { font-size:44px; }
+ }
+ .panel-title .sub { font-size:12.5px; color:#6e6e73; font-weight:400; letter-spacing:0.02em; }
  .mini-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
- .mini-tile { background:#fff; border-radius:10px; overflow:hidden;
-              box-shadow:0 1px 6px rgba(0,0,0,0.05); transition:transform .15s, box-shadow .15s; }
- .mini-tile:hover { transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,0.08); }
+ .mini-tile { background:rgba(255,255,255,0.82);
+              backdrop-filter:saturate(160%) blur(16px);
+              -webkit-backdrop-filter:saturate(160%) blur(16px);
+              border-radius:18px; overflow:hidden;
+              box-shadow:
+                0 1px 0 rgba(255,255,255,0.9) inset,
+                0 1px 2px rgba(0,0,0,0.04),
+                0 6px 18px rgba(60,70,90,0.10),
+                0 18px 36px rgba(60,70,90,0.05);
+              border:1px solid rgba(255,255,255,0.65);
+              transition:transform .4s cubic-bezier(0.34,1.56,0.64,1),
+                         box-shadow .4s cubic-bezier(0.34,1.56,0.64,1); }
+ .mini-tile:hover, .mini-tile:focus-within {
+   transform:translateY(-5px) scale(1.03);
+   box-shadow:
+     0 1px 0 rgba(255,255,255,0.95) inset,
+     0 2px 4px rgba(0,0,0,0.05),
+     0 14px 30px rgba(60,70,90,0.18),
+     0 30px 56px rgba(60,70,90,0.12);
+ }
+ .mini-tile:active { transform:translateY(-2px) scale(1.01); transition-duration:.15s; }
  .mini-img { width:100%; aspect-ratio:16/9; background-size:cover; background-position:center;
              position:relative; overflow:hidden; }
  .img-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
@@ -1607,29 +2753,31 @@ $htmlShell = @"
                 padding:16px; letter-spacing:0.03em; text-shadow:0 2px 10px rgba(0,0,0,0.35);
                 background:linear-gradient(135deg, rgba(0,0,0,0.15), rgba(0,0,0,0.0) 50%); }
  .mini-body { padding:10px 13px 12px; }
- .mini-body h4 { font-size:13.5px; margin:0 0 5px; line-height:1.45; font-weight:600; color:#1a1d24;
+ .mini-body h4 { font-size:13.5px; margin:0 0 5px; line-height:1.45; font-weight:600; color:#1d1d1f;
                  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
- .mini-body .meta { font-size:11px; color:#666; }
+ .mini-body .meta { font-size:11px; color:#6e6e73; }
 
  .tags { display:flex; gap:6px; align-items:center; }
  .tag { font-size:10.5px; padding:2px 9px; border-radius:999px;
         color:#fff; font-weight:600; letter-spacing:0.03em; }
  .tag.tiny { font-size:10px; padding:1px 7px; }
  .lang { font-size:10px; padding:1px 6px; border-radius:3px;
-         background:rgba(0,0,0,0.08); color:#555; font-weight:600; }
+         background:rgba(255,255,255,0.10); color:#d0d0d6; font-weight:600; }
  .lang.dark { background:rgba(255,255,255,0.25); color:#fff; }
 
  /* Detail expansion */
- .detail { padding:14px 18px 18px; background:#fafafa; border-top:1px solid #eee;
-           font-size:13.5px; color:#333; }
- .detail p { margin:0 0 10px; line-height:1.65; }
+ .detail { padding:16px 20px 20px;
+           background:#fafafc;
+           border-top:1px solid #f0f0f3;
+           font-size:13.5px; color:#1d1d1f; }
+ .detail p { margin:0 0 10px; line-height:1.6; }
  .read-more-group { display:flex; gap:10px; align-items:center; margin-top:4px; flex-wrap:wrap; }
  .read-more { display:inline-block; padding:6px 12px;
               background:#5b87e0; color:#fff !important; font-size:12.5px;
               font-weight:600; border-radius:6px; text-decoration:none;
               transition:background .15s; }
  .read-more:hover { background:#4870c8; text-decoration:none; }
- .read-more-alt { color:#888; font-size:12px; text-decoration:none;
+ .read-more-alt { color:#6e6e73; font-size:12px; text-decoration:none;
                   padding:4px 8px; border:1px solid #ddd; border-radius:5px;
                   transition:color .15s, border-color .15s; }
  .read-more-alt:hover { color:#333; border-color:#aaa; text-decoration:none; }
@@ -1640,7 +2788,12 @@ $htmlShell = @"
  .hero .detail { padding:16px 26px 22px; }
 
  footer { margin-top:22px; padding-top:14px; border-top:1px solid rgba(0,0,0,0.07);
-          text-align:center; font-size:11.5px; color:#777; }
+          text-align:center; font-size:11.5px; color:#86868b; }
+
+ /* 點擊區域至少符合 Apple HIG 44px touch target（連結 / 詳情按鈕） */
+ .card summary, .mini-tile summary, .list-item summary, .carbon-item summary {
+   -webkit-tap-highlight-color:rgba(0,0,0,0.04);
+ }
 
  @media (max-width:1000px) {
    .hero-row { grid-template-columns:1fr; }
@@ -1649,9 +2802,84 @@ $htmlShell = @"
    .hero { min-height:320px; }
    .hero > summary { min-height:320px; }
  }
- @media (max-width:600px) {
-   .grid { grid-template-columns:1fr; }
-   .wrap { padding:16px; margin:12px; border-radius:16px; }
+
+ /* Apple HIG 行動體驗：tabs 改水平捲動、touch target ≥44px、層級單純化 */
+ @media (max-width:768px) {
+   .wrap { padding:18px 16px; margin:10px; border-radius:16px;
+           box-shadow:0 1px 2px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.05); }
+   header { gap:12px; margin-bottom:18px; padding-bottom:14px; }
+   header .logo { height:40px; }
+   header .logo-placeholder { height:40px; min-width:40px; font-size:16px; padding:0 10px; }
+   header h1 { font-size:19px; line-height:1.3; letter-spacing:-0.015em;
+               white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+   header .sub { font-size:11.5px; }
+
+   /* tabs：改成水平捲動條，避免 sticky 過高遮住內容 */
+   .tabs { flex-wrap:nowrap; overflow-x:auto; overflow-y:visible;
+           padding:10px 12px; margin:0 -16px 18px; border-radius:0;
+           border-left:none; border-right:none;
+           top:0; gap:8px;
+           scroll-snap-type:x proximity;
+           -webkit-overflow-scrolling:touch;
+           scrollbar-width:none;
+           background:rgba(255,255,255,0.78);
+           backdrop-filter:saturate(180%) blur(22px);
+           -webkit-backdrop-filter:saturate(180%) blur(22px);
+           border-top:1px solid rgba(255,255,255,0.6);
+           border-bottom:1px solid rgba(0,0,0,0.06); }
+   .tabs::-webkit-scrollbar { display:none; }
+   .tab { flex-shrink:0; padding:9px 14px; min-height:42px;
+          font-size:13px; scroll-snap-align:start; border-radius:12px; }
+   /* mobile 觸控放大替代 hover */
+   .tab:active {
+     transform:translateY(-1px) scale(1.04);
+     box-shadow:
+       0 1px 0 rgba(255,255,255,0.95) inset,
+       0 4px 8px rgba(0,0,0,0.08),
+       0 10px 20px rgba(60,70,90,0.18);
+   }
+   .card:active, .mini-tile:active {
+     transform:translateY(-3px) scale(1.02);
+   }
+
+   /* hero/list/grid 全部單欄 */
+   .grid { grid-template-columns:1fr; gap:12px; }
+   .hero { min-height:300px; }
+   .hero > summary { min-height:300px; }
+   .hero-caption { padding:18px 18px; }
+   .hero-caption h2 { font-size:18px; }
+   .list { padding:14px 16px; }
+
+   /* mini-grid 改為 2 欄 */
+   .mini-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+   .mini-tile { border-radius:14px; }
+   .card { border-radius:14px; }
+
+   /* panel 標題小一點 */
+   .panel-section { margin-top:26px; }
+   .panel-title { font-size:16px; }
+
+   /* 天氣面板響應式 */
+   .weather-card { padding:18px 18px; border-radius:14px; }
+   .weather-temp { font-size:42px; }
+   .weather-emoji { font-size:42px; }
+   .weather-forecast { grid-template-columns:repeat(3,1fr); gap:8px; }
+   .aqi-list { grid-template-columns:repeat(2,1fr); }
+
+   /* detail 縮排 */
+   .detail { padding:14px 16px 16px; font-size:13px; }
+   .hero .detail { padding:14px 18px 18px; }
+   .read-more { padding:8px 14px; font-size:13px; min-height:36px; display:inline-flex; align-items:center; }
+ }
+
+ @media (max-width:480px) {
+   .wrap { padding:16px 14px; margin:8px; border-radius:14px; }
+   header { gap:10px; }
+   header h1 { font-size:17px; }
+   header .sub { font-size:11px; }
+   .mini-grid { grid-template-columns:1fr; }
+   .weather-forecast { grid-template-columns:repeat(2,1fr); }
+   .aqi-list { grid-template-columns:1fr; }
  }
 </style>
 </head>
@@ -1667,13 +2895,24 @@ $htmlShell = @"
 
   <nav class="tabs">
     <button type="button" class="tab active" data-tab="all">全部</button>
+    <button type="button" class="tab" data-tab="weather">天氣預報</button>
     <button type="button" class="tab" data-tab="main">國際要聞 <em>$($picked.Count)</em></button>
     <button type="button" class="tab" data-tab="carbon">碳纖維即時 <em>$($carbonPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="mfg">碳纖製造商 <em>$($mfgPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="tech">複材技術 <em>$($techPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="app">市場情報 <em>$($appPicked.Count)</em></button>
     <button type="button" class="tab" data-tab="fiber">超級纖維 <em>$($fiberPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="plastic">塑膠消息 <em>$($plasticPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="metal">世界金屬 <em>$($metalPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="fun">來點好心情 <em>$($funPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="food">給你的美食 <em>$($foodPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="local">台中咖啡好去處 <em>$($localFoodPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="kid">親子週末 <em>$($kidPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="beer">台中啤酒好地方 <em>$($beerPicked.Count)</em></button>
+    <button type="button" class="tab" data-tab="ren">和美搖飲(忍) <em>$($renShops.Count)</em></button>
   </nav>
+
+  $weatherHtml
 
   <section class="hero-row" data-group="main">
     $heroHtml
@@ -1693,6 +2932,22 @@ $htmlShell = @"
   $appHtml
 
   $fiberHtml
+
+  $plasticHtml
+
+  $metalHtml
+
+  $funHtml
+
+  $foodHtml
+
+  $localFoodHtml
+
+  $kidHtml
+
+  $beerHtml
+
+  $renHtml
 
   <footer>純 RSS + PowerShell · 無 API · 零費用 · $dateStr</footer>
 </div>
@@ -1784,10 +3039,11 @@ function Publish-ToGitHub {
         Publish-FileToGitHub -LocalFile $LocalFile -RepoPath 'index.html' -Token $token -Repo $repo -CommitMsg "Daily update $date" | Out-Null
 
         # 同步腳本／LOGO／workflow（供 Actions 使用）
+        # 本機 PS1 是中文檔名，repo 上是英文檔名（給 Actions 用）
         $syncTargets = @(
-            @{ Local='fetch_news.ps1'; Repo='fetch_news.ps1' }
-            @{ Local='logo.png';       Repo='logo.png' }
-            @{ Local='logo.svg';       Repo='logo.svg' }
+            @{ Local='抓新聞_fetch_news.ps1'; Repo='fetch_news.ps1' }
+            @{ Local='logo.png';              Repo='logo.png' }
+            @{ Local='logo.svg';              Repo='logo.svg' }
             @{ Local='.github/workflows/update-news.yml'; Repo='.github/workflows/update-news.yml' }
         )
         foreach ($t in $syncTargets) {
