@@ -10,7 +10,25 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# ---------- 0. 背景排程跑時自動寫 log（最先做，確保 PS 有跑就有紀錄）----------
+$Global:__TeiLogPath = Join-Path $env:TEMP 'tei_news_silent.log'
+"[$(Get-Date -Format o)] PS START (PID=$PID, Cwd=$(Get-Location))" |
+    Out-File $Global:__TeiLogPath -Encoding UTF8 -Append -ErrorAction SilentlyContinue
+
+# Console 編碼（在無 console 環境會拋例外，要包 try）
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
+
+# 啟動 transcript（捕捉所有 Write-Host 輸出）
+try {
+    Start-Transcript -Path $Global:__TeiLogPath -Append -Force -ErrorAction Stop | Out-Null
+} catch {
+    "[$(Get-Date -Format o)] Start-Transcript failed: $($_.Exception.Message)" |
+        Out-File $Global:__TeiLogPath -Encoding UTF8 -Append -ErrorAction SilentlyContinue
+}
+
+"[$(Get-Date -Format o)] ScriptRoot=$PSScriptRoot, OpenBrowser=$OpenBrowser" |
+    Out-File $Global:__TeiLogPath -Encoding UTF8 -Append -ErrorAction SilentlyContinue
 
 # ---------- 1. 自動設定登入時啟動 ----------
 function Install-StartupShortcut {
@@ -44,20 +62,12 @@ function Install-DailyTask {
         if (-not $PSCommandPath) { return }
 
         # 排程跑背景不打開瀏覽器（用戶的分頁會自動 refresh）
-        # 用 wscript.exe 呼叫 silent_runner.vbs，避免 PowerShell 黑視窗閃出
-        $vbsPath = Join-Path (Split-Path $PSCommandPath) 'silent_runner.vbs'
-        if (Test-Path $vbsPath) {
-            $action = New-ScheduledTaskAction `
-                -Execute 'wscript.exe' `
-                -Argument "`"$vbsPath`"" `
-                -WorkingDirectory (Split-Path $PSCommandPath)
-        } else {
-            # 後備方案：直接用 powershell（會閃黑視窗）
-            $action = New-ScheduledTaskAction `
-                -Execute 'powershell.exe' `
-                -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
-                -WorkingDirectory (Split-Path $PSCommandPath)
-        }
+        # 直接 powershell 啟動，加 -WindowStyle Hidden 隱藏視窗
+        # （會閃過很短的視窗，但確保 script 100% 跑得起來，比 VBS 包裝可靠）
+        $action = New-ScheduledTaskAction `
+            -Execute 'powershell.exe' `
+            -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+            -WorkingDirectory (Split-Path $PSCommandPath)
 
         # 立即開始，每 10 分鐘執行一次（每天循環 24 小時不間斷）
         $startAt = (Get-Date).AddMinutes(2)  # 2 分鐘後開始第一次
@@ -73,7 +83,8 @@ function Install-DailyTask {
             -DontStopIfGoingOnBatteries `
             -RunOnlyIfNetworkAvailable `
             -ExecutionTimeLimit (New-TimeSpan -Minutes 8) `
-            -MultipleInstances IgnoreNew
+            -MultipleInstances IgnoreNew `
+            -Hidden
 
         $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive
 
@@ -3092,3 +3103,5 @@ function Publish-ToGitHub {
 # 本機 Task Scheduler 才是 10 分鐘準時更新的主力。
 Publish-ToGitHub -LocalFile $outFile
 if ($OpenBrowser) { Start-Process $outFile }
+
+try { Stop-Transcript | Out-Null } catch { }
