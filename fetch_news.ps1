@@ -51,12 +51,12 @@ function Install-DailyTask {
                 -WorkingDirectory (Split-Path $PSCommandPath)
         }
 
-        # 立即開始，每 10 分鐘執行一次（每天循環 24 小時不間斷）
+        # 立即開始，每 30 分鐘執行一次（每天循環 24 小時不間斷）
         $startAt = (Get-Date).AddMinutes(2)  # 2 分鐘後開始第一次
         $trigger = New-ScheduledTaskTrigger -Daily -At $startAt
         $repTrig = New-ScheduledTaskTrigger -Once -At $startAt `
-                       -RepetitionInterval (New-TimeSpan -Minutes 10) `
-                       -RepetitionDuration (New-TimeSpan -Hours 23 -Minutes 50)
+                       -RepetitionInterval (New-TimeSpan -Minutes 30) `
+                       -RepetitionDuration (New-TimeSpan -Hours 23 -Minutes 30)
         $trigger.Repetition = $repTrig.Repetition
 
         $settings = New-ScheduledTaskSettingsSet `
@@ -77,7 +77,7 @@ function Install-DailyTask {
             -Settings $settings `
             -Principal $principal | Out-Null
 
-        Write-Host "[setup] 已設定每 10 分鐘自動更新（首次 $($startAt.ToString('HH:mm'))，24 小時不間斷）" -ForegroundColor Green
+        Write-Host "[setup] 已設定每 30 分鐘自動更新（首次 $($startAt.ToString('HH:mm'))，24 小時不間斷）" -ForegroundColor Green
     } catch {
         Write-Host "[setup] 排程建立失敗（可能需要先手動執行一次）: $_" -ForegroundColor Yellow
     }
