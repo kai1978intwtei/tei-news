@@ -14,26 +14,17 @@ $ErrorActionPreference = 'Continue'
 # Console 編碼（在無 console 環境會拋例外，要包 try）
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
-# ---------- 1. 自動設定登入時啟動 ----------
+# ---------- 1. 移除登入自動開瀏覽器（避免每次開機都跳新分頁）----------
+# 改由 Task Scheduler 每 10 分鐘背景執行，網頁本身 meta refresh 30 分鐘自動重整
 function Install-StartupShortcut {
     try {
         $startup  = [Environment]::GetFolderPath('Startup')
         $shortcut = Join-Path $startup '國際大事件.lnk'
-        if (Test-Path $shortcut) { return }
-        if (-not $PSCommandPath) { return }
-
-        $wsh = New-Object -ComObject WScript.Shell
-        $sc  = $wsh.CreateShortcut($shortcut)
-        $sc.TargetPath       = (Get-Command powershell.exe).Source
-        # 登入時跑一次並開啟瀏覽器
-        $sc.Arguments        = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`" -OpenBrowser"
-        $sc.WorkingDirectory = Split-Path $PSCommandPath
-        $sc.IconLocation     = 'imageres.dll,109'
-        $sc.Save()
-        Write-Host '[setup] 已在「啟動」資料夾建立捷徑，下次登入自動執行' -ForegroundColor Green
-    } catch {
-        Write-Host "[setup] 捷徑建立失敗：$_" -ForegroundColor Yellow
-    }
+        if (Test-Path $shortcut) {
+            Remove-Item $shortcut -Force -ErrorAction SilentlyContinue
+            Write-Host '[setup] 已移除「啟動」資料夾舊捷徑（不再每次登入跳新分頁）' -ForegroundColor DarkGray
+        }
+    } catch { }
 }
 
 function Install-DailyTask {
@@ -2414,7 +2405,7 @@ $htmlShell = @"
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="refresh" content="600">
+<meta http-equiv="refresh" content="1800">
 <meta name="theme-color" content="#81d8d0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -3093,4 +3084,7 @@ function Publish-ToGitHub {
 # 因為實測 GitHub Actions cron 在免費版會被嚴重 throttle，
 # 本機 Task Scheduler 才是 10 分鐘準時更新的主力。
 Publish-ToGitHub -LocalFile $outFile
-if ($OpenBrowser) { Start-Process $outFile }
+# -OpenBrowser 旗標保留供未來測試用，但預設不開瀏覽器
+# 同仁請自行加入書籤：https://kai1978intwtei.github.io/tei-news/
+# 已開的分頁會每 30 分鐘自動 meta refresh
+# if ($OpenBrowser) { Start-Process $outFile }
