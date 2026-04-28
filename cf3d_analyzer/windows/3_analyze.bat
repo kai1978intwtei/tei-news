@@ -1,13 +1,13 @@
 @echo off
 REM ============================================================
-REM   Analyse one drawing.
-REM   Usage:
-REM     - Drag a .stp / .step / .dxf / .pdf onto this file, or
-REM     - Double-click and type a path when prompted.
+REM   Analyse one drawing (portable - works wherever the folder
+REM   is moved).  Drag a .stp / .step / .dxf / .pdf onto this
+REM   file in Explorer, or double-click and type a path.
 REM ============================================================
 setlocal EnableDelayedExpansion
 title CF3D Analyzer - Analyse drawing
 set "ROOT=%~dp0.."
+set "BASE=%~dp0..\.."
 cd /d "%ROOT%"
 
 if not exist ".venv\Scripts\activate.bat" (
@@ -32,7 +32,7 @@ if not exist "%DRAWING%" (
     exit /b 1
 )
 
-set "OUT=%USERPROFILE%\Desktop\cf3d_output"
+set "OUT=%BASE%\cf3d_output"
 if not exist "%OUT%" mkdir "%OUT%"
 
 echo.
@@ -54,7 +54,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Open the HTML report automatically.
 for %%F in ("%DRAWING%") do set "STEM=%%~nF"
 if exist "%OUT%\!STEM!.report.html" (
     start "" "%OUT%\!STEM!.report.html"

@@ -1,15 +1,24 @@
 @echo off
 REM ============================================================
-REM   CF3D Analyzer - one-click installer for Windows
-REM   Double-click this file once, the first time you set up.
+REM   CF3D Analyzer - one-click installer (portable)
+REM   This script auto-detects its own location.  You can move
+REM   the whole folder anywhere - it will still work.
 REM ============================================================
 setlocal EnableDelayedExpansion
 title CF3D Analyzer - Installer
 
+REM Software lives one level up from this script.
 set "ROOT=%~dp0.."
+REM I/O folders sit next to the cf3d_analyzer folder, in its parent.
+set "BASE=%~dp0..\.."
 cd /d "%ROOT%" || goto :err
 
 echo.
+echo Software path : %ROOT%
+echo Drawings here : %BASE%\cf3d_input
+echo Reports here  : %BASE%\cf3d_output
+echo.
+
 echo === [1/4] Checking Python ===
 where python >nul 2>nul
 if errorlevel 1 (
@@ -37,21 +46,21 @@ python -m pip install --upgrade pip setuptools wheel || goto :err
 pip install -e .[all] || goto :err
 
 echo.
-echo === [4/4] Creating Desktop folders ===
-if not exist "%USERPROFILE%\Desktop\cf3d_input"  mkdir "%USERPROFILE%\Desktop\cf3d_input"
-if not exist "%USERPROFILE%\Desktop\cf3d_output" mkdir "%USERPROFILE%\Desktop\cf3d_output"
+echo === [4/4] Creating sibling input/output folders ===
+if not exist "%BASE%\cf3d_input"  mkdir "%BASE%\cf3d_input"
+if not exist "%BASE%\cf3d_output" mkdir "%BASE%\cf3d_output"
 
 echo.
 echo ============================================================
 echo   Install OK.
 echo.
 echo   Drop your .stp / .step / .dxf / .pdf into:
-echo     %USERPROFILE%\Desktop\cf3d_input
+echo     %BASE%\cf3d_input
 echo.
 echo   Reports will appear in:
-echo     %USERPROFILE%\Desktop\cf3d_output
+echo     %BASE%\cf3d_output
 echo.
-echo   Next, double-click:
+echo   Next, double-click in this folder:
 echo     2_gui.bat       - desktop GUI
 echo     3_analyze.bat   - drag a drawing onto this file
 echo     4_watch.bat     - auto-analyse new files in cf3d_input

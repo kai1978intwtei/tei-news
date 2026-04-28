@@ -1,35 +1,47 @@
-CF3D Analyzer - Windows quick start
-====================================
+CF3D Analyzer - Windows quick start (PORTABLE)
+==============================================
 
-Numbered scripts in this folder map to the order you'll use them:
+The .bat files in this folder are PORTABLE: they auto-detect their
+own location, so you can drop the whole "tei-news" folder anywhere
+(Desktop, Documents, network drive, USB stick) and they will still
+work.
+
+Recommended location for this project
+-------------------------------------
+  <anywhere>\國際大事件\TEi -3D工程專用3\tei-news\
+
+Folder layout you will end up with
+----------------------------------
+  國際大事件\TEi -3D工程專用3\
+   ├── tei-news\                         <-- the GitHub download
+   │    └── cf3d_analyzer\
+   │         ├── windows\                <-- the .bat files (here)
+   │         ├── examples\
+   │         ├── tests\
+   │         └── ...
+   ├── cf3d_input\                       <-- AUTO-CREATED for your STP/DXF
+   └── cf3d_output\                      <-- AUTO-CREATED for reports
+
+Numbered scripts (run them in order the first time)
+---------------------------------------------------
 
   1_install.bat       Run once.  Creates .venv, installs the package +
-                      all extras (matplotlib, ezdxf, PyMuPDF, opencv,
-                      trimesh).  Also creates Desktop\cf3d_input and
-                      Desktop\cf3d_output.
+                      all extras, and creates cf3d_input / cf3d_output
+                      next to the tei-news folder.
 
-  2_gui.bat           Launches the desktop GUI.  Browse to a drawing,
-                      pick options, click Analyze.
+  2_gui.bat           Launches the desktop GUI.
 
-  3_analyze.bat       Drag any .stp / .step / .dxf / .pdf / .png onto
-                      THIS FILE in Explorer to analyse it in one shot.
-                      Or double-click and paste a path when prompted.
-                      Report opens automatically in your browser.
+  3_analyze.bat       Drag any drawing onto THIS FILE in Explorer to
+                      analyse it instantly.  Or double-click and paste
+                      a path.  Report opens in your browser.
 
-  4_watch.bat         Folder watcher.  Drop drawings into
-                      Desktop\cf3d_input - reports auto-generate in
-                      Desktop\cf3d_output.
+  4_watch.bat         Folder watcher.  Drop drawings into the
+                      sibling cf3d_input folder; reports auto-generate
+                      in cf3d_output.
 
-  5_open_folders.bat  Open the input + output folders in Explorer.
+  5_open_folders.bat  Open input + output folders in Explorer.
 
-  6_run_tests.bat     Run the smoke-test suite (8 tests).  Use this if
-                      anything looks wrong after the install.
-
-Where things go
----------------
-Drawings   ->  %USERPROFILE%\Desktop\cf3d_input
-Reports    ->  %USERPROFILE%\Desktop\cf3d_output
-Software   ->  this folder's parent (cf3d_analyzer)
+  6_run_tests.bat     Smoke-test suite (8 tests).
 
 Output files per drawing
 ------------------------
@@ -50,12 +62,10 @@ Troubleshooting
 ---------------
 - "python is not recognized": re-install Python with the
   "Add Python to PATH" box ticked.
-- "cf3d is not recognized": close the cmd window and reopen, or run
-  the .bat scripts (they activate .venv automatically).
-- DWG files won't import: convert to DXF first (Autodesk DWG
-  TrueView, Inventor, SolidWorks Save-As, or ODA File Converter).
-- For full B-Rep tessellation of STEP files (instead of envelope
-  proxy), open a CMD inside this folder and run:
-      .venv\Scripts\activate
+- "cf3d is not recognized": close the cmd window and reopen, or just
+  use the .bat scripts (they activate .venv automatically).
+- DWG files won't import: convert to DXF first (Autodesk DWG TrueView,
+  Inventor, SolidWorks Save-As, or ODA File Converter).
+- For full B-Rep tessellation of STEP files, run inside the venv:
       pip install cadquery
   (On Windows, conda is more reliable: conda install -c conda-forge cadquery)

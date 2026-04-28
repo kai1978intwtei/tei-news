@@ -1,7 +1,8 @@
 @echo off
-REM Watch the Desktop\cf3d_input folder; analyse anything you drop in.
+REM Watch the sibling cf3d_input folder; analyse anything you drop in.
 title CF3D Analyzer - Folder Watcher
 set "ROOT=%~dp0.."
+set "BASE=%~dp0..\.."
 cd /d "%ROOT%"
 
 if not exist ".venv\Scripts\activate.bat" (
@@ -11,8 +12,8 @@ if not exist ".venv\Scripts\activate.bat" (
 )
 call ".venv\Scripts\activate.bat"
 
-set "IN=%USERPROFILE%\Desktop\cf3d_input"
-set "OUT=%USERPROFILE%\Desktop\cf3d_output"
+set "IN=%BASE%\cf3d_input"
+set "OUT=%BASE%\cf3d_output"
 if not exist "%IN%"  mkdir "%IN%"
 if not exist "%OUT%" mkdir "%OUT%"
 
