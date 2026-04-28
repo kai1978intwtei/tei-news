@@ -201,26 +201,74 @@ def _ingest_dxf_lite(p: Path, digest: str) -> DrawingPackage:
 
 # ----------------------------------------------------------- STEP / IGES / X_T
 def _ingest_cad3d(p: Path, digest: str) -> DrawingPackage:
+    """STEP / IGES ingest.
+
+    Preferred backend: cadquery (full B-Rep tessellation).
+    Fallback: pure-python STEP parser that pulls real CARTESIAN_POINT
+    coordinates so the bounding box + circular features are accurate
+    even without cadquery installed.
+    """
     try:
         import cadquery as cq  # type: ignore
         shape = cq.importers.importStep(str(p)) if p.suffix.lower() in {".step", ".stp"} \
             else cq.importers.importIges(str(p))
         bb = shape.val().BoundingBox()
-        bbox = (bb.xmin, bb.ymin, bb.xmax, bb.ymax)
-        view = View(name="model", entities=[{"type": "brep", "ref": str(p)}],
-                    bbox=bbox, units="mm")
+        entities = [{"type": "brep", "ref": str(p)},
+                    {"type": "_bbox3d",
+                     "min": (bb.xmin, bb.ymin, bb.zmin),
+                     "max": (bb.xmax, bb.ymax, bb.zmax)}]
+        view = View(name="model", entities=entities,
+                    bbox=(bb.xmin, bb.ymin, bb.xmax, bb.ymax), units="mm")
         return DrawingPackage(source=p, sha256=digest, units="mm",
                               views=[view], annotations=[],
                               title_block=TitleBlock(part_no=p.stem),
                               raw={"backend": "cadquery"})
     except ImportError:
-        log.warning("cadquery not available — surfacing 3D file as opaque ref")
-        view = View(name="model", entities=[{"type": "brep", "ref": str(p)}],
-                    bbox=(0, 0, 0, 0), units="mm")
-        return DrawingPackage(source=p, sha256=digest, units="mm",
-                              views=[view], annotations=[],
-                              title_block=TitleBlock(part_no=p.stem),
-                              raw={"backend": "opaque"})
+        pass
+    except Exception as exc:
+        log.warning("cadquery failed on %s: %s — falling back to STEP parser", p.name, exc)
+
+    if p.suffix.lower() in {".step", ".stp"}:
+        from .step_parser import parse as _parse_step
+        try:
+            s = _parse_step(p)
+            (xmin, ymin, zmin), (xmax, ymax, zmax) = s.bbox
+            entities: list[dict] = [{"type": "brep", "ref": str(p)},
+                                     {"type": "_bbox3d",
+                                      "min": (xmin, ymin, zmin),
+                                      "max": (xmax, ymax, zmax)}]
+            for r in s.circle_radii:
+                entities.append({"type": "circle", "c": (0.0, 0.0), "r": r})
+            for r in s.cylinder_radii:
+                entities.append({"type": "circle", "c": (0.0, 0.0), "r": r})
+            if s.has_bspline:
+                entities.append({"type": "spline", "ctrl": []})
+                entities.append({"type": "spline", "ctrl": []})  # mark "compound" hint
+
+            view = View(name="model", entities=entities,
+                        bbox=(xmin, ymin, xmax, ymax), units=s.units)
+            note_text = ("STEP parsed natively (no cadquery): "
+                          f"{len(s.points)} pts, {len(s.circle_radii)} circles, "
+                          f"{len(s.cylinder_radii)} cylinders")
+            return DrawingPackage(
+                source=p, sha256=digest, units="mm",
+                views=[view], annotations=[Annotation(kind="note", text=note_text)],
+                title_block=TitleBlock(part_no=p.stem),
+                raw={"backend": "step_parser",
+                     "n_points": len(s.points),
+                     "min_radius_mm": s.min_radius,
+                     "has_bspline": s.has_bspline},
+            )
+        except Exception as exc:
+            log.error("STEP parser failed on %s: %s", p.name, exc)
+
+    log.warning("3D ingest degraded — install cadquery for full B-Rep import")
+    view = View(name="model", entities=[{"type": "brep", "ref": str(p)}],
+                bbox=(0, 0, 0, 0), units="mm")
+    return DrawingPackage(source=p, sha256=digest, units="mm",
+                          views=[view], annotations=[],
+                          title_block=TitleBlock(part_no=p.stem),
+                          raw={"backend": "opaque"})
 
 
 # ------------------------------------------------------------------------- PDF

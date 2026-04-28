@@ -117,14 +117,31 @@ def reconstruct(pkg: DrawingPackage) -> ReconstructionResult:
 
 # ----------------------------------------------------------------- B-Rep wrap
 def _wrap_native_brep(pkg: DrawingPackage) -> ReconstructionResult:
-    bbox = pkg.views[0].bbox
-    xmin, ymin, xmax, ymax = bbox
+    """Use the parsed 3D bounding box from STEP/IGES/cadquery if present."""
+    view = pkg.views[0]
+    bbox3d = next((e for e in view.entities if e.get("type") == "_bbox3d"), None)
+    if bbox3d:
+        xmin, ymin, zmin = bbox3d["min"]
+        xmax, ymax, zmax = bbox3d["max"]
+        dx = max(xmax - xmin, 0.1)
+        dy = max(ymax - ymin, 0.1)
+        dz = max(zmax - zmin, 0.1)
+        mesh = _box_mesh(dx, dy, dz)
+        for v_idx, (vx, vy, vz) in enumerate(mesh.vertices):
+            mesh.vertices[v_idx] = (vx + xmin, vy + ymin, vz + zmin)
+        return ReconstructionResult(
+            mesh=mesh, method="brep", confidence=0.95,
+            warnings=["Native 3D bbox used; mesh is a true-size envelope proxy"],
+            inferred_views=["model"],
+        )
+    # legacy fallback: 2D bbox only
+    xmin, ymin, xmax, ymax = view.bbox
     dx, dy = max(xmax - xmin, 1.0), max(ymax - ymin, 1.0)
     dz = min(dx, dy) * 0.4
     mesh = _box_mesh(dx, dy, dz)
     return ReconstructionResult(
-        mesh=mesh, method="brep", confidence=0.99,
-        warnings=["Using native B-Rep handle; bbox proxy mesh attached for analytics"],
+        mesh=mesh, method="brep", confidence=0.6,
+        warnings=["No 3D bbox attached; built proxy from 2D extents"],
         inferred_views=["model"],
     )
 

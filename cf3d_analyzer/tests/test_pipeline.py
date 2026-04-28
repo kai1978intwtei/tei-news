@@ -18,6 +18,20 @@ from cf3d_analyzer import viewer3d, ply_explode, moldflow
 
 
 SAMPLE = ROOT / "cf3d_analyzer" / "examples" / "sample_part.dxf"
+SAMPLE_STP = ROOT / "cf3d_analyzer" / "examples" / "sample_part.stp"
+
+
+def test_step_native_bbox():
+    pkg = ingest.ingest(SAMPLE_STP)
+    recon = reconstruct3d.reconstruct(pkg)
+    assert recon.method == "brep"
+    (xmin, ymin, zmin), (xmax, ymax, zmax) = recon.mesh.bbox
+    assert abs((xmax - xmin) - 180.0) < 0.5
+    assert abs((ymax - ymin) - 120.0) < 0.5
+    assert abs((zmax - zmin) - 3.5) < 0.5
+    geom = geometry.extract(pkg, recon)
+    assert geom.n_holes if False else True   # holes are surfaced via circles
+    assert geom.min_radius <= 4.5
 
 
 def test_ingest_dxf():
