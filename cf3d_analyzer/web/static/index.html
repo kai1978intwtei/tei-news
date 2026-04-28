@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CF3D Studio · TEi Composites</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M4 8 L16 4 L28 8 L28 24 L16 28 L4 24 Z"/>
+        <path d="M4 8 L16 12 L28 8" />
+        <path d="M16 12 L16 28" />
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-name">CF3D Studio</span>
+      <span class="brand-tag">Carbon Fiber Composite Engineering</span>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-ghost" id="btn-theme" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <span class="status-pill"><span class="dot"></span>v1.0 production</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- LEFT: drop zone + project context -->
+  <section class="panel panel-controls">
+
+    <div class="card drop-zone" id="drop-zone">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <h3>拖入工程圖紙</h3>
+      <p>STP · STEP · IGES · DXF · DWG · PDF · PNG</p>
+      <input type="file" id="file-input" accept=".stp,.step,.igs,.iges,.dxf,.dwg,.pdf,.png,.jpg,.jpeg,.tif,.tiff,.x_t,.x_b" hidden>
+      <button class="btn-primary" onclick="document.getElementById('file-input').click()">選擇檔案</button>
+      <div class="filename" id="filename"></div>
+    </div>
+
+    <div class="card ctx-card">
+      <h4>Project context</h4>
+      <div class="field">
+        <label>年產量</label>
+        <input type="number" id="annual_volume" value="500" min="1">
+      </div>
+      <div class="field">
+        <label>品質等級</label>
+        <div class="seg" data-target="quality">
+          <button class="active" data-v="A">Class-A</button>
+          <button data-v="B">B</button>
+          <button data-v="C">C</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>應用</label>
+        <div class="seg" data-target="application">
+          <button class="active" data-v="structural">結構</button>
+          <button data-v="cosmetic">外觀</button>
+          <button data-v="pressure">壓力容器</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>樹脂體系</label>
+        <div class="seg" data-target="matrix">
+          <button class="active" data-v="epoxy">Epoxy</button>
+          <button data-v="bmi">BMI</button>
+          <button data-v="thermoplastic">熱塑</button>
+        </div>
+      </div>
+      <button class="btn-primary btn-full" id="btn-analyze">
+        <span>立即分析</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+  </section>
+
+  <!-- CENTER: 3D viewer -->
+  <section class="panel panel-viewer">
+    <div class="card viewer-card">
+      <div class="viewer-head">
+        <h4>3D Model</h4>
+        <div class="viewer-tools">
+          <button class="chip" id="vt-iso">ISO</button>
+          <button class="chip" id="vt-front">Front</button>
+          <button class="chip" id="vt-top">Top</button>
+          <button class="chip" id="vt-right">Right</button>
+          <span class="chip-divider"></span>
+          <button class="chip" id="vt-explode">Ply Explode</button>
+          <button class="chip" id="vt-restore">Restore</button>
+        </div>
+      </div>
+      <div id="three-host" class="three-host">
+        <div class="ghost" id="ghost-msg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+          <p>分析後即可在此互動旋轉、縮放、爆炸疊構</p>
+        </div>
+      </div>
+      <div class="viewer-foot" id="viewer-foot"></div>
+    </div>
+  </section>
+
+  <!-- RIGHT: results -->
+  <section class="panel panel-results">
+
+    <div class="card kpi-card">
+      <div class="kpi"><span class="kpi-label">推薦製程</span><span class="kpi-value" id="kpi-process">—</span></div>
+      <div class="kpi"><span class="kpi-label">適配度</span><span class="kpi-value" id="kpi-fitness">—</span></div>
+      <div class="kpi"><span class="kpi-label">疊構等效模量</span><span class="kpi-value" id="kpi-modulus">—</span></div>
+    </div>
+
+    <div class="card section-card">
+      <h4>製程推薦排名</h4>
+      <div id="recs"></div>
+    </div>
+
+    <div class="card section-card">
+      <h4>幾何特徵</h4>
+      <div id="geom"></div>
+    </div>
+
+    <div class="card section-card">
+      <h4>碳纖維疊構</h4>
+      <div id="layup"></div>
+    </div>
+
+    <div class="card section-card" id="moldflow-card" hidden>
+      <h4>模流分析</h4>
+      <div id="moldflow"></div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn-ghost" id="btn-multiview">多視角拼圖</button>
+      <button class="btn-ghost" id="btn-explode-png">疊構爆炸圖</button>
+      <button class="btn-ghost" id="btn-fillmap">模流熱圖</button>
+      <button class="btn-ghost" id="btn-html">完整報告</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="overlay hidden" id="overlay">
+  <div class="overlay-card">
+    <div class="spinner"></div>
+    <h3 id="overlay-title">分析中…</h3>
+    <p id="overlay-msg">建置 3D 模型 · 評估 10 種碳纖製程 · 規劃疊構</p>
+    <div class="progress"><div class="bar"></div></div>
+  </div>
+</div>
+
+<div class="lightbox hidden" id="lightbox" onclick="this.classList.add('hidden')">
+  <img id="lightbox-img" alt="snapshot">
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="/static/viewer.js"></script>
+<script src="/static/app.js"></script>
+
+</body>
+</html>

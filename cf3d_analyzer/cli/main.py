@@ -76,6 +76,12 @@ def main(argv: list[str] | None = None) -> int:
 
     p_gui = sub.add_parser("gui", help="Launch the desktop GUI")
 
+    p_serve = sub.add_parser("serve", help="Launch the modern web UI (CF3D Studio)")
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8765)
+    p_serve.add_argument("--no-browser", action="store_true",
+                          help="Don't auto-open the browser")
+
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
@@ -109,6 +115,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "gui":
         from ..gui import launch
         launch()
+        return 0
+
+    if args.cmd == "serve":
+        from ..web.server import serve
+        serve(args.host, args.port, open_browser=not args.no_browser)
         return 0
 
     parser.error(f"Unknown command {args.cmd}")

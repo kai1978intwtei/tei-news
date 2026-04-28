@@ -27,11 +27,13 @@ dxf       = ["ezdxf>=1.0"]
 pdf       = ["PyMuPDF>=1.23"]
 raster    = ["opencv-python>=4.8", "numpy>=1.24"]
 trimesh   = ["trimesh>=4.0", "numpy>=1.24"]
+web       = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "python-multipart>=0.0.7"]
 all = [
     "matplotlib>=3.7", "Pillow>=9.0", "numpy>=1.24",
     "ezdxf>=1.0", "PyMuPDF>=1.23",
     "opencv-python>=4.8",
     "trimesh>=4.0",
+    "fastapi>=0.110", "uvicorn[standard]>=0.27", "python-multipart>=0.0.7",
 ]
 
 [project.scripts]
@@ -44,3 +46,6 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["cf3d_analyzer*"]
+
+[tool.setuptools.package-data]
+"cf3d_analyzer.web" = ["static/*"]
