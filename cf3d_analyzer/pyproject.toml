@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cf3d-analyzer"
+version = "1.0.0"
+description = "Drawing-to-3D + composite-process advisor for high-precision carbon fiber parts"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Proprietary"}
+authors = [{name = "TEi Composites"}]
+keywords = ["carbon fiber", "composites", "manufacturing", "DFM", "RTM",
+            "autoclave", "AFP", "mold flow", "ply book"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Operating System :: OS Independent",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+viz       = ["matplotlib>=3.7", "Pillow>=9.0", "numpy>=1.24"]
+dxf       = ["ezdxf>=1.0"]
+pdf       = ["PyMuPDF>=1.23"]
+raster    = ["opencv-python>=4.8", "numpy>=1.24"]
+trimesh   = ["trimesh>=4.0", "numpy>=1.24"]
+all = [
+    "matplotlib>=3.7", "Pillow>=9.0", "numpy>=1.24",
+    "ezdxf>=1.0", "PyMuPDF>=1.23",
+    "opencv-python>=4.8",
+    "trimesh>=4.0",
+]
+
+[project.scripts]
+cf3d        = "cf3d_analyzer.cli.main:main"
+cf3d-gui    = "cf3d_analyzer.gui:launch"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cf3d_analyzer*"]

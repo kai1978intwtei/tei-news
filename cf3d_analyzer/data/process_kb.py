@@ -1,0 +1,296 @@
+"""Composite manufacturing process knowledge base.
+
+The values below are conservative industry envelopes used to score
+candidate processes against an extracted GeometricFeatures + project
+context.  Sources include CMH-17, Campbell "Manufacturing Processes
+for Advanced Composites", and aerospace primary-structure practice.
+The data is *advisory*; engineers must validate for their own qual.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+@dataclass(frozen=True)
+class ProcessEnvelope:
+    name: str
+    family: str
+    fiber_form: tuple[str, ...]              # e.g. ("UD prepreg",)
+    fiber_volume_pct: tuple[float, float]
+    void_content_pct: tuple[float, float]    # achievable best-case
+    min_radius_mm: float
+    max_part_length_mm: float
+    min_thickness_mm: float
+    max_thickness_mm: float
+    closed_section_ok: bool
+    compound_curvature_ok: bool
+    undercut_ok: bool
+    typical_volume_low: int
+    typical_volume_high: int                  # parts/yr
+    typical_unit_cost_pct_of_baseline: float  # 1.0 = autoclave prepreg baseline
+    surface_quality: str                      # "A" | "B" | "C"
+    dimensional_tolerance_mm: float
+    cycle_time_min: tuple[float, float]
+    notes: tuple[str, ...] = field(default_factory=tuple)
+
+
+# Baseline = aerospace autoclave prepreg.
+PROCESSES: tuple[ProcessEnvelope, ...] = (
+    ProcessEnvelope(
+        name="Autoclave Prepreg Lay-up",
+        family="autoclave",
+        fiber_form=("UD prepreg", "Woven prepreg", "Thin-ply prepreg"),
+        fiber_volume_pct=(58.0, 65.0),
+        void_content_pct=(0.1, 1.0),
+        min_radius_mm=2.0,
+        max_part_length_mm=20000.0,
+        min_thickness_mm=0.2,
+        max_thickness_mm=80.0,
+        closed_section_ok=True,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=1,
+        typical_volume_high=2000,
+        typical_unit_cost_pct_of_baseline=1.0,
+        surface_quality="A",
+        dimensional_tolerance_mm=0.10,
+        cycle_time_min=(180, 720),
+        notes=("Gold standard for primary structure",
+               "Requires autoclave + invar/CFRP tooling",
+               "Lay-up by hand or AFP/ATL"),
+    ),
+    ProcessEnvelope(
+        name="Out-of-Autoclave (OOA) Prepreg",
+        family="oven_vbo",
+        fiber_form=("VBO prepreg",),
+        fiber_volume_pct=(54.0, 60.0),
+        void_content_pct=(0.5, 2.0),
+        min_radius_mm=3.0,
+        max_part_length_mm=15000.0,
+        min_thickness_mm=0.3,
+        max_thickness_mm=40.0,
+        closed_section_ok=True,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=1,
+        typical_volume_high=1500,
+        typical_unit_cost_pct_of_baseline=0.75,
+        surface_quality="A",
+        dimensional_tolerance_mm=0.15,
+        cycle_time_min=(360, 720),
+        notes=("Vacuum-bag-only cure, no autoclave needed",
+               "Sensitive to debulking schedule"),
+    ),
+    ProcessEnvelope(
+        name="Resin Transfer Moulding (RTM)",
+        family="rtm",
+        fiber_form=("NCF preform", "3D woven preform", "Braided preform"),
+        fiber_volume_pct=(50.0, 62.0),
+        void_content_pct=(0.5, 1.5),
+        min_radius_mm=3.0,
+        max_part_length_mm=4000.0,
+        min_thickness_mm=1.0,
+        max_thickness_mm=30.0,
+        closed_section_ok=True,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=200,
+        typical_volume_high=20000,
+        typical_unit_cost_pct_of_baseline=0.55,
+        surface_quality="A",
+        dimensional_tolerance_mm=0.05,
+        cycle_time_min=(15, 60),
+        notes=("Two-sided tool — both surfaces Class-A",
+               "Best for net-shape with tight tolerance",
+               "High up-front tooling cost"),
+    ),
+    ProcessEnvelope(
+        name="Vacuum-Assisted RTM (VARTM / SCRIMP)",
+        family="rtm",
+        fiber_form=("NCF", "Woven fabric", "Stitched preform"),
+        fiber_volume_pct=(48.0, 56.0),
+        void_content_pct=(1.0, 3.0),
+        min_radius_mm=5.0,
+        max_part_length_mm=30000.0,
+        min_thickness_mm=1.5,
+        max_thickness_mm=60.0,
+        closed_section_ok=False,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=20,
+        typical_volume_high=2000,
+        typical_unit_cost_pct_of_baseline=0.45,
+        surface_quality="B",
+        dimensional_tolerance_mm=0.50,
+        cycle_time_min=(120, 480),
+        notes=("Single-sided tool, vacuum-only infusion",
+               "Common for marine / wind / large covers"),
+    ),
+    ProcessEnvelope(
+        name="Compression Moulding (Prepreg / SMC)",
+        family="compression",
+        fiber_form=("Prepreg", "SMC", "Forged composite chips"),
+        fiber_volume_pct=(45.0, 60.0),
+        void_content_pct=(0.5, 2.0),
+        min_radius_mm=1.0,
+        max_part_length_mm=1500.0,
+        min_thickness_mm=1.0,
+        max_thickness_mm=20.0,
+        closed_section_ok=False,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=1000,
+        typical_volume_high=200000,
+        typical_unit_cost_pct_of_baseline=0.30,
+        surface_quality="A",
+        dimensional_tolerance_mm=0.05,
+        cycle_time_min=(2, 8),
+        notes=("Net-shape, both surfaces Class-A",
+               "Excellent for automotive/consumer goods"),
+    ),
+    ProcessEnvelope(
+        name="Automated Fiber Placement (AFP)",
+        family="afp_atl",
+        fiber_form=("UD slit-tape prepreg",),
+        fiber_volume_pct=(58.0, 64.0),
+        void_content_pct=(0.2, 1.0),
+        min_radius_mm=15.0,
+        max_part_length_mm=30000.0,
+        min_thickness_mm=0.5,
+        max_thickness_mm=80.0,
+        closed_section_ok=True,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=1,
+        typical_volume_high=1000,
+        typical_unit_cost_pct_of_baseline=1.10,
+        surface_quality="A",
+        dimensional_tolerance_mm=0.08,
+        cycle_time_min=(60, 1200),
+        notes=("Steered fibers; ideal for tow-steered designs",
+               "Min radius limited by tape width",
+               "Used on 787/A350 fuselage"),
+    ),
+    ProcessEnvelope(
+        name="Filament Winding",
+        family="winding",
+        fiber_form=("Wet roving", "Towpreg"),
+        fiber_volume_pct=(60.0, 75.0),
+        void_content_pct=(0.5, 2.0),
+        min_radius_mm=20.0,
+        max_part_length_mm=20000.0,
+        min_thickness_mm=0.5,
+        max_thickness_mm=100.0,
+        closed_section_ok=True,
+        compound_curvature_ok=False,
+        undercut_ok=False,
+        typical_volume_low=10,
+        typical_volume_high=50000,
+        typical_unit_cost_pct_of_baseline=0.35,
+        surface_quality="B",
+        dimensional_tolerance_mm=0.30,
+        cycle_time_min=(20, 240),
+        notes=("Axisymmetric: pressure vessels, shafts, pipes",
+               "Cannot do compound curvature"),
+    ),
+    ProcessEnvelope(
+        name="Pultrusion",
+        family="pultrusion",
+        fiber_form=("Roving", "CFM", "Continuous mat"),
+        fiber_volume_pct=(55.0, 75.0),
+        void_content_pct=(0.5, 2.0),
+        min_radius_mm=2.0,
+        max_part_length_mm=100000.0,
+        min_thickness_mm=1.5,
+        max_thickness_mm=50.0,
+        closed_section_ok=True,
+        compound_curvature_ok=False,
+        undercut_ok=False,
+        typical_volume_low=500,
+        typical_volume_high=1000000,
+        typical_unit_cost_pct_of_baseline=0.20,
+        surface_quality="B",
+        dimensional_tolerance_mm=0.20,
+        cycle_time_min=(0.2, 2.0),
+        notes=("Constant cross-section profiles only",
+               "Lowest unit cost for long structurals"),
+    ),
+    ProcessEnvelope(
+        name="Braiding (Overbraiding)",
+        family="braiding",
+        fiber_form=("Triaxial braid", "Biaxial braid"),
+        fiber_volume_pct=(50.0, 60.0),
+        void_content_pct=(1.0, 3.0),
+        min_radius_mm=5.0,
+        max_part_length_mm=10000.0,
+        min_thickness_mm=1.0,
+        max_thickness_mm=20.0,
+        closed_section_ok=True,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=100,
+        typical_volume_high=20000,
+        typical_unit_cost_pct_of_baseline=0.50,
+        surface_quality="B",
+        dimensional_tolerance_mm=0.30,
+        cycle_time_min=(5, 30),
+        notes=("Best for tubes & shafts with bias plies",
+               "Often combined with RTM for matrix injection"),
+    ),
+    ProcessEnvelope(
+        name="Press Forming of Thermoplastic Composites (CF/PEEK, CF/PPS)",
+        family="thermoplastic",
+        fiber_form=("CF/PEEK organosheet", "CF/PPS laminate"),
+        fiber_volume_pct=(55.0, 60.0),
+        void_content_pct=(0.5, 2.0),
+        min_radius_mm=3.0,
+        max_part_length_mm=2000.0,
+        min_thickness_mm=0.8,
+        max_thickness_mm=8.0,
+        closed_section_ok=False,
+        compound_curvature_ok=True,
+        undercut_ok=False,
+        typical_volume_low=2000,
+        typical_volume_high=200000,
+        typical_unit_cost_pct_of_baseline=0.40,
+        surface_quality="A",
+        dimensional_tolerance_mm=0.10,
+        cycle_time_min=(0.5, 3),
+        notes=("Stamp-form heated blank",
+               "Recyclable, weldable",
+               "Shallow draws only without slip rings"),
+    ),
+)
+
+
+# Per-process cure / consolidation guidance: epoxy/BMI/TP defaults.
+RESIN_CURE_HINTS: dict[str, dict] = {
+    "epoxy_180c": {
+        "ramp_c_per_min": 1.5,
+        "dwell_min": 120,
+        "dwell_temp_c": 180,
+        "pressure_bar": 6.0,
+        "vacuum_inHg": 28.5,
+    },
+    "epoxy_120c": {
+        "ramp_c_per_min": 2.0,
+        "dwell_min": 90,
+        "dwell_temp_c": 120,
+        "pressure_bar": 3.0,
+        "vacuum_inHg": 28.5,
+    },
+    "bmi_220c": {
+        "ramp_c_per_min": 1.0,
+        "dwell_min": 360,
+        "dwell_temp_c": 220,
+        "pressure_bar": 7.0,
+        "vacuum_inHg": 29.0,
+        "post_cure_c": 230,
+        "post_cure_min": 360,
+    },
+    "peek_thermoplastic": {
+        "process_temp_c": 385,
+        "consolidation_pressure_bar": 10.0,
+        "cool_rate_c_per_min": 5.0,
+    },
+}
