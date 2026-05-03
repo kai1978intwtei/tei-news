@@ -388,9 +388,58 @@ body::before{
   font-size:11px;
   color:#fff;
   display:flex; justify-content:space-between; align-items:center;
+  gap:6px;
 }
 .card .end-overlay .ending-soon{
   color:#ffb8b8; font-weight:700;
+}
+/* Countdown urgency levels */
+.cd{
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 8px;
+  border-radius:8px;
+  font-weight:700; font-size:11px;
+  font-variant-numeric:tabular-nums;
+  background:rgba(0,0,0,0.45);
+  border:1px solid rgba(255,255,255,0.15);
+  color:#fff;
+  letter-spacing:0.01em;
+}
+.cd .ico{ font-size:11px; line-height:1; }
+.cd.warn{
+  background:linear-gradient(135deg, rgba(255,180,40,0.85), rgba(255,140,0,0.85));
+  border-color:rgba(255,200,80,0.6);
+  color:#2a1500;
+  box-shadow:0 0 12px rgba(255,160,40,0.5);
+}
+.cd.danger{
+  background:linear-gradient(135deg, rgba(255,80,80,0.95), rgba(220,30,30,0.95));
+  border-color:rgba(255,140,140,0.7);
+  color:#fff;
+  box-shadow:0 0 14px rgba(255,60,60,0.55);
+}
+.cd.critical{
+  background:linear-gradient(135deg, #ff2a2a, #ff0066);
+  border-color:#fff;
+  color:#fff;
+  box-shadow:0 0 18px rgba(255,30,90,0.85);
+  animation:pulse 0.9s ease-in-out infinite;
+}
+.cd.ended{
+  background:rgba(0,0,0,0.55);
+  color:rgba(255,255,255,0.55);
+  border-color:rgba(255,255,255,0.1);
+}
+@keyframes pulse{
+  0%,100%{ transform:scale(1); filter:brightness(1); }
+  50%{ transform:scale(1.06); filter:brightness(1.25); }
+}
+.card.ending-pulse{
+  animation:cardGlow 1.4s ease-in-out infinite;
+}
+@keyframes cardGlow{
+  0%,100%{ box-shadow:0 1px 0 rgba(255,255,255,0.18) inset, 0 0 0 1px rgba(255,40,90,0.0), 0 24px 60px rgba(0,0,0,0.45); }
+  50%{ box-shadow:0 1px 0 rgba(255,255,255,0.18) inset, 0 0 0 2px rgba(255,40,90,0.7), 0 24px 60px rgba(255,30,80,0.35); }
 }
 .card .body{
   padding:12px 12px 14px;
@@ -624,6 +673,9 @@ body::before{
       </div>
     </div>
     <div class="head-actions">
+      <button class="icon-btn" id="btnBibAccount" title="比比昂 我的下標進度" style="background:linear-gradient(135deg,#ffd86b,#ff8a00); color:#3a1500; border-color:transparent;">
+        <span style="font-size:14px;">🛍</span>
+      </button>
       <button class="icon-btn" id="btnWishlist" title="願望清單">
         <span>♡</span>
         <span class="badge" id="wlBadge" style="display:none;">0</span>
@@ -718,6 +770,9 @@ body::before{
       <button class="icon-btn" data-close>✕</button>
     </header>
     <div class="body" id="wlBody"></div>
+    <div style="padding:12px 18px max(14px,env(safe-area-inset-bottom)); border-top:1px solid var(--glass-border); background:rgba(0,0,0,0.25);">
+      <button class="btn primary" id="btnGoBibAccount" style="width:100%;">🛍 前往比比昂 · 查看我的下標進度</button>
+    </div>
   </div>
 </div>
 
@@ -759,7 +814,11 @@ body::before{
 
       <div class="section">
         <h3>比比昂代購</h3>
-        <p class="desc">點卡片上「比比昂」按鈕時會帶入該商品連結至比比昂代購頁。</p>
+        <p class="desc">點卡片上「比比昂」按鈕會帶該商品到比比昂代購；右上 🛍 按鈕則開啟「我的下標進度」帳號頁。</p>
+        <div class="field">
+          <label>我的下標 / 帳號頁網址</label>
+          <input id="setBibAccount" type="text" placeholder="https://www.bibian.com.tw/yahoo/member/yahoo_bid.php">
+        </div>
         <div class="field">
           <label>Yahoo 拍賣代購網址模板</label>
           <input id="setBibYahoo" type="text" placeholder="https://www.bibian.com.tw/yahoo/auc/auction.php?aID={id}">
@@ -767,6 +826,9 @@ body::before{
         <div class="field">
           <label>Mercari 代購網址模板</label>
           <input id="setBibMercari" type="text" placeholder="https://www.bibian.com.tw/mercari/item.php?mID={id}">
+        </div>
+        <div class="row-btns">
+          <button class="btn sm" id="btnOpenBibAccount">開啟我的下標頁</button>
         </div>
       </div>
 
@@ -834,6 +896,7 @@ const DEFAULTS = {
     proxy: 'https://api.allorigins.win/get?url=',
     bibYahoo: 'https://www.bibian.com.tw/yahoo/auc/auction.php?aID={id}',
     bibMercari: 'https://www.bibian.com.tw/mercari/item.php?mID={id}',
+    bibAccount: 'https://www.bibian.com.tw/yahoo/member/yahoo_bid.php',
     fx: 0.21,
     syncUrl: '',
     syncKey: '',
@@ -1107,6 +1170,12 @@ async function doSearch(){
   const results = await Promise.all(promises);
 
   let merged = results.flatMap(x=>x.r);
+  // Stamp fetch time and parse end times so countdowns stay accurate after reopening
+  const now = Date.now();
+  for(const it of merged){
+    it.fetchedAt = now;
+    if(!it.endsAt) it.endsAt = parseEndTime(it.endText, now);
+  }
   if(merged.length === 0){
     setBusy(false);
     showNoResults(queryJa, queryZh, links);
@@ -1139,7 +1208,12 @@ function sortItems(items, by){
     case 'bids_desc':  copy.sort((a,b)=> (b.bids??0) - (a.bids??0)); break;
     case 'new':        copy.sort((a,b)=> (b.id||'').localeCompare(a.id||'')); break;
     case 'end_asc':
-    default: /* leave order or by endText */ break;
+      copy.sort((a,b)=>{
+        const av = a.endsAt ?? Infinity, bv = b.endsAt ?? Infinity;
+        return av - bv;
+      });
+      break;
+    default: break;
   }
   return copy;
 }
@@ -1188,18 +1262,102 @@ function renderResults(items, ctx){
   for(const it of items) r.appendChild(buildCard(it));
 }
 
+/* ---------- Countdown ---------- */
+// Parse JP relative time text ("残り 2時間 30分", "あと 1日", "即購入"...) into ms-until-end.
+// Returns endsAt timestamp (number) or null if not parseable.
+function parseEndTime(text, baseTs){
+  if(!text) return null;
+  const base = baseTs || Date.now();
+  const s = String(text).trim();
+  if(/終了|終わり|落札済|sold|ended/i.test(s)) return base - 1; // already over
+  if(/即購入|即決|fixed/i.test(s)) return null;                  // buy-now, no countdown
+
+  // Try absolute ISO / common date formats first
+  const iso = Date.parse(s);
+  if(!isNaN(iso) && /\d{4}/.test(s)) return iso;
+
+  let total = 0, matched = false;
+  const mDay = s.match(/(\d+)\s*日/);
+  const mHr  = s.match(/(\d+)\s*時間/);
+  const mMin = s.match(/(\d+)\s*分/);
+  const mSec = s.match(/(\d+)\s*秒/);
+  if(mDay){ total += +mDay[1] * 86400000; matched = true; }
+  if(mHr) { total += +mHr[1]  * 3600000;  matched = true; }
+  if(mMin){ total += +mMin[1] * 60000;    matched = true; }
+  if(mSec){ total += +mSec[1] * 1000;     matched = true; }
+  if(matched) return base + total;
+  return null;
+}
+
+function fmtCountdown(ms){
+  if(ms <= 0) return { text:'已結束', cls:'ended', ico:'⏹', minutes:-1 };
+  const sec = Math.floor(ms/1000);
+  const d = Math.floor(sec/86400);
+  const h = Math.floor((sec%86400)/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  let text;
+  if(d>0)      text = `${d}天 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  else if(h>0) text = `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  else         text = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const minutes = sec/60;
+  let cls='', ico='⏱';
+  if(minutes <= 10){ cls='critical'; ico='🚨'; }
+  else if(minutes <= 60){ cls='danger'; ico='⚠'; }
+  else if(minutes <= 360){ cls='warn'; ico='⏰'; }
+  return { text, cls, ico, minutes };
+}
+
+const _cdRegistry = new Set();           // Set<HTMLElement>
+let _cdTimer = null;
+function registerCountdown(el){
+  _cdRegistry.add(el);
+  if(!_cdTimer){
+    _cdTimer = setInterval(tickCountdowns, 1000);
+  }
+  tickCountdowns();
+}
+function tickCountdowns(){
+  const now = Date.now();
+  for(const el of [..._cdRegistry]){
+    if(!el.isConnected){ _cdRegistry.delete(el); continue; }
+    const endsAt = +el.dataset.ends;
+    if(!endsAt) continue;
+    const f = fmtCountdown(endsAt - now);
+    el.className = 'cd ' + f.cls;
+    el.innerHTML = `<span class="ico">${f.ico}</span><span>${f.text}</span>`;
+    const card = el.closest('.card');
+    if(card){
+      if(f.cls === 'critical') card.classList.add('ending-pulse');
+      else card.classList.remove('ending-pulse');
+    }
+  }
+  if(_cdRegistry.size === 0 && _cdTimer){
+    clearInterval(_cdTimer); _cdTimer = null;
+  }
+}
+
 function buildCard(it){
   const card = document.createElement('div');
   card.className = 'card glass';
   const onWl = State.wishlist.some(w=>w.id===it.id);
   const ntd = it.price ? Math.round(it.price * (State.settings.fx||0.21)).toLocaleString() : '';
   const srcLabel = { yahoo:'YAHOO', jdi:'JDI', mercari:'MERCARI' }[it.source] || it.source;
+  // Compute countdown end timestamp from endText (or from item.endsAt if already set)
+  if(!it.endsAt) it.endsAt = parseEndTime(it.endText, it.fetchedAt || Date.now());
+  let overlayHtml = '';
+  if(it.endsAt){
+    const f = fmtCountdown(it.endsAt - Date.now());
+    overlayHtml = `<div class="end-overlay"><span class="cd ${f.cls}" data-ends="${it.endsAt}"><span class="ico">${f.ico}</span><span>${f.text}</span></span>${it.bids?`<span>${it.bids} 出價</span>`:''}</div>`;
+  } else if(it.endText){
+    overlayHtml = `<div class="end-overlay"><span>⏱ ${escape(it.endText)}</span>${it.bids?`<span>${it.bids} 出價</span>`:''}</div>`;
+  }
   card.innerHTML = `
     <div class="thumb">
       ${it.img ? `<img src="${escapeAttr(it.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;opacity:0.4;">📦</div>`}
       <span class="src-tag ${it.source}">${srcLabel}</span>
       <button class="heart ${onWl?'on':''}" data-act="wish" title="加入願望清單">${onWl?'♥':'♡'}</button>
-      ${it.endText ? `<div class="end-overlay"><span>⏱ ${escape(it.endText)}</span>${it.bids?`<span>${it.bids} 出價</span>`:''}</div>`:''}
+      ${overlayHtml}
     </div>
     <div class="body">
       <div class="titles">
@@ -1224,6 +1382,9 @@ function buildCard(it){
     }
     window.open(it.url, '_blank', 'noopener');
   });
+  // Register live countdown if present
+  const cdEl = card.querySelector('.cd[data-ends]');
+  if(cdEl) registerCountdown(cdEl);
   return card;
 }
 
@@ -1256,6 +1417,12 @@ function openBibian(it){
     toast('已複製商品連結，請於比比昂貼上');
   }
   window.open(url, '_blank', 'noopener');
+}
+
+function openBibAccount(){
+  const url = (State.settings.bibAccount||'').trim() || 'https://www.bibian.com.tw/yahoo/member/yahoo_bid.php';
+  window.open(url, '_blank', 'noopener');
+  toast('開啟比比昂「我的下標」頁');
 }
 
 /* ---------- Wishlist UI ---------- */
@@ -1299,25 +1466,34 @@ function renderWishlist(){
       const el = document.createElement('div');
       el.className = 'wl-item';
       const ntd = it.price ? Math.round(it.price * (State.settings.fx||0.21)).toLocaleString() : '';
+      let cdHtml = '';
+      if(it.endsAt){
+        const f = fmtCountdown(it.endsAt - Date.now());
+        cdHtml = `<span class="cd ${f.cls}" data-ends="${it.endsAt}" style="margin-left:6px;"><span class="ico">${f.ico}</span><span>${f.text}</span></span>`;
+      }
       el.innerHTML = `
         <img src="${escapeAttr(it.img||'')}" alt="" referrerpolicy="no-referrer" onerror="this.style.opacity=0.2;">
         <div class="info">
           <div class="t">${escape(it.title_zh||it.title_ja||'')}</div>
-          <div class="p">¥${(it.price??0).toLocaleString()}${ntd?` · NT$${ntd}`:''} · ${it.source.toUpperCase()}</div>
+          <div class="p">¥${(it.price??0).toLocaleString()}${ntd?` · NT$${ntd}`:''} · ${it.source.toUpperCase()}${cdHtml}</div>
           <div class="row">
             <button data-act="open">前往</button>
             <button data-act="bibian">比比昂</button>
+            <button data-act="bibacc">我的下標</button>
             <button data-act="remove">移除</button>
           </div>
         </div>
       `;
       el.querySelector('[data-act="open"]').onclick = ()=> window.open(it.url,'_blank','noopener');
       el.querySelector('[data-act="bibian"]').onclick = ()=> openBibian(it);
+      el.querySelector('[data-act="bibacc"]').onclick = ()=> openBibAccount();
       el.querySelector('[data-act="remove"]').onclick = ()=>{
         const i = State.wishlist.findIndex(w=>w.id===it.id);
         if(i>=0) State.wishlist.splice(i,1);
         save(); refreshWishlist();
       };
+      const cd = el.querySelector('.cd[data-ends]');
+      if(cd) registerCountdown(cd);
       sec.appendChild(el);
     }
     body.appendChild(sec);
@@ -1374,12 +1550,14 @@ function bindSettings(){
   set('setTransDir','transDir');
   set('setDeeplKey','deeplKey');
   set('setProxy','proxy');
+  set('setBibAccount','bibAccount');
   set('setBibYahoo','bibYahoo');
   set('setBibMercari','bibMercari');
   set('setFx','fx');
   set('setSyncUrl','syncUrl');
   set('setSyncKey','syncKey');
 
+  document.getElementById('btnOpenBibAccount').onclick = openBibAccount;
   document.getElementById('btnExport').onclick = exportJSON;
   document.getElementById('btnImport').onclick = ()=> document.getElementById('fileImport').click();
   document.getElementById('fileImport').onchange = importJSON;
@@ -1510,7 +1688,13 @@ function loadDemo(){
       title_ja:'スーパーファミコン 本体 動作品 ジャンク扱い',
       title_zh:'超級任天堂 主機 可動 故障品',
       img:'https://images.unsplash.com/photo-1531390658120-e06b58d826ea?w=400',
-      price:2500, currency:'JPY', bids:32, endText:'残り 30分' },
+      price:2500, currency:'JPY', bids:32, endText:'残り 7分' },
+    { id:'demo7b', sourceId:'demo7b', source:'yahoo',
+      url:'https://auctions.yahoo.co.jp/',
+      title_ja:'PlayStation 2 本体 SCPH-50000 ジャンク',
+      title_zh:'PlayStation 2 主機 SCPH-50000 故障品',
+      img:'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400',
+      price:1800, currency:'JPY', bids:18, endText:'残り 45分' },
     { id:'demo8', sourceId:'demo8', source:'mercari',
       url:'https://jp.mercari.com/',
       title_ja:'NARUTO ナルト 全72巻 完結セット',
@@ -1568,6 +1752,8 @@ function init(){
   // Header
   document.getElementById('btnWishlist').onclick = ()=> openDrawer('dWishlist');
   document.getElementById('btnSettings').onclick = ()=> openDrawer('dSettings');
+  document.getElementById('btnBibAccount').onclick = openBibAccount;
+  document.getElementById('btnGoBibAccount').onclick = openBibAccount;
 
   // Search bindings
   document.getElementById('btnSearch').onclick = doSearch;
