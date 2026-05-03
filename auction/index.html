@@ -1,0 +1,1637 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1024">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>櫻拍 SakuraBid · 日本拍賣搜尋</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23ff7eb6'/><stop offset='1' stop-color='%237afcff'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='32' y='44' font-size='38' font-family='Helvetica' font-weight='700' fill='white' text-anchor='middle'>櫻</text></svg>">
+
+<style>
+:root{
+  --bg-1:#0a0d22;
+  --bg-2:#1a1238;
+  --bg-3:#3a1a4a;
+  --accent:#ff7eb6;
+  --accent-2:#7afcff;
+  --accent-3:#c79bff;
+  --text:#f5f3ff;
+  --text-dim:rgba(245,243,255,0.62);
+  --text-mute:rgba(245,243,255,0.42);
+  --glass:rgba(255,255,255,0.07);
+  --glass-strong:rgba(255,255,255,0.14);
+  --glass-border:rgba(255,255,255,0.16);
+  --glass-border-strong:rgba(255,255,255,0.28);
+  --shadow-soft:0 1px 0 rgba(255,255,255,0.18) inset, 0 24px 60px rgba(0,0,0,0.45), 0 4px 14px rgba(0,0,0,0.25);
+  --shadow-deep:0 1px 0 rgba(255,255,255,0.22) inset, 0 30px 80px rgba(0,0,0,0.55), 0 8px 20px rgba(0,0,0,0.35);
+  --r-lg:22px;
+  --r-md:16px;
+  --r-sm:11px;
+  --t:cubic-bezier(0.34,1.56,0.64,1);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;min-height:100vh;overscroll-behavior-y:none;}
+body{
+  color:var(--text);
+  font-family:"SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Helvetica Neue","Hiragino Sans",sans-serif;
+  letter-spacing:-0.003em;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  background:
+    radial-gradient(1100px 700px at 8% -10%, rgba(255,126,182,0.35), transparent 60%),
+    radial-gradient(1000px 720px at 95% 0%,  rgba(122,252,255,0.28), transparent 65%),
+    radial-gradient(900px 700px at 50% 110%, rgba(199,155,255,0.30), transparent 60%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+  background-attachment:fixed;
+}
+body::before{
+  content:'';
+  position:fixed; inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.5), transparent 60%),
+    radial-gradient(2px 2px at 80% 30%, rgba(255,255,255,0.4), transparent 60%),
+    radial-gradient(1.5px 1.5px at 30% 80%, rgba(255,255,255,0.45), transparent 60%),
+    radial-gradient(2.5px 2.5px at 70% 90%, rgba(255,255,255,0.4), transparent 60%);
+  opacity:0.5;
+  z-index:0;
+}
+
+/* Liquid glass primitive */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  border-radius:var(--r-lg);
+  backdrop-filter:saturate(180%) blur(28px);
+  -webkit-backdrop-filter:saturate(180%) blur(28px);
+  box-shadow:var(--shadow-soft);
+  position:relative;
+  overflow:hidden;
+}
+.glass::after{
+  content:'';
+  position:absolute;
+  top:0; left:-30%;
+  width:30%; height:100%;
+  background:linear-gradient(115deg, transparent, rgba(255,255,255,0.15), transparent);
+  transform:skewX(-20deg);
+  transition:left .9s ease;
+  pointer-events:none;
+}
+.glass:hover::after{ left:130%; }
+
+/* Layout */
+.app{
+  position:relative; z-index:1;
+  max-width:1400px;
+  margin:0 auto;
+  padding:max(20px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
+}
+
+/* Header */
+.head{
+  display:flex; align-items:center; gap:14px;
+  padding:14px 18px;
+  margin-bottom:16px;
+  position:sticky; top:10px; z-index:60;
+}
+.brand{
+  display:flex; align-items:center; gap:12px; min-width:0; flex:1;
+}
+.brand .mark{
+  width:42px; height:42px; flex-shrink:0;
+  border-radius:12px;
+  background:conic-gradient(from 200deg, var(--accent), var(--accent-3), var(--accent-2), var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:800; color:#1a0625; font-size:22px;
+  box-shadow:0 8px 24px rgba(255,126,182,0.35);
+}
+.brand .title{
+  display:flex; flex-direction:column; min-width:0;
+}
+.brand .title strong{
+  font-size:18px; font-weight:700; letter-spacing:-0.01em;
+}
+.brand .title span{
+  font-size:11px; color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase;
+}
+.head-actions{
+  display:flex; gap:8px; align-items:center;
+}
+.icon-btn{
+  width:40px; height:40px;
+  border-radius:12px;
+  background:var(--glass-strong);
+  border:1px solid var(--glass-border);
+  color:var(--text);
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  transition:transform .25s var(--t), background .2s;
+  font-size:17px;
+  position:relative;
+}
+.icon-btn:hover{ background:rgba(255,255,255,0.22); transform:translateY(-1px); }
+.icon-btn .badge{
+  position:absolute; top:-4px; right:-4px;
+  min-width:18px; height:18px; padding:0 5px;
+  border-radius:10px;
+  background:var(--accent);
+  color:#1a0625; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(255,126,182,0.55);
+}
+
+/* Search section */
+.search{
+  padding:18px;
+  margin-bottom:14px;
+}
+.search-row{
+  display:flex; gap:8px; align-items:stretch;
+  flex-wrap:wrap;
+}
+.search-input{
+  flex:1; min-width:220px;
+  display:flex; align-items:center; gap:10px;
+  padding:14px 16px;
+  background:rgba(0,0,0,0.25);
+  border:1px solid var(--glass-border);
+  border-radius:14px;
+  transition:border .2s, background .2s;
+}
+.search-input:focus-within{
+  border-color:var(--accent-2);
+  background:rgba(0,0,0,0.4);
+  box-shadow:0 0 0 4px rgba(122,252,255,0.18);
+}
+.search-input input{
+  flex:1; min-width:0;
+  background:transparent; border:0; outline:0;
+  color:var(--text); font-size:15px;
+  font-family:inherit;
+}
+.search-input input::placeholder{ color:var(--text-mute); }
+.search-input .lang-tag{
+  font-size:10px; font-weight:700; letter-spacing:0.06em;
+  padding:4px 8px; border-radius:8px;
+  background:var(--glass-strong);
+  color:var(--text-dim);
+}
+.btn{
+  padding:0 18px;
+  border-radius:14px;
+  border:1px solid var(--glass-border);
+  background:var(--glass-strong);
+  color:var(--text);
+  font-family:inherit; font-size:14px; font-weight:600;
+  cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px;
+  transition:transform .25s var(--t), background .2s;
+  white-space:nowrap;
+  min-height:48px;
+}
+.btn:hover{ background:rgba(255,255,255,0.22); transform:translateY(-1px); }
+.btn.primary{
+  background:linear-gradient(135deg, var(--accent), var(--accent-3));
+  border-color:transparent;
+  color:#1a0625;
+  box-shadow:0 8px 22px rgba(255,126,182,0.35);
+}
+.btn.primary:hover{ filter:brightness(1.06); }
+.btn.ghost{
+  background:transparent;
+}
+.btn.sm{ padding:0 12px; min-height:36px; font-size:12.5px; border-radius:10px; }
+
+/* Filter bar */
+.filters{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  margin-top:12px; padding-top:12px;
+  border-top:1px solid var(--glass-border);
+}
+.filter-group{
+  display:flex; align-items:center; gap:6px;
+  padding:6px 8px 6px 12px;
+  background:rgba(0,0,0,0.2);
+  border:1px solid var(--glass-border);
+  border-radius:11px;
+  font-size:12.5px;
+  color:var(--text-dim);
+}
+.filter-group label{ font-weight:600; color:var(--text-mute); margin-right:2px; }
+.filter-group select,.filter-group input{
+  background:transparent; border:0; outline:0;
+  color:var(--text); font-family:inherit; font-size:12.5px;
+  padding:6px 4px;
+  cursor:pointer;
+}
+.filter-group input{ width:80px; cursor:text; }
+.filter-group select option{ background:#1a1238; color:var(--text); }
+
+.toggle-row{
+  display:flex; gap:6px;
+}
+.toggle-pill{
+  padding:8px 12px;
+  border-radius:11px;
+  background:rgba(0,0,0,0.2);
+  border:1px solid var(--glass-border);
+  color:var(--text-dim);
+  font-size:12.5px; font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:inherit;
+}
+.toggle-pill .dot{
+  width:8px; height:8px; border-radius:50%;
+  background:currentColor;
+  opacity:0.55;
+}
+.toggle-pill[aria-pressed="true"]{
+  color:var(--text);
+  background:linear-gradient(135deg, rgba(255,126,182,0.3), rgba(122,252,255,0.25));
+  border-color:var(--glass-border-strong);
+}
+.toggle-pill[aria-pressed="true"] .dot{ opacity:1; }
+
+/* Categories */
+.cats{
+  display:flex; flex-wrap:wrap; gap:8px;
+  padding:14px 18px;
+  margin-bottom:14px;
+}
+.cat{
+  padding:9px 14px;
+  border-radius:99px;
+  background:rgba(0,0,0,0.22);
+  border:1px solid var(--glass-border);
+  color:var(--text-dim);
+  font-size:13px; font-weight:600;
+  cursor:pointer;
+  display:inline-flex; align-items:center; gap:8px;
+  transition:all .2s;
+  font-family:inherit;
+}
+.cat:hover{ color:var(--text); background:rgba(255,255,255,0.12); }
+.cat[aria-pressed="true"]{
+  color:#1a0625;
+  background:linear-gradient(135deg, var(--accent), var(--accent-3));
+  border-color:transparent;
+  box-shadow:0 6px 18px rgba(255,126,182,0.3);
+}
+.cat .x{
+  display:inline-flex; width:16px; height:16px; align-items:center; justify-content:center;
+  border-radius:50%; background:rgba(0,0,0,0.25); color:rgba(255,255,255,0.85);
+  font-size:11px; line-height:1;
+  opacity:0; transition:opacity .15s;
+}
+.cat:hover .x{ opacity:0.85; }
+.cat[aria-pressed="true"] .x{ background:rgba(0,0,0,0.2); color:#1a0625; }
+.cat-add{
+  padding:9px 14px;
+  border-radius:99px;
+  background:transparent;
+  border:1px dashed var(--glass-border-strong);
+  color:var(--text-dim);
+  font-size:13px; font-weight:600;
+  cursor:pointer;
+  font-family:inherit;
+}
+.cat-add:hover{ color:var(--text); border-color:var(--accent-2); }
+
+/* Status bar */
+.status-bar{
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+  padding:10px 18px;
+  margin-bottom:14px;
+  font-size:12.5px;
+  color:var(--text-dim);
+}
+.status-bar .count strong{ color:var(--text); font-weight:700; font-size:14px; }
+.status-bar .right{ display:flex; gap:10px; align-items:center; }
+
+/* Result grid */
+.results{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:14px;
+  margin-bottom:24px;
+}
+.card{
+  display:flex; flex-direction:column;
+  border-radius:var(--r-md);
+  overflow:hidden;
+  cursor:pointer;
+  transition:transform .35s var(--t), box-shadow .3s;
+}
+.card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-deep);
+}
+.card .thumb{
+  position:relative;
+  aspect-ratio:1;
+  overflow:hidden;
+  background:linear-gradient(135deg, rgba(255,126,182,0.15), rgba(122,252,255,0.15));
+}
+.card .thumb img{
+  width:100%; height:100%;
+  object-fit:cover;
+  transition:transform .6s var(--t);
+}
+.card:hover .thumb img{ transform:scale(1.05); }
+.card .src-tag{
+  position:absolute; top:8px; left:8px;
+  padding:4px 8px;
+  border-radius:8px;
+  font-size:10px; font-weight:700; letter-spacing:0.04em;
+  text-transform:uppercase;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  background:rgba(0,0,0,0.45);
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.18);
+}
+.card .src-tag.yahoo{ background:linear-gradient(135deg, rgba(143,36,255,0.85), rgba(85,12,180,0.85)); }
+.card .src-tag.mercari{ background:linear-gradient(135deg, rgba(255,28,75,0.85), rgba(180,12,40,0.85)); }
+.card .src-tag.jdi{ background:linear-gradient(135deg, rgba(255,160,40,0.85), rgba(200,90,12,0.85)); }
+.card .heart{
+  position:absolute; top:8px; right:8px;
+  width:36px; height:36px;
+  border-radius:50%;
+  background:rgba(0,0,0,0.45);
+  border:1px solid rgba(255,255,255,0.18);
+  color:#fff;
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  transition:transform .25s var(--t), background .2s;
+  font-size:16px;
+}
+.card .heart:hover{ background:rgba(0,0,0,0.65); transform:scale(1.08); }
+.card .heart.on{
+  background:linear-gradient(135deg, var(--accent), #ff4f8f);
+  border-color:transparent;
+  color:#fff;
+}
+.card .end-overlay{
+  position:absolute; bottom:0; left:0; right:0;
+  padding:18px 10px 8px;
+  background:linear-gradient(0deg, rgba(0,0,0,0.7), transparent);
+  font-size:11px;
+  color:#fff;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.card .end-overlay .ending-soon{
+  color:#ffb8b8; font-weight:700;
+}
+.card .body{
+  padding:12px 12px 14px;
+  display:flex; flex-direction:column; gap:8px;
+  background:rgba(0,0,0,0.2);
+  flex:1;
+}
+.card .titles .ja{
+  font-size:12.5px;
+  color:var(--text-dim);
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  font-weight:500;
+  line-height:1.4;
+}
+.card .titles .zh{
+  font-size:13.5px;
+  color:var(--text);
+  font-weight:600;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  line-height:1.4;
+  margin-top:2px;
+}
+.card .row{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.card .price{
+  font-size:17px; font-weight:800;
+  background:linear-gradient(135deg, var(--accent-2), #b8f4ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  letter-spacing:-0.01em;
+}
+.card .price .ntd{
+  font-size:11px; font-weight:600; color:var(--text-mute);
+  margin-left:4px;
+  -webkit-text-fill-color:var(--text-mute);
+}
+.card .bibian{
+  padding:6px 10px;
+  font-size:11px; font-weight:700;
+  border-radius:8px;
+  background:linear-gradient(135deg, #ffd86b, #ff8a00);
+  color:#3a1a00;
+  border:0;
+  cursor:pointer;
+  font-family:inherit;
+  display:inline-flex; align-items:center; gap:4px;
+  white-space:nowrap;
+  transition:transform .25s var(--t);
+}
+.card .bibian:hover{ transform:translateY(-1px); }
+
+/* Empty / loading */
+.empty{
+  text-align:center;
+  padding:60px 24px;
+  color:var(--text-dim);
+}
+.empty .emo{ font-size:42px; margin-bottom:10px; }
+.empty h3{ font-weight:600; color:var(--text); margin:8px 0 6px; font-size:18px; }
+.empty p{ font-size:13px; max-width:480px; margin:0 auto; line-height:1.6; }
+.empty .btns{ display:flex; gap:8px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
+
+.skel{
+  background:linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+  background-size:200% 100%;
+  animation:shimmer 1.2s linear infinite;
+  border-radius:var(--r-md);
+}
+@keyframes shimmer{
+  0%{ background-position:200% 0; }
+  100%{ background-position:-200% 0; }
+}
+
+/* Drawer */
+.drawer{
+  position:fixed; inset:0;
+  z-index:200;
+  display:none;
+}
+.drawer.open{ display:block; }
+.drawer .scrim{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  animation:fadeIn .25s ease;
+}
+.drawer .panel{
+  position:absolute; top:0; right:0;
+  height:100%; width:min(440px, 92vw);
+  background:rgba(20,12,40,0.92);
+  border-left:1px solid var(--glass-border);
+  backdrop-filter:saturate(180%) blur(28px);
+  -webkit-backdrop-filter:saturate(180%) blur(28px);
+  display:flex; flex-direction:column;
+  animation:slideIn .35s var(--t);
+  box-shadow:-30px 0 80px rgba(0,0,0,0.5);
+}
+.drawer .panel header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--glass-border);
+}
+.drawer .panel header h2{
+  margin:0; font-size:17px; font-weight:700;
+}
+.drawer .panel .body{
+  flex:1; overflow-y:auto;
+  padding:14px 18px 22px;
+  display:flex; flex-direction:column; gap:14px;
+}
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+@keyframes slideIn{ from{transform:translateX(100%);} to{transform:translateX(0);} }
+
+/* Wishlist item */
+.wl-item{
+  display:flex; gap:12px;
+  padding:10px;
+  border-radius:14px;
+  background:var(--glass-strong);
+  border:1px solid var(--glass-border);
+  align-items:center;
+}
+.wl-item img{
+  width:64px; height:64px; border-radius:10px; object-fit:cover; flex-shrink:0;
+  background:rgba(255,255,255,0.05);
+}
+.wl-item .info{ flex:1; min-width:0; }
+.wl-item .info .t{ font-size:12.5px; font-weight:600; line-height:1.35;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.wl-item .info .p{ font-size:11.5px; color:var(--text-dim); margin-top:3px; }
+.wl-item .info .row{ display:flex; gap:6px; margin-top:6px; }
+.wl-item button{
+  border:0; background:transparent; color:var(--text-dim);
+  font-size:11.5px; font-family:inherit; cursor:pointer; padding:3px 6px;
+  border-radius:7px; background:rgba(255,255,255,0.06);
+  transition:all .15s;
+}
+.wl-item button:hover{ color:var(--text); background:rgba(255,255,255,0.18); }
+
+/* Settings */
+.section{
+  display:flex; flex-direction:column; gap:8px;
+  padding:14px;
+  border-radius:14px;
+  background:var(--glass-strong);
+  border:1px solid var(--glass-border);
+}
+.section h3{
+  margin:0 0 4px; font-size:13px; font-weight:700;
+  letter-spacing:0.02em;
+}
+.section .desc{ font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+.field{
+  display:flex; flex-direction:column; gap:4px;
+}
+.field label{
+  font-size:11px; font-weight:600; color:var(--text-mute); letter-spacing:0.04em; text-transform:uppercase;
+}
+.field input,.field select,.field textarea{
+  width:100%;
+  padding:10px 12px;
+  background:rgba(0,0,0,0.3);
+  border:1px solid var(--glass-border);
+  border-radius:10px;
+  color:var(--text);
+  font-family:inherit; font-size:13px;
+  outline:0;
+}
+.field textarea{ min-height:90px; resize:vertical; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; }
+.field input:focus,.field select:focus,.field textarea:focus{ border-color:var(--accent-2); }
+
+.row-btns{ display:flex; gap:8px; flex-wrap:wrap; }
+
+/* Toast */
+.toast{
+  position:fixed; left:50%; bottom:24px;
+  transform:translateX(-50%);
+  padding:11px 18px;
+  border-radius:14px;
+  background:rgba(0,0,0,0.78);
+  border:1px solid var(--glass-border);
+  color:#fff;
+  font-size:13px; font-weight:600;
+  z-index:300;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 14px 36px rgba(0,0,0,0.6);
+  animation:toast .35s var(--t);
+  display:flex; align-items:center; gap:8px;
+}
+@keyframes toast{ from{opacity:0; transform:translate(-50%, 20px);} to{opacity:1; transform:translate(-50%,0);} }
+
+/* Scrollbar */
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.18); border-radius:4px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,0.32); }
+
+@media (max-width:600px){
+  .results{ grid-template-columns:repeat(2, 1fr); gap:10px; }
+  .card .body{ padding:10px; }
+  .card .titles .ja{ font-size:11.5px; }
+  .card .titles .zh{ font-size:12.5px; }
+  .card .price{ font-size:15px; }
+  .head{ padding:10px 14px; }
+  .brand .title strong{ font-size:16px; }
+  .search,.cats,.status-bar{ padding:14px; }
+  .btn{ font-size:13px; padding:0 14px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="head glass">
+    <div class="brand">
+      <div class="mark">櫻</div>
+      <div class="title">
+        <strong>櫻拍 SakuraBid</strong>
+        <span>Japan Auctions · 中日翻譯 · 比比昂代購</span>
+      </div>
+    </div>
+    <div class="head-actions">
+      <button class="icon-btn" id="btnWishlist" title="願望清單">
+        <span>♡</span>
+        <span class="badge" id="wlBadge" style="display:none;">0</span>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="設定">⚙</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search glass">
+    <div class="search-row">
+      <div class="search-input">
+        <span style="font-size:18px; opacity:0.6;">⌕</span>
+        <input id="q" type="search" autocomplete="off" placeholder="輸入關鍵字（中文／日文皆可）— 例：高達、ポケモン、Switch、ジャンク">
+        <span class="lang-tag" id="langTag">AUTO</span>
+      </div>
+      <button class="btn" id="btnTranslate" title="翻譯欄位內文字">譯</button>
+      <button class="btn primary" id="btnSearch">搜尋</button>
+    </div>
+
+    <div class="filters">
+      <div class="toggle-row" id="srcToggles">
+        <button class="toggle-pill" data-src="yahoo" aria-pressed="true"><span class="dot" style="color:#a86bff;"></span>Yahoo 拍賣</button>
+        <button class="toggle-pill" data-src="jdi" aria-pressed="true"><span class="dot" style="color:#ffa028;"></span>JDirectItems</button>
+        <button class="toggle-pill" data-src="mercari" aria-pressed="true"><span class="dot" style="color:#ff1c4b;"></span>Mercari</button>
+      </div>
+      <div class="filter-group">
+        <label>排序</label>
+        <select id="sortBy">
+          <option value="end_asc">即將結束</option>
+          <option value="new">最新上架</option>
+          <option value="price_asc">價格 低→高</option>
+          <option value="price_desc">價格 高→低</option>
+          <option value="bids_desc">出價數最多</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>價格 ¥</label>
+        <input id="priceMin" type="number" placeholder="最低" min="0">
+        <span style="opacity:0.4;">~</span>
+        <input id="priceMax" type="number" placeholder="最高" min="0">
+      </div>
+      <div class="filter-group">
+        <label>狀態</label>
+        <select id="condition">
+          <option value="">全部</option>
+          <option value="new">全新</option>
+          <option value="used">中古</option>
+        </select>
+      </div>
+      <button class="btn ghost sm" id="btnClear" style="margin-left:auto;">清除</button>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div class="cats glass" id="catBar">
+    <!-- categories rendered here -->
+  </div>
+
+  <!-- Status / count -->
+  <div class="status-bar">
+    <div class="count" id="countText">準備搜尋 — 試試「高達 1/144」或「ポケカ ピカチュウ」</div>
+    <div class="right">
+      <span id="syncDot" style="display:inline-flex; gap:6px; align-items:center;">
+        <span style="width:8px; height:8px; border-radius:50%; background:#7afcff;"></span>
+        <span>本機同步</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results"></div>
+
+  <div id="emptyState" class="empty glass" style="display:block;">
+    <div class="emo">⛩️</div>
+    <h3>歡迎來到 櫻拍 SakuraBid</h3>
+    <p>輸入想找的物品（中文或日文），App 會自動翻譯並同時搜尋 Yahoo 拍賣、JDirectItems 與 Mercari，依結束時間／價格排序。喜歡的可加入願望清單，再一鍵帶到比比昂代購。</p>
+    <div class="btns">
+      <button class="btn primary" onclick="document.getElementById('q').focus()">開始搜尋</button>
+      <button class="btn" onclick="loadDemo()">看示範資料</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Wishlist drawer -->
+<div class="drawer" id="dWishlist">
+  <div class="scrim" data-close></div>
+  <div class="panel">
+    <header>
+      <h2>♡ 願望清單 <span id="wlCount" style="color:var(--text-dim); font-weight:500; font-size:13px;"></span></h2>
+      <button class="icon-btn" data-close>✕</button>
+    </header>
+    <div class="body" id="wlBody"></div>
+  </div>
+</div>
+
+<!-- Settings drawer -->
+<div class="drawer" id="dSettings">
+  <div class="scrim" data-close></div>
+  <div class="panel">
+    <header>
+      <h2>⚙ 設定</h2>
+      <button class="icon-btn" data-close>✕</button>
+    </header>
+    <div class="body">
+
+      <div class="section">
+        <h3>翻譯</h3>
+        <p class="desc">使用 MyMemory 免費翻譯 API（每日 5000 字）。可自填 DeepL／Google API Key 取得更準確結果。</p>
+        <div class="field">
+          <label>翻譯方向</label>
+          <select id="setTransDir">
+            <option value="auto">自動偵測</option>
+            <option value="zh-ja">中 → 日</option>
+            <option value="ja-zh">日 → 中</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>DeepL API Key（選填）</label>
+          <input id="setDeeplKey" type="password" placeholder="留空使用免費翻譯">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>搜尋來源</h3>
+        <p class="desc">瀏覽器無法直接讀取日本拍賣站（CORS 限制），需透過代理。預設 allorigins 已可讀取，若失敗會回退為「於原站開啟」。</p>
+        <div class="field">
+          <label>CORS 代理</label>
+          <input id="setProxy" type="text" placeholder="https://api.allorigins.win/get?url=">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>比比昂代購</h3>
+        <p class="desc">點卡片上「比比昂」按鈕時會帶入該商品連結至比比昂代購頁。</p>
+        <div class="field">
+          <label>Yahoo 拍賣代購網址模板</label>
+          <input id="setBibYahoo" type="text" placeholder="https://www.bibian.com.tw/yahoo/auc/auction.php?aID={id}">
+        </div>
+        <div class="field">
+          <label>Mercari 代購網址模板</label>
+          <input id="setBibMercari" type="text" placeholder="https://www.bibian.com.tw/mercari/item.php?mID={id}">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>匯率（顯示用）</h3>
+        <div class="field">
+          <label>1 JPY = ? TWD</label>
+          <input id="setFx" type="number" step="0.001" min="0" placeholder="0.21">
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>跨裝置同步</h3>
+        <p class="desc">電腦、手機之間同步願望清單與分類。可匯出 JSON 後在另一裝置匯入；或填入 JSONBin / Firebase REST 端點自動同步。</p>
+        <div class="row-btns">
+          <button class="btn sm" id="btnExport">匯出 JSON</button>
+          <button class="btn sm" id="btnImport">匯入 JSON</button>
+          <button class="btn sm ghost" id="btnShareLink">產生同步連結</button>
+        </div>
+        <div class="field">
+          <label>JSONBin / 自訂同步端點（選填）</label>
+          <input id="setSyncUrl" type="text" placeholder="https://api.jsonbin.io/v3/b/<bin-id>">
+        </div>
+        <div class="field">
+          <label>Header X-Master-Key（JSONBin）</label>
+          <input id="setSyncKey" type="password" placeholder="$2a$10$...">
+        </div>
+        <div class="row-btns">
+          <button class="btn sm" id="btnPullCloud">↓ 從雲端拉取</button>
+          <button class="btn sm primary" id="btnPushCloud">↑ 推送到雲端</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>關於</h3>
+        <p class="desc">櫻拍 SakuraBid · v1.0 · 純前端 PWA，可加到主畫面當原生 App 使用。資料只存在你的裝置與你指定的同步端點。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileImport" accept="application/json" style="display:none;">
+
+<script>
+/* =========================================================
+ * 櫻拍 SakuraBid — main script
+ * ======================================================= */
+
+const STORE_KEY = 'sakurabid:v1';
+const DEFAULTS = {
+  cats: [
+    { id:'all', name:'全部', emoji:'⌘', system:true },
+    { id:'manga', name:'漫畫', emoji:'📚' },
+    { id:'music', name:'音樂', emoji:'🎵' },
+    { id:'game', name:'電視遊戲', emoji:'🎮' },
+    { id:'figure', name:'公仔模型', emoji:'🧸' },
+    { id:'card', name:'卡牌', emoji:'🎴' },
+    { id:'camera', name:'相機', emoji:'📷' },
+  ],
+  activeCat: 'all',
+  wishlist: [],
+  settings: {
+    transDir: 'auto',
+    deeplKey: '',
+    proxy: 'https://api.allorigins.win/get?url=',
+    bibYahoo: 'https://www.bibian.com.tw/yahoo/auc/auction.php?aID={id}',
+    bibMercari: 'https://www.bibian.com.tw/mercari/item.php?mID={id}',
+    fx: 0.21,
+    syncUrl: '',
+    syncKey: '',
+  },
+  sources: { yahoo:true, jdi:true, mercari:true },
+  sortBy: 'end_asc',
+};
+
+const State = load();
+let lastResults = [];
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return structuredClone(DEFAULTS);
+    const s = JSON.parse(raw);
+    return Object.assign(structuredClone(DEFAULTS), s, {
+      settings: Object.assign({}, DEFAULTS.settings, s.settings||{}),
+      sources: Object.assign({}, DEFAULTS.sources, s.sources||{}),
+    });
+  }catch(e){ return structuredClone(DEFAULTS); }
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(State)); }catch(e){}
+}
+
+/* ---------- Toast ---------- */
+function toast(msg, kind=''){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  if(kind==='error') t.style.borderColor = '#ff7e7e';
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.transition='opacity .25s, transform .25s'; t.style.opacity='0'; t.style.transform='translate(-50%,20px)'; }, 2400);
+  setTimeout(()=>t.remove(), 2750);
+}
+
+/* ---------- Language detect ---------- */
+function detectLang(s){
+  if(!s) return 'unknown';
+  // Hiragana / Katakana → Japanese
+  if(/[぀-ゟ゠-ヿ]/.test(s)) return 'ja';
+  // CJK only — could be either; lean on common ZH-only chars
+  if(/[一-鿿]/.test(s)){
+    // Heuristic: presence of zh-only chars suggests Chinese
+    if(/[麼這個們臺灣]/.test(s)) return 'zh';
+    // Without kana: assume Chinese
+    return 'zh';
+  }
+  if(/[a-zA-Z]/.test(s)) return 'en';
+  return 'unknown';
+}
+
+/* ---------- Translate ---------- */
+async function translate(text, from, to){
+  if(!text || !text.trim()) return text;
+  // DeepL if user provided key
+  if(State.settings.deeplKey){
+    try{
+      const r = await fetch('https://api-free.deepl.com/v2/translate', {
+        method:'POST',
+        headers:{ 'Authorization':'DeepL-Auth-Key '+State.settings.deeplKey,
+                  'Content-Type':'application/x-www-form-urlencoded' },
+        body:`text=${encodeURIComponent(text)}&target_lang=${to==='ja'?'JA':'ZH'}&source_lang=${from==='ja'?'JA':from==='zh'?'ZH':''}`,
+      });
+      if(r.ok){ const j = await r.json(); return j.translations?.[0]?.text || text; }
+    }catch(e){}
+  }
+  // MyMemory free
+  try{
+    const pair = `${from==='ja'?'ja':'zh-TW'}|${to==='ja'?'ja':'zh-TW'}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}&de=sakurabid@example.com`;
+    const r = await fetch(url);
+    const j = await r.json();
+    return j?.responseData?.translatedText || text;
+  }catch(e){
+    return text;
+  }
+}
+
+/* ---------- Search ---------- */
+
+// Build deep-link URLs — these always work (open in new tab)
+function buildDeepLinks(query, sortBy, priceMin, priceMax){
+  // Yahoo Auctions Japan
+  // sort: end ascending = s1=end&o1=a; new = s1=new&o1=d; price asc = s1=cbids&o1=a
+  const yMap = { end_asc:['end','a'], new:['new','d'], price_asc:['cbids','a'], price_desc:['cbids','d'], bids_desc:['bids','d'] };
+  const [yS, yO] = yMap[sortBy] || ['end','a'];
+  const yQS = new URLSearchParams({
+    p: query, b:'1', n:'50',
+    s1: yS, o1: yO,
+  });
+  if(priceMin) yQS.set('aucminprice', priceMin);
+  if(priceMax) yQS.set('aucmaxprice', priceMax);
+  const yahoo = `https://auctions.yahoo.co.jp/search/search?${yQS}`;
+
+  // JDirectItems — Yahoo proxy buying service.
+  const jdi = `https://www.jdirectitems.com/itm/auctions/?keyword=${encodeURIComponent(query)}`;
+
+  // Mercari Japan
+  const mMap = { new:'created_time', price_asc:'price', price_desc:'price', end_asc:'created_time', bids_desc:'num_likes' };
+  const mOrder = (sortBy==='price_desc' || sortBy==='bids_desc') ? 'desc' : 'asc';
+  const mQS = new URLSearchParams({
+    keyword: query,
+    sort: mMap[sortBy] || 'created_time',
+    order: mOrder,
+    status: 'on_sale',
+  });
+  if(priceMin) mQS.set('price_min', priceMin);
+  if(priceMax) mQS.set('price_max', priceMax);
+  const mercari = `https://jp.mercari.com/search?${mQS}`;
+
+  return { yahoo, jdi, mercari };
+}
+
+async function fetchViaProxy(url){
+  const proxy = State.settings.proxy || 'https://api.allorigins.win/get?url=';
+  const u = proxy.includes('allorigins')
+    ? proxy + encodeURIComponent(url)
+    : proxy + encodeURIComponent(url);
+  const r = await fetch(u, { mode:'cors' });
+  if(!r.ok) throw new Error('proxy fetch failed: '+r.status);
+  const txt = await r.text();
+  // allorigins wraps: { contents:"<html>..." }
+  try{
+    const j = JSON.parse(txt);
+    if(j && typeof j.contents === 'string') return j.contents;
+  }catch(e){}
+  return txt;
+}
+
+function parseYahoo(html){
+  const out = [];
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  // Yahoo Auctions search list — use product li nodes
+  doc.querySelectorAll('li.Product').forEach(li=>{
+    const a = li.querySelector('a.Product__titleLink, a.Product__imageLink');
+    const url = a?.href || '';
+    const title = (li.querySelector('.Product__title, .Product__titleLink')?.textContent || '').trim();
+    const img = li.querySelector('img')?.src || '';
+    const priceTxt = (li.querySelector('.Product__priceValue, .Product__price')?.textContent || '').replace(/[^\d]/g,'');
+    const price = priceTxt ? parseInt(priceTxt,10) : null;
+    const bids = parseInt((li.querySelector('.Product__bid')?.textContent||'').replace(/\D/g,''))||0;
+    const end = (li.querySelector('.Product__time, .Product__remainingTime')?.textContent || '').trim();
+    const idMatch = url.match(/\/auction\/([a-z0-9]+)/i);
+    if(!url || !title) return;
+    out.push({
+      id:'y_'+(idMatch?.[1]||Math.random().toString(36).slice(2)),
+      sourceId: idMatch?.[1] || '',
+      source:'yahoo', url, title_ja:title, title_zh:'',
+      img, price, currency:'JPY', bids, endText:end,
+    });
+  });
+  return out;
+}
+
+function parseMercari(html){
+  const out = [];
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  // Mercari uses Next.js __NEXT_DATA__ JSON for SSR data
+  const nd = doc.querySelector('script#__NEXT_DATA__');
+  if(nd){
+    try{
+      const j = JSON.parse(nd.textContent);
+      const items = j?.props?.pageProps?.searchResult?.items
+                 || j?.props?.pageProps?.initialState?.search?.items
+                 || [];
+      for(const it of items){
+        out.push({
+          id:'m_'+it.id,
+          sourceId: it.id,
+          source:'mercari',
+          url: `https://jp.mercari.com/item/${it.id}`,
+          title_ja: it.name || '',
+          title_zh:'',
+          img: it.thumbnails?.[0] || it.thumbnail || '',
+          price: it.price,
+          currency:'JPY',
+          bids: it.numLikes || 0,
+          endText: it.created ? new Date(it.created*1000).toLocaleDateString('ja-JP') : '',
+        });
+      }
+    }catch(e){}
+  }
+  // Fallback: parse anchors with /item/
+  if(out.length === 0){
+    doc.querySelectorAll('a[href^="/item/"]').forEach(a=>{
+      const id = a.getAttribute('href').split('/item/')[1]?.split(/[?#/]/)[0];
+      if(!id) return;
+      const img = a.querySelector('img')?.src || '';
+      const title = a.querySelector('[itemprop="name"], .merItemThumbnail__itemName, span')?.textContent?.trim() || '';
+      const price = parseInt((a.textContent.match(/¥\s*([\d,]+)/)||[])[1]?.replace(/,/g,''))||null;
+      if(title) out.push({
+        id:'m_'+id, sourceId:id, source:'mercari',
+        url:'https://jp.mercari.com/item/'+id,
+        title_ja:title, title_zh:'', img, price, currency:'JPY', bids:0, endText:'',
+      });
+    });
+  }
+  return out;
+}
+
+function parseJDI(html){
+  const out = [];
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('.item-card, .product-card, .auction-item').forEach(el=>{
+    const a = el.querySelector('a');
+    const url = a?.href || '';
+    const img = el.querySelector('img')?.src || '';
+    const title = (el.querySelector('.title, .item-title, h3')?.textContent || '').trim();
+    const priceTxt = (el.querySelector('.price, .item-price')?.textContent || '').replace(/[^\d]/g,'');
+    const price = priceTxt ? parseInt(priceTxt,10) : null;
+    const idMatch = url.match(/[?&]id=([^&]+)/) || url.match(/\/(\w+)\/?$/);
+    if(!title) return;
+    out.push({
+      id:'j_'+(idMatch?.[1]||Math.random().toString(36).slice(2)),
+      sourceId: idMatch?.[1] || '',
+      source:'jdi',
+      url: url || '',
+      title_ja: title, title_zh:'',
+      img, price, currency:'JPY', bids:0, endText:'',
+    });
+  });
+  return out;
+}
+
+async function searchSource(source, url){
+  try{
+    const html = await fetchViaProxy(url);
+    if(source==='yahoo') return parseYahoo(html);
+    if(source==='mercari') return parseMercari(html);
+    if(source==='jdi') return parseJDI(html);
+  }catch(e){
+    console.warn('search', source, 'failed', e);
+  }
+  return [];
+}
+
+async function doSearch(){
+  const raw = document.getElementById('q').value.trim();
+  if(!raw){ toast('請輸入關鍵字'); return; }
+
+  const lang = detectLang(raw);
+  let queryJa = raw;
+  let queryZh = '';
+  document.getElementById('langTag').textContent = lang.toUpperCase();
+
+  // Translate to JP for searching JP sites
+  if(lang === 'zh'){
+    setBusy(true, '正在翻譯…');
+    queryJa = await translate(raw, 'zh', 'ja');
+    queryZh = raw;
+    document.getElementById('q').setAttribute('data-zh', queryZh);
+    document.getElementById('q').setAttribute('data-ja', queryJa);
+  } else if(lang === 'ja'){
+    queryZh = await translate(raw, 'ja', 'zh');
+  }
+
+  const sortBy = State.sortBy;
+  const priceMin = parseInt(document.getElementById('priceMin').value)||'';
+  const priceMax = parseInt(document.getElementById('priceMax').value)||'';
+  const links = buildDeepLinks(queryJa, sortBy, priceMin, priceMax);
+
+  setBusy(true, `搜尋中：${queryJa}`);
+  showSkeletons();
+
+  const promises = [];
+  if(State.sources.yahoo)   promises.push(searchSource('yahoo', links.yahoo).then(r=>({src:'yahoo', r, link:links.yahoo})));
+  if(State.sources.jdi)     promises.push(searchSource('jdi', links.jdi).then(r=>({src:'jdi', r, link:links.jdi})));
+  if(State.sources.mercari) promises.push(searchSource('mercari', links.mercari).then(r=>({src:'mercari', r, link:links.mercari})));
+  const results = await Promise.all(promises);
+
+  let merged = results.flatMap(x=>x.r);
+  if(merged.length === 0){
+    setBusy(false);
+    showNoResults(queryJa, queryZh, links);
+    return;
+  }
+
+  // Translate JP titles → ZH (in batches, capped to first ~30)
+  const toTrans = merged.slice(0, 30);
+  await Promise.all(toTrans.map(async it=>{
+    if(!it.title_zh){
+      try{ it.title_zh = await translate(it.title_ja, 'ja', 'zh'); }catch(e){}
+    }
+  }));
+
+  // Apply price filter / sort
+  if(priceMin) merged = merged.filter(x=> x.price==null || x.price >= +priceMin);
+  if(priceMax) merged = merged.filter(x=> x.price==null || x.price <= +priceMax);
+  merged = sortItems(merged, sortBy);
+
+  lastResults = merged;
+  renderResults(merged, { queryJa, queryZh, links });
+  setBusy(false);
+}
+
+function sortItems(items, by){
+  const copy = items.slice();
+  switch(by){
+    case 'price_asc':  copy.sort((a,b)=> (a.price??Infinity) - (b.price??Infinity)); break;
+    case 'price_desc': copy.sort((a,b)=> (b.price??-1) - (a.price??-1)); break;
+    case 'bids_desc':  copy.sort((a,b)=> (b.bids??0) - (a.bids??0)); break;
+    case 'new':        copy.sort((a,b)=> (b.id||'').localeCompare(a.id||'')); break;
+    case 'end_asc':
+    default: /* leave order or by endText */ break;
+  }
+  return copy;
+}
+
+function setBusy(b, msg){
+  document.getElementById('countText').textContent = b ? (msg||'…') : '';
+}
+
+function showSkeletons(){
+  const r = document.getElementById('results');
+  r.innerHTML = '';
+  document.getElementById('emptyState').style.display = 'none';
+  for(let i=0;i<8;i++){
+    const c = document.createElement('div');
+    c.className = 'card glass';
+    c.innerHTML = `<div class="thumb skel"></div><div class="body" style="padding:12px;"><div class="skel" style="height:14px; margin-bottom:6px;"></div><div class="skel" style="height:12px; width:70%; margin-bottom:10px;"></div><div class="skel" style="height:18px; width:40%;"></div></div>`;
+    r.appendChild(c);
+  }
+}
+
+function showNoResults(qJa, qZh, links){
+  const r = document.getElementById('results');
+  r.innerHTML = '';
+  const e = document.getElementById('emptyState');
+  e.style.display = 'block';
+  e.innerHTML = `
+    <div class="emo">🔍</div>
+    <h3>找不到符合的拍賣（或代理被擋）</h3>
+    <p>瀏覽器讀取日本站常會被 CORS 擋。已自動把翻譯後的關鍵字「<strong style="color:var(--text);">${qJa}</strong>」帶到原站，點下方按鈕可在新分頁查看完整結果。</p>
+    <div class="btns">
+      <a class="btn primary" href="${links.yahoo}" target="_blank" rel="noopener">於 Yahoo 拍賣開啟</a>
+      <a class="btn" href="${links.jdi}" target="_blank" rel="noopener">於 JDirectItems 開啟</a>
+      <a class="btn" href="${links.mercari}" target="_blank" rel="noopener">於 Mercari 開啟</a>
+    </div>
+    <p style="margin-top:18px; font-size:12px;">想啟用站內預覽？至「設定 ⚙ → 搜尋來源」更換 CORS 代理（例：<code>https://corsproxy.io/?</code>）。</p>
+  `;
+  document.getElementById('countText').textContent = `「${qJa}」— 0 件結果`;
+}
+
+function renderResults(items, ctx){
+  const r = document.getElementById('results');
+  r.innerHTML = '';
+  document.getElementById('emptyState').style.display = 'none';
+  if(items.length === 0){ showNoResults(ctx.queryJa, ctx.queryZh, ctx.links); return; }
+  document.getElementById('countText').innerHTML = `「<strong>${escape(ctx.queryJa)}</strong>」 — <strong>${items.length}</strong> 件結果（已合併 ${[...new Set(items.map(i=>i.source))].join('、')}）`;
+  for(const it of items) r.appendChild(buildCard(it));
+}
+
+function buildCard(it){
+  const card = document.createElement('div');
+  card.className = 'card glass';
+  const onWl = State.wishlist.some(w=>w.id===it.id);
+  const ntd = it.price ? Math.round(it.price * (State.settings.fx||0.21)).toLocaleString() : '';
+  const srcLabel = { yahoo:'YAHOO', jdi:'JDI', mercari:'MERCARI' }[it.source] || it.source;
+  card.innerHTML = `
+    <div class="thumb">
+      ${it.img ? `<img src="${escapeAttr(it.img)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;opacity:0.4;">📦</div>`}
+      <span class="src-tag ${it.source}">${srcLabel}</span>
+      <button class="heart ${onWl?'on':''}" data-act="wish" title="加入願望清單">${onWl?'♥':'♡'}</button>
+      ${it.endText ? `<div class="end-overlay"><span>⏱ ${escape(it.endText)}</span>${it.bids?`<span>${it.bids} 出價</span>`:''}</div>`:''}
+    </div>
+    <div class="body">
+      <div class="titles">
+        <div class="ja">${escape(it.title_ja||'')}</div>
+        <div class="zh">${escape(it.title_zh||it.title_ja||'')}</div>
+      </div>
+      <div class="row">
+        <div class="price">¥${(it.price??0).toLocaleString()}${ntd?`<span class="ntd">≈ NT$${ntd}</span>`:''}</div>
+        <button class="bibian" data-act="bibian" title="送至比比昂代購">🛍 比比昂</button>
+      </div>
+    </div>
+  `;
+  card.addEventListener('click', e=>{
+    const t = e.target.closest('[data-act]');
+    if(t){
+      e.preventDefault();
+      e.stopPropagation();
+      const act = t.dataset.act;
+      if(act==='wish') toggleWish(it, t);
+      if(act==='bibian') openBibian(it);
+      return;
+    }
+    window.open(it.url, '_blank', 'noopener');
+  });
+  return card;
+}
+
+function toggleWish(it, btn){
+  const i = State.wishlist.findIndex(w=>w.id===it.id);
+  if(i>=0){
+    State.wishlist.splice(i,1);
+    btn.classList.remove('on'); btn.textContent='♡';
+    toast('已移出願望清單');
+  } else {
+    State.wishlist.unshift({ ...it, addedAt: Date.now(), cat: State.activeCat });
+    btn.classList.add('on'); btn.textContent='♥';
+    toast('已加入願望清單 ♥');
+  }
+  save(); refreshWishlist();
+}
+
+function openBibian(it){
+  let tpl = '';
+  if(it.source==='yahoo' || it.source==='jdi') tpl = State.settings.bibYahoo;
+  if(it.source==='mercari') tpl = State.settings.bibMercari;
+  let url = '';
+  if(tpl && it.sourceId){
+    url = tpl.replace('{id}', encodeURIComponent(it.sourceId)).replace('{url}', encodeURIComponent(it.url));
+  }
+  if(!url){
+    // Fallback — Bibian generic agent page with auction URL pre-filled in clipboard
+    url = 'https://www.bibian.com.tw/';
+    navigator.clipboard?.writeText(it.url).catch(()=>{});
+    toast('已複製商品連結，請於比比昂貼上');
+  }
+  window.open(url, '_blank', 'noopener');
+}
+
+/* ---------- Wishlist UI ---------- */
+function refreshWishlist(){
+  const b = document.getElementById('wlBadge');
+  const n = State.wishlist.length;
+  b.textContent = n; b.style.display = n? 'flex':'none';
+  document.getElementById('wlCount').textContent = n? `(${n})` : '';
+  // re-render highlight on cards
+  document.querySelectorAll('.card .heart').forEach(el=>{
+    const card = el.closest('.card');
+    // we don't have id attribute — skip
+  });
+  renderWishlist();
+}
+
+function renderWishlist(){
+  const body = document.getElementById('wlBody');
+  body.innerHTML = '';
+
+  // Group by category
+  const byCat = {};
+  for(const it of State.wishlist){
+    const c = it.cat || 'all';
+    (byCat[c] ||= []).push(it);
+  }
+  const cats = State.cats.filter(c=> byCat[c.id]?.length).map(c=>c);
+  if(State.wishlist.length === 0){
+    body.innerHTML = `<div class="empty" style="padding:30px 10px;">
+      <div class="emo">📭</div>
+      <h3 style="font-size:15px;">還沒有收藏</h3>
+      <p style="font-size:12.5px;">在搜尋結果或商品卡上點 ♡ 加入這裡。</p>
+    </div>`;
+    return;
+  }
+  for(const c of cats){
+    const sec = document.createElement('div');
+    sec.style.cssText='display:flex; flex-direction:column; gap:8px;';
+    sec.innerHTML = `<div style="font-size:11px; font-weight:700; color:var(--text-mute); letter-spacing:0.06em; text-transform:uppercase; padding:0 4px;">${c.emoji||''} ${escape(c.name)} · ${byCat[c.id].length}</div>`;
+    for(const it of byCat[c.id]){
+      const el = document.createElement('div');
+      el.className = 'wl-item';
+      const ntd = it.price ? Math.round(it.price * (State.settings.fx||0.21)).toLocaleString() : '';
+      el.innerHTML = `
+        <img src="${escapeAttr(it.img||'')}" alt="" referrerpolicy="no-referrer" onerror="this.style.opacity=0.2;">
+        <div class="info">
+          <div class="t">${escape(it.title_zh||it.title_ja||'')}</div>
+          <div class="p">¥${(it.price??0).toLocaleString()}${ntd?` · NT$${ntd}`:''} · ${it.source.toUpperCase()}</div>
+          <div class="row">
+            <button data-act="open">前往</button>
+            <button data-act="bibian">比比昂</button>
+            <button data-act="remove">移除</button>
+          </div>
+        </div>
+      `;
+      el.querySelector('[data-act="open"]').onclick = ()=> window.open(it.url,'_blank','noopener');
+      el.querySelector('[data-act="bibian"]').onclick = ()=> openBibian(it);
+      el.querySelector('[data-act="remove"]').onclick = ()=>{
+        const i = State.wishlist.findIndex(w=>w.id===it.id);
+        if(i>=0) State.wishlist.splice(i,1);
+        save(); refreshWishlist();
+      };
+      sec.appendChild(el);
+    }
+    body.appendChild(sec);
+  }
+}
+
+/* ---------- Categories ---------- */
+function renderCats(){
+  const bar = document.getElementById('catBar');
+  bar.innerHTML = '';
+  for(const c of State.cats){
+    const b = document.createElement('button');
+    b.className = 'cat';
+    b.setAttribute('aria-pressed', State.activeCat===c.id ? 'true' : 'false');
+    b.innerHTML = `<span>${c.emoji||''}</span><span>${escape(c.name)}</span>${c.system?'':'<span class="x" data-act="del" title="刪除">✕</span>'}`;
+    b.addEventListener('click', e=>{
+      if(e.target.closest('[data-act="del"]')){
+        e.stopPropagation();
+        if(confirm(`刪除分類「${c.name}」？(已加入此分類的願望會留在清單)`)){
+          State.cats = State.cats.filter(x=>x.id!==c.id);
+          if(State.activeCat===c.id) State.activeCat='all';
+          save(); renderCats();
+        }
+        return;
+      }
+      State.activeCat = c.id;
+      save(); renderCats();
+    });
+    bar.appendChild(b);
+  }
+  const add = document.createElement('button');
+  add.className = 'cat-add';
+  add.textContent = '+ 新增分類';
+  add.onclick = ()=>{
+    const name = prompt('分類名稱（例如：球鞋、唱片、Vintage）');
+    if(!name) return;
+    const emoji = prompt('用一個 emoji 代表（可留白）','🎁') || '';
+    State.cats.push({ id:'c_'+Date.now().toString(36), name, emoji });
+    save(); renderCats();
+  };
+  bar.appendChild(add);
+}
+
+/* ---------- Settings UI binding ---------- */
+function bindSettings(){
+  const set = (id, key, root='settings')=>{
+    const el = document.getElementById(id);
+    el.value = State[root][key] ?? '';
+    el.addEventListener('change', ()=>{
+      State[root][key] = el.value;
+      save();
+    });
+  };
+  set('setTransDir','transDir');
+  set('setDeeplKey','deeplKey');
+  set('setProxy','proxy');
+  set('setBibYahoo','bibYahoo');
+  set('setBibMercari','bibMercari');
+  set('setFx','fx');
+  set('setSyncUrl','syncUrl');
+  set('setSyncKey','syncKey');
+
+  document.getElementById('btnExport').onclick = exportJSON;
+  document.getElementById('btnImport').onclick = ()=> document.getElementById('fileImport').click();
+  document.getElementById('fileImport').onchange = importJSON;
+  document.getElementById('btnShareLink').onclick = shareLink;
+  document.getElementById('btnPullCloud').onclick = pullCloud;
+  document.getElementById('btnPushCloud').onclick = pushCloud;
+}
+
+function exportJSON(){
+  const data = JSON.stringify(State, null, 2);
+  const blob = new Blob([data], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sakurabid-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  toast('已匯出 JSON');
+}
+
+function importJSON(e){
+  const f = e.target.files?.[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const j = JSON.parse(r.result);
+      Object.assign(State, j, {
+        settings: Object.assign({}, State.settings, j.settings||{}),
+        sources: Object.assign({}, State.sources, j.sources||{}),
+      });
+      save();
+      renderCats(); refreshWishlist();
+      toast('已匯入 ✓');
+    }catch(err){ toast('JSON 格式錯誤','error'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+}
+
+async function shareLink(){
+  const data = b64encUtf8(JSON.stringify({ wishlist:State.wishlist, cats:State.cats }));
+  const url = location.href.split('#')[0] + '#sync=' + data;
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('同步連結已複製，於另一裝置開啟即可匯入');
+  }catch(e){
+    prompt('複製此連結，於另一裝置開啟', url);
+  }
+}
+
+async function pushCloud(){
+  const url = State.settings.syncUrl;
+  if(!url){ toast('請先填入同步端點','error'); return; }
+  const headers = { 'Content-Type':'application/json' };
+  if(State.settings.syncKey){
+    headers['X-Master-Key'] = State.settings.syncKey;
+  }
+  try{
+    const r = await fetch(url, { method:'PUT', headers, body: JSON.stringify(State) });
+    if(!r.ok) throw new Error(r.status);
+    toast('已推送到雲端 ☁︎');
+    document.getElementById('syncDot').innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#7afcff;"></span><span>已雲端同步</span>';
+  }catch(e){ toast('推送失敗：'+e.message,'error'); }
+}
+
+async function pullCloud(){
+  const url = State.settings.syncUrl;
+  if(!url){ toast('請先填入同步端點','error'); return; }
+  const headers = {};
+  if(State.settings.syncKey){
+    headers['X-Master-Key'] = State.settings.syncKey;
+  }
+  try{
+    const r = await fetch(url, { headers });
+    if(!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const data = j.record || j;
+    Object.assign(State, data, {
+      settings: Object.assign({}, State.settings, data.settings||{}),
+    });
+    save();
+    renderCats(); refreshWishlist();
+    toast('已從雲端拉取 ↓');
+  }catch(e){ toast('拉取失敗：'+e.message,'error'); }
+}
+
+/* ---------- Demo / sample data ---------- */
+function loadDemo(){
+  const demo = [
+    { id:'demo1', sourceId:'demo1', source:'yahoo',
+      url:'https://auctions.yahoo.co.jp/',
+      title_ja:'機動戦士ガンダム 1/144 RX-78-2 未組立 当時物',
+      title_zh:'機動戰士鋼彈 1/144 RX-78-2 未組裝 當年物',
+      img:'https://images.unsplash.com/photo-1601132359864-c974e79890ac?w=400',
+      price:8500, currency:'JPY', bids:23, endText:'残り 2時間' },
+    { id:'demo2', sourceId:'demo2', source:'mercari',
+      url:'https://jp.mercari.com/',
+      title_ja:'ポケモンカード ピカチュウ プロモ 美品',
+      title_zh:'寶可夢卡 皮卡丘 promo 美品',
+      img:'https://images.unsplash.com/photo-1606503825008-909a67e63c3d?w=400',
+      price:3200, currency:'JPY', bids:0, endText:'即購入' },
+    { id:'demo3', sourceId:'demo3', source:'jdi',
+      url:'https://www.jdirectitems.com/',
+      title_ja:'Nintendo Switch 有機ELモデル 本体 ホワイト',
+      title_zh:'任天堂 Switch OLED 主機 白色',
+      img:'https://images.unsplash.com/photo-1612801799343-2dabf3a4dd14?w=400',
+      price:32500, currency:'JPY', bids:8, endText:'残り 1日' },
+    { id:'demo4', sourceId:'demo4', source:'yahoo',
+      url:'https://auctions.yahoo.co.jp/',
+      title_ja:'ONE PIECE 1巻〜100巻 セット ジャンプコミックス',
+      title_zh:'航海王 第1~100集 集英社JUMP漫畫',
+      img:'https://images.unsplash.com/photo-1612036782180-6f0822045d23?w=400',
+      price:14800, currency:'JPY', bids:15, endText:'残り 3日' },
+    { id:'demo5', sourceId:'demo5', source:'mercari',
+      url:'https://jp.mercari.com/',
+      title_ja:'宇多田ヒカル First Love レコード LP 帯付',
+      title_zh:'宇多田光 First Love 黑膠 帶腰封',
+      img:'https://images.unsplash.com/photo-1535992165812-68d1861aa71e?w=400',
+      price:6800, currency:'JPY', bids:0, endText:'即購入' },
+    { id:'demo6', sourceId:'demo6', source:'jdi',
+      url:'https://www.jdirectitems.com/',
+      title_ja:'Canon EOS Kiss X10 一眼レフカメラ 美品',
+      title_zh:'Canon EOS Kiss X10 單眼相機 美品',
+      img:'https://images.unsplash.com/photo-1606986628253-49efe2e9e51b?w=400',
+      price:42000, currency:'JPY', bids:4, endText:'残り 5日' },
+    { id:'demo7', sourceId:'demo7', source:'yahoo',
+      url:'https://auctions.yahoo.co.jp/',
+      title_ja:'スーパーファミコン 本体 動作品 ジャンク扱い',
+      title_zh:'超級任天堂 主機 可動 故障品',
+      img:'https://images.unsplash.com/photo-1531390658120-e06b58d826ea?w=400',
+      price:2500, currency:'JPY', bids:32, endText:'残り 30分' },
+    { id:'demo8', sourceId:'demo8', source:'mercari',
+      url:'https://jp.mercari.com/',
+      title_ja:'NARUTO ナルト 全72巻 完結セット',
+      title_zh:'火影忍者 全72集 完結套',
+      img:'https://images.unsplash.com/photo-1612036782180-6f0822045d23?w=400',
+      price:9800, currency:'JPY', bids:0, endText:'即購入' },
+  ];
+  lastResults = demo;
+  renderResults(demo, { queryJa:'示範資料', queryZh:'示範資料', links:{ yahoo:'#', jdi:'#', mercari:'#' } });
+  document.getElementById('countText').innerHTML = `<strong>示範資料</strong> — ${demo.length} 件 · 試試加入 ♡ 願望清單`;
+}
+
+/* ---------- Helpers ---------- */
+function esc(s){ return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+const escape = esc;          // alias used in templates above
+const escapeAttr = esc;
+function b64encUtf8(str){
+  return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+}
+function b64decUtf8(b64){
+  const bytes = Uint8Array.from(atob(b64), c=>c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+/* ---------- Drawers ---------- */
+function openDrawer(id){ document.getElementById(id).classList.add('open'); }
+function closeDrawer(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e=>{
+  if(e.target.matches('[data-close]') || e.target.closest('[data-close]')){
+    e.target.closest('.drawer')?.classList.remove('open');
+  }
+});
+
+/* ---------- Wire up ---------- */
+function init(){
+  renderCats();
+  refreshWishlist();
+  bindSettings();
+
+  // Source toggles
+  document.querySelectorAll('#srcToggles .toggle-pill').forEach(b=>{
+    const k = b.dataset.src;
+    b.setAttribute('aria-pressed', State.sources[k] ? 'true' : 'false');
+    b.addEventListener('click', ()=>{
+      State.sources[k] = !State.sources[k];
+      b.setAttribute('aria-pressed', State.sources[k] ? 'true' : 'false');
+      save();
+    });
+  });
+  document.getElementById('sortBy').value = State.sortBy;
+  document.getElementById('sortBy').addEventListener('change', e=>{
+    State.sortBy = e.target.value; save();
+  });
+
+  // Header
+  document.getElementById('btnWishlist').onclick = ()=> openDrawer('dWishlist');
+  document.getElementById('btnSettings').onclick = ()=> openDrawer('dSettings');
+
+  // Search bindings
+  document.getElementById('btnSearch').onclick = doSearch;
+  document.getElementById('q').addEventListener('keydown', e=>{
+    if(e.key==='Enter') doSearch();
+  });
+  document.getElementById('q').addEventListener('input', e=>{
+    const lang = detectLang(e.target.value);
+    document.getElementById('langTag').textContent = lang.toUpperCase();
+  });
+  document.getElementById('btnTranslate').onclick = async ()=>{
+    const el = document.getElementById('q');
+    const text = el.value.trim();
+    if(!text){ toast('請先輸入文字'); return; }
+    const lang = detectLang(text);
+    const dir = State.settings.transDir;
+    let from, to;
+    if(dir==='zh-ja'){ from='zh'; to='ja'; }
+    else if(dir==='ja-zh'){ from='ja'; to='zh'; }
+    else { from = lang==='ja'?'ja':'zh'; to = from==='ja'?'zh':'ja'; }
+    const out = await translate(text, from, to);
+    el.value = out;
+    toast(`已翻譯 ${from.toUpperCase()} → ${to.toUpperCase()}`);
+    document.getElementById('langTag').textContent = detectLang(out).toUpperCase();
+  };
+  document.getElementById('btnClear').onclick = ()=>{
+    document.getElementById('q').value='';
+    document.getElementById('priceMin').value='';
+    document.getElementById('priceMax').value='';
+    document.getElementById('condition').value='';
+    document.getElementById('results').innerHTML='';
+    document.getElementById('emptyState').style.display='block';
+    document.getElementById('emptyState').innerHTML = `
+      <div class="emo">⛩️</div>
+      <h3>歡迎來到 櫻拍 SakuraBid</h3>
+      <p>輸入想找的物品（中文或日文），App 會自動翻譯並同時搜尋 Yahoo 拍賣、JDirectItems 與 Mercari，依結束時間／價格排序。喜歡的可加入願望清單，再一鍵帶到比比昂代購。</p>
+      <div class="btns">
+        <button class="btn primary" onclick="document.getElementById('q').focus()">開始搜尋</button>
+        <button class="btn" onclick="loadDemo()">看示範資料</button>
+      </div>`;
+    document.getElementById('countText').textContent = '準備搜尋';
+  };
+
+  // Sync link from URL fragment
+  if(location.hash.startsWith('#sync=')){
+    try{
+      const data = JSON.parse(b64decUtf8(location.hash.slice(6)));
+      if(confirm(`偵測到分享連結，要匯入 ${data.wishlist?.length||0} 件願望與 ${data.cats?.length||0} 個分類嗎？`)){
+        if(data.wishlist) State.wishlist = data.wishlist;
+        if(data.cats) State.cats = data.cats;
+        save(); renderCats(); refreshWishlist();
+        toast('已匯入分享資料');
+      }
+      history.replaceState(null,'', location.pathname);
+    }catch(e){}
+  }
+  // Auto-pull from cloud if configured
+  if(State.settings.syncUrl){
+    pullCloud().catch(()=>{});
+  }
+}
+
+window.loadDemo = loadDemo;
+init();
+</script>
+</body>
+</html>

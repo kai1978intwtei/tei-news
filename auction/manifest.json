@@ -1,0 +1,26 @@
+{
+  "name": "櫻拍 SakuraBid · 日本拍賣搜尋",
+  "short_name": "櫻拍",
+  "description": "日本 Yahoo / JDirectItems / Mercari 拍賣搜尋與翻譯，連結比比昂代購。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1024",
+  "theme_color": "#0e1024",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23ff7eb6'/><stop offset='1' stop-color='%237afcff'/></linearGradient></defs><rect width='192' height='192' rx='42' fill='url(%23g)'/><text x='96' y='130' font-size='110' font-family='SF Pro Display,Helvetica,Arial' font-weight='700' fill='white' text-anchor='middle'>櫻</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23ff7eb6'/><stop offset='1' stop-color='%237afcff'/></linearGradient></defs><rect width='512' height='512' rx='112' fill='url(%23g)'/><text x='256' y='350' font-size='300' font-family='SF Pro Display,Helvetica,Arial' font-weight='700' fill='white' text-anchor='middle'>櫻</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
