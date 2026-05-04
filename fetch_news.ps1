@@ -2445,7 +2445,19 @@ $htmlShell = @"
           font-weight:800; font-size:20px; letter-spacing:0.04em; padding:0 12px; flex-shrink:0; }
  header .brand-text { display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
  header h1 { font-size:24px; margin:0; font-weight:600; letter-spacing:-0.02em; line-height:1.25; color:#1d1d1f; }
- header .sub { color:#6e6e73; font-size:12.5px; line-height:1.4; }
+ header .sub { color:#6e6e73; font-size:12.5px; line-height:1.6; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+ header .sub strong { color:#1d1d1f; font-weight:600; }
+ header .sub .sub-sep { color:#c0c0c5; }
+ /* 即時脈動小綠點：示意所有資訊每 30 分鐘自動更新中 */
+ .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%;
+             background:#10b981;
+             box-shadow:0 0 0 0 rgba(16,185,129,0.7);
+             animation:live-pulse 2s infinite; flex-shrink:0; margin-right:2px; }
+ @keyframes live-pulse {
+   0%   { box-shadow:0 0 0 0   rgba(16,185,129,0.7); }
+   70%  { box-shadow:0 0 0 8px rgba(16,185,129,0); }
+   100% { box-shadow:0 0 0 0   rgba(16,185,129,0); }
+ }
 
  /* 頁籤導覽 — 彩色玻璃方格 */
  .tabs { display:flex; gap:8px; padding:10px; margin:0 0 24px; border-radius:18px;
@@ -2891,7 +2903,12 @@ $htmlShell = @"
     $logoHtml
     <div class="brand-text">
       <h1>TEi Composites Corporation 國際新聞</h1>
-      <div class="sub">For 同仁 · 過去 24 小時 · $($picked.Count + $carbonPicked.Count + $appPicked.Count + $fiberPicked.Count) 則 · $dateStr</div>
+      <div class="sub">
+        <span class="live-dot" title="每 30 分鐘自動更新"></span>
+        最後更新：<strong>$dateStr</strong>
+        <span class="sub-sep">·</span> 過去 24 小時 $($picked.Count + $carbonPicked.Count + $appPicked.Count + $fiberPicked.Count) 則
+        <span class="sub-sep">·</span> 每 30 分鐘自動刷新
+      </div>
     </div>
   </header>
 
