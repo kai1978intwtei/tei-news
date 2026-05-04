@@ -3073,14 +3073,14 @@ function Publish-ToGitHub {
         $date = Get-Date -Format 'yyyy-MM-dd HH:mm'
         Publish-FileToGitHub -LocalFile $LocalFile -RepoPath 'index.html' -Token $token -Repo $repo -CommitMsg "Daily update $date" | Out-Null
 
-        # 同步腳本／LOGO／搖飲店家資料／workflow（供 Actions 使用）
-        # 本機 PS1 是中文檔名，repo 上是英文檔名（給 Actions 用）
+        # 同步腳本／LOGO／搖飲店家資料（給雲端 Actions 用，無需手動）
+        # 本機 PS1 是中文檔名，repo 上是英文檔名
+        # workflow YAML 不在此清單（PAT 沒 workflow 權限會 404，已存在的 YAML 用既有版本即可）
         $syncTargets = @(
             @{ Local='抓新聞_fetch_news.ps1'; Repo='fetch_news.ps1' }
             @{ Local='logo.png';              Repo='logo.png' }
             @{ Local='logo.svg';              Repo='logo.svg' }
             @{ Local='ren-shops.json';        Repo='ren-shops.json' }
-            @{ Local='.github/workflows/update-news.yml'; Repo='.github/workflows/update-news.yml' }
         )
         foreach ($t in $syncTargets) {
             $p = Join-Path $PSScriptRoot $t.Local
