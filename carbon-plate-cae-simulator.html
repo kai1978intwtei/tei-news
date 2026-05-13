@@ -659,6 +659,92 @@
   .scroll-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.20); border-radius: 999px; }
   .scroll-thin::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.35); }
 
+  /* ===== Prominent scrollbar — used on areas where the engineer might NOT
+     realize there's more content below (e.g. #bottomArea per-ply table,
+     marathon panel, CLT, design rules). High-contrast white thumb on a
+     dark groove so the affordance is unmistakable. Falls back gracefully
+     to native scrollbar UI on Firefox via scrollbar-width/scrollbar-color. */
+  .scroll-prominent {
+    scrollbar-width: auto;                      /* Firefox: full native width */
+    scrollbar-color: #e2e8f0 rgba(15,23,42,0.85);
+  }
+  .scroll-prominent::-webkit-scrollbar { width: 16px; height: 16px; }
+  .scroll-prominent::-webkit-scrollbar-track {
+    background: linear-gradient(180deg, rgba(8,12,24,0.95), rgba(15,23,42,0.95));
+    border-left: 1px solid rgba(148,163,184,0.20);
+    box-shadow: inset 1px 0 0 rgba(255,255,255,0.04);
+  }
+  .scroll-prominent::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.20);
+    min-height: 60px;
+  }
+  .scroll-prominent::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+    background-clip: padding-box;
+  }
+  .scroll-prominent::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, #67e8f9 0%, #38bdf8 100%);
+    background-clip: padding-box;
+  }
+  .scroll-prominent::-webkit-scrollbar-button:vertical:start,
+  .scroll-prominent::-webkit-scrollbar-button:vertical:end {
+    display: block;
+    height: 16px;
+    background-color: rgba(15,23,42,0.95);
+    background-position: center;
+    background-repeat: no-repeat;
+    border-left: 1px solid rgba(148,163,184,0.20);
+  }
+  .scroll-prominent::-webkit-scrollbar-button:vertical:start {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M5 2 L9 8 L1 8 Z' fill='%23e2e8f0'/></svg>");
+  }
+  .scroll-prominent::-webkit-scrollbar-button:vertical:end {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M5 8 L9 2 L1 2 Z' fill='%23e2e8f0'/></svg>");
+  }
+
+  /* "More content below" hint — a soft gradient mask at the bottom edge of
+     a scrollable area, plus a tiny pulsing arrow strip. Combined with the
+     prominent scrollbar, this leaves no doubt that the panel scrolls. The
+     arrow + gradient FADE OUT once the user has scrolled to the bottom
+     (we toggle .at-bottom via JS once scrollTop + clientHeight === scrollHeight). */
+  .scroll-hinted {
+    position: relative;
+  }
+  .scroll-hinted::after {
+    content: "▼ scroll for more · 往下捲還有資訊";
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: block;
+    pointer-events: none;
+    text-align: center;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #67e8f9;
+    padding: 6px 8px 8px;
+    margin-top: -28px;
+    background: linear-gradient(180deg, rgba(11,16,32,0) 0%, rgba(11,16,32,0.85) 55%, rgba(11,16,32,0.95) 100%);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    animation: scrollHintPulse 1.8s ease-in-out infinite;
+    z-index: 5;
+    transition: opacity 240ms ease;
+  }
+  .scroll-hinted.at-bottom::after {
+    opacity: 0;
+    animation: none;            /* stop pulsing so opacity:0 actually sticks */
+    pointer-events: none;
+  }
+  @keyframes scrollHintPulse {
+    0%, 100% { transform: translateY(0); opacity: 0.85; }
+    50%      { transform: translateY(2px); opacity: 1; }
+  }
+
   /* viewport overlays */
   .hud {
     position: absolute;
@@ -2008,7 +2094,7 @@
     </div>
 
     <!-- ========== PER-PLY ANALYSIS + MARATHON ========== -->
-    <section id="bottomArea" class="overflow-y-auto scroll-thin" style="flex-shrink: 0; max-height: 360px;">
+    <section id="bottomArea" class="overflow-y-auto scroll-prominent scroll-hinted" style="flex-shrink: 0; max-height: 360px;">
     <!-- ===== Slot selector for bottom data region =====
          Mirror of the layup-panel A/B toggle. Lets the user choose whether
          PER-PLY / CLT / σ_VM / Design Rules show slot A or slot B data
@@ -2557,6 +2643,7 @@
       '收合下方數據': 'Collapse bottom data',
       '切換下方數據區顯示 / 收合': 'Toggle bottom data area show / collapse',
       '▲ 展開下方數據': '▲ Expand bottom data',
+      '▼ scroll for more · 往下捲還有資訊': '▼ scroll for more · 往下捲還有資訊',
       // ===== Sport tabs =====
       '跑鞋 Running': 'Running',
       '籃球 Basketball': 'Basketball',
@@ -2928,6 +3015,32 @@
     return { apply, toggle, translate, get lang() { return lang; } };
   })();
   window.I18N = I18N;
+
+  // ===== "Scroll for more" hint dismissal =====
+  // The #bottomArea uses .scroll-hinted which renders a pulsing cyan
+  // "▼ scroll for more · 往下捲還有資訊" overlay at its bottom edge so
+  // engineers immediately see the panel scrolls. Once the user has
+  // reached the bottom, fade the hint by toggling .at-bottom on the
+  // container. Re-shows the hint if they scroll back up.
+  function wireScrollHint() {
+    const area = document.getElementById('bottomArea');
+    if (!area) return;
+    const update = () => {
+      const atBottom = (area.scrollTop + area.clientHeight) >= (area.scrollHeight - 4);
+      const noScrollNeeded = area.scrollHeight <= area.clientHeight + 1;
+      area.classList.toggle('at-bottom', atBottom || noScrollNeeded);
+    };
+    area.addEventListener('scroll', update, { passive: true });
+    // Re-check on resize and when bottom-collapse toggles change layout.
+    window.addEventListener('resize', update, { passive: true });
+    new MutationObserver(update).observe(area, { childList: true, subtree: true });
+    setTimeout(update, 200);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireScrollHint);
+  } else {
+    setTimeout(wireScrollHint, 0);
+  }
 
   // =====================================================================
   //  MATERIAL DATABASES
