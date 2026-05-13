@@ -6138,12 +6138,18 @@
   // openMaxRad: HALF-angle of foot opening (rad). 0.78 ≈ 45° each side ≈ 90° total opening.
   // superN: superellipse exponent for cross-section (2 = ellipse, >2 = more rectangular/shoe-like)
   function shoeDims(style){
+    // ===== AMPLIFIED sport silhouettes =====
+    // User feedback (2026-05): the original spread (upperH 55..180) wasn't
+    // visually distinct enough — at AB-mode zoom the basketball shoe still
+    // read as a running shoe. Pushed the contrast: basketball is now a clear
+    // high-top (260mm), football a beefy mid-cut, soccer a sleeve-low cleat,
+    // spike near-zero. Goal is "unmistakable at a glance, no label needed."
     switch(style){
-      case 'spike':      return { outsoleH: 8,  midHeel: 16,  midFore: 8,   upperH: 55,  soleW:1.02, lacesN: 4, openStart:0.28, openEnd:0.82, openMaxRad:0.78, superN:3.0, sideTaper:0.55 };
-      case 'soccer':     return { outsoleH: 10, midHeel: 16,  midFore: 12,  upperH: 65,  soleW:1.02, lacesN: 5, openStart:0.20, openEnd:0.85, openMaxRad:0.85, superN:3.2, sideTaper:0.62 };
-      case 'football':   return { outsoleH: 12, midHeel: 36,  midFore: 22,  upperH: 105, soleW:1.05, lacesN: 5, openStart:0.22, openEnd:0.80, openMaxRad:0.80, superN:2.8, sideTaper:0.70 };
-      case 'basketball': return { outsoleH: 14, midHeel: 50,  midFore: 32,  upperH: 180, soleW:1.06, lacesN: 7, openStart:0.16, openEnd:0.65, openMaxRad:0.78, superN:2.6, sideTaper:0.78 };
-      case 'trail':      return { outsoleH: 18, midHeel: 60,  midFore: 32,  upperH: 130, soleW:1.08, lacesN: 6, openStart:0.22, openEnd:0.74, openMaxRad:0.82, superN:2.7, sideTaper:0.72 };
+      case 'spike':      return { outsoleH: 6,  midHeel: 12,  midFore: 6,   upperH: 38,  soleW:0.96, lacesN: 4, openStart:0.30, openEnd:0.85, openMaxRad:0.82, superN:3.4, sideTaper:0.48 };
+      case 'soccer':     return { outsoleH: 9,  midHeel: 12,  midFore: 9,   upperH: 48,  soleW:0.98, lacesN: 5, openStart:0.22, openEnd:0.88, openMaxRad:0.88, superN:3.4, sideTaper:0.56 };
+      case 'football':   return { outsoleH: 13, midHeel: 32,  midFore: 22,  upperH: 160, soleW:1.10, lacesN: 5, openStart:0.18, openEnd:0.72, openMaxRad:0.78, superN:2.7, sideTaper:0.74 };
+      case 'basketball': return { outsoleH: 16, midHeel: 46,  midFore: 30,  upperH: 260, soleW:1.10, lacesN: 7, openStart:0.14, openEnd:0.58, openMaxRad:0.74, superN:2.4, sideTaper:0.82 };
+      case 'trail':      return { outsoleH: 22, midHeel: 64,  midFore: 36,  upperH: 175, soleW:1.12, lacesN: 6, openStart:0.20, openEnd:0.70, openMaxRad:0.80, superN:2.6, sideTaper:0.74 };
       case 'running':
       default:           return { outsoleH: 12, midHeel: 60,  midFore: 28,  upperH: 120, soleW:1.05, lacesN: 6, openStart:0.22, openEnd:0.78, openMaxRad:0.85, superN:2.7, sideTaper:0.72 };
     }
@@ -6157,17 +6163,35 @@
   function upperHeightAt(nx, dims, style){
     let r;
     if (style === 'basketball'){
-      if      (nx < 0.06) r = 1.0;
-      else if (nx < 0.20) r = 1.10 - 0.18*((nx-0.06)/0.14);  // ankle collar peak
-      else if (nx < 0.50) r = 0.92 - 0.30*((nx-0.20)/0.30);
-      else if (nx < 0.85) r = 0.62 - 0.20*((nx-0.50)/0.35);
-      else                r = 0.42 * (1 - (nx-0.85)/0.15);
+      // Pronounced high-top: ankle collar peaks at r=1.0 right above the
+      // ankle (nx ~ 0.14), then drops sharply forward — produces the
+      // unmistakeable basketball "sock" silhouette.
+      if      (nx < 0.04) r = 0.72;
+      else if (nx < 0.18) r = 0.72 + 0.30 * Math.sin(((nx-0.04)/0.14)*Math.PI*0.5);  // climb to 1.02
+      else if (nx < 0.32) r = 1.02 - 0.12*((nx-0.18)/0.14);                          // hold the collar
+      else if (nx < 0.55) r = 0.90 - 0.40*((nx-0.32)/0.23);                          // step down past midfoot
+      else if (nx < 0.85) r = 0.50 - 0.22*((nx-0.55)/0.30);
+      else                r = 0.28 * (1 - (nx-0.85)/0.15);
     } else if (style === 'spike' || style === 'soccer'){
-      if      (nx < 0.20) r = 0.58 + 0.30*Math.sin((nx/0.20)*Math.PI*0.5);
-      else if (nx < 0.50) r = 0.88 - 0.18*((nx-0.20)/0.30);
-      else if (nx < 0.85) r = 0.70 - 0.22*((nx-0.50)/0.35);
-      else                r = 0.45 * (1 - (nx-0.85)/0.15);
+      // Sleeve-low cleat — heel collar barely lifts, body stays flat.
+      if      (nx < 0.20) r = 0.55 + 0.20*Math.sin((nx/0.20)*Math.PI*0.5);
+      else if (nx < 0.50) r = 0.75 - 0.12*((nx-0.20)/0.30);
+      else if (nx < 0.85) r = 0.63 - 0.20*((nx-0.50)/0.35);
+      else                r = 0.42 * (1 - (nx-0.85)/0.15);
+    } else if (style === 'football'){
+      // Reinforced mid-cut — taller heel counter than running, beefy midfoot.
+      if      (nx < 0.18) r = 0.78 + 0.22*Math.sin((nx/0.18)*Math.PI*0.5);
+      else if (nx < 0.50) r = 1.00 - 0.18*((nx-0.18)/0.32);
+      else if (nx < 0.85) r = 0.82 - 0.22*((nx-0.50)/0.35);
+      else                r = 0.55 * (1 - (nx-0.85)/0.15);
+    } else if (style === 'trail'){
+      // Rugged mid-cut — taller across the whole midfoot, generous ankle wrap.
+      if      (nx < 0.20) r = 0.80 + 0.20*Math.sin((nx/0.20)*Math.PI*0.5);
+      else if (nx < 0.50) r = 1.00 - 0.18*((nx-0.20)/0.30);
+      else if (nx < 0.85) r = 0.82 - 0.22*((nx-0.50)/0.35);
+      else                r = 0.55 * (1 - (nx-0.85)/0.15);
     } else {
+      // running (default)
       if      (nx < 0.20) r = 0.65 + 0.30*Math.sin((nx/0.20)*Math.PI*0.5);
       else if (nx < 0.50) r = 0.95 - 0.20*((nx-0.20)/0.30);
       else if (nx < 0.85) r = 0.75 - 0.20*((nx-0.50)/0.35);
