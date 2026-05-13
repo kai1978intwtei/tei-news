@@ -1455,6 +1455,176 @@
 
   .glow-cyan { box-shadow: 0 0 20px -2px rgba(34,211,238,0.45); }
 
+  /* ===== Recording UI =====
+     REC button + floating timer HUD + settings modal.
+     Recording captures the central <main id="vpMain"> region via getDisplayMedia
+     + canvas crop. The HUD sits OUTSIDE the captured region by design so it
+     never appears in the saved video. */
+  #btnRec.rec-idle {
+    background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(220,38,38,0.10));
+    border-color: rgba(239,68,68,0.45);
+    color: #fca5a5;
+  }
+  #btnRec.rec-idle:hover {
+    background: linear-gradient(135deg, rgba(239,68,68,0.30), rgba(220,38,38,0.18));
+    color: #fee2e2;
+    box-shadow: 0 0 18px -4px rgba(239,68,68,0.55);
+  }
+  #btnRec.rec-active {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    border-color: rgba(255,255,255,0.35);
+    color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(239,68,68,0.6), 0 0 24px -2px rgba(239,68,68,0.75);
+    animation: rec-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes rec-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(239,68,68,0.6), 0 0 24px -2px rgba(239,68,68,0.75); }
+    50%      { box-shadow: 0 0 0 1px rgba(239,68,68,0.9), 0 0 36px 2px rgba(239,68,68,0.95); }
+  }
+  /* Venect light theme — keep REC red recognizable but on the lighter palette */
+  body.theme-venect #btnRec.rec-idle {
+    background: #fff5f5;
+    border-color: #fca5a5;
+    color: #b91c1c;
+    box-shadow: 0 1px 2px rgba(185,28,28,0.10);
+  }
+  body.theme-venect #btnRec.rec-idle:hover {
+    background: #fee2e2;
+    color: #7f1d1d;
+    box-shadow: 0 4px 12px -4px rgba(185,28,28,0.35);
+  }
+
+  /* Floating REC HUD — fixed top-center of viewport, outside the captured
+     red box so it isn't recorded. Auto-hidden when idle. */
+  #recHud {
+    position: fixed;
+    top: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9700;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px 8px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(20,28,42,0.88), rgba(8,14,26,0.92));
+    border: 1px solid rgba(239,68,68,0.55);
+    box-shadow: 0 0 0 1px rgba(239,68,68,0.25), 0 16px 40px -10px rgba(0,0,0,0.55), 0 0 28px -4px rgba(239,68,68,0.45);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    color: #f8fafc;
+    font-family: 'Inter','Noto Sans TC',sans-serif;
+    font-size: 12.5px;
+    user-select: none;
+  }
+  #recHud.on { display: inline-flex; }
+  #recHud .rec-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239,68,68,0.6);
+    animation: rec-dot-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes rec-dot-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.85); }
+    70%  { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  }
+  #recHud .rec-timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+    color: #fef2f2;
+  }
+  #recHud .rec-size {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.55);
+    padding-left: 8px;
+    border-left: 1px solid rgba(255,255,255,0.18);
+  }
+  #recHud .rec-stop-btn {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(239,68,68,0.20);
+    border: 1px solid rgba(239,68,68,0.50);
+    color: #fecaca;
+    font-size: 11px;
+    cursor: pointer;
+    margin-left: 4px;
+    transition: all 150ms;
+  }
+  #recHud .rec-stop-btn:hover {
+    background: #ef4444;
+    color: #fff;
+    border-color: rgba(255,255,255,0.5);
+  }
+
+  /* Recording settings modal */
+  #recModal { z-index: 9600; }
+  #recModal .rec-modal-card {
+    width: min(440px, calc(100vw - 32px));
+    background: linear-gradient(180deg, rgba(28,40,58,0.78), rgba(14,22,38,0.84));
+    border: 1px solid rgba(239,68,68,0.32);
+    border-radius: 16px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.10) inset,
+                0 0 0 1px rgba(239,68,68,0.10),
+                0 0 32px rgba(239,68,68,0.16),
+                0 28px 64px -16px rgba(0,0,0,0.70);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    color: #f8fafc;
+  }
+  #recModal .rec-field {
+    display: block;
+    font-size: 11px;
+    color: var(--text-1);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  #recModal .rec-folder-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: rgba(8,14,26,0.55);
+    border: 1px solid rgba(148,163,184,0.20);
+  }
+  #recModal .rec-folder-path {
+    flex: 1; min-width: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #cbd5e1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #recModal .rec-folder-path.empty {
+    color: #64748b; font-style: italic; font-family: 'Inter','Noto Sans TC',sans-serif;
+  }
+  #recModal select, #recModal input[type=text] {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: rgba(8,14,26,0.70);
+    border: 1px solid rgba(148,163,184,0.25);
+    color: #e2e8f0;
+    font-size: 12.5px;
+    font-family: inherit;
+  }
+  #recModal select option { background: #1a2230; color: #e2e8f0; }
+  body.theme-venect #recModal .rec-modal-card {
+    background: linear-gradient(180deg, #ffffff, #f8fafc);
+    border-color: rgba(220,38,38,0.40);
+    color: #1e293b;
+  }
+  body.theme-venect #recModal .rec-folder-row {
+    background: #f8fafc; border-color: #cbd5e1;
+  }
+  body.theme-venect #recModal .rec-folder-path { color: #334155; }
+  body.theme-venect #recModal select, body.theme-venect #recModal input[type=text] {
+    background: #ffffff; border-color: #cbd5e1; color: #1e293b;
+  }
+
   /* range slider */
   input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
   input[type=range]::-webkit-slider-runnable-track {
@@ -1561,6 +1731,13 @@
         <button id="btnTheme" class="btn text-[11px]" title="主題循環：Aurora → Venect → 深色">🌙 深色</button>
         <button id="btnScroll" class="btn btn-ghost text-[11px]" title="點擊切換到滾動模式（整頁可上下捲）">📜 滾動</button>
         <button id="btnReset" class="btn btn-ghost text-[11px]">↺ 重置</button>
+        <!-- ===== Screen-recording controls =====
+             btnRec   — toggle start/stop. Idle = red-accented, recording = pulsing.
+             btnRecCfg — open settings modal (save folder / resolution / fps).
+             Captures only the <main id="vpMain"> region via getDisplayMedia + crop;
+             these buttons sit OUTSIDE that region so they aren't recorded. -->
+        <button id="btnRec" class="btn rec-idle text-[11px]" title="開始/停止錄影 · 只錄中央 3D 視窗">● 錄影</button>
+        <button id="btnRecCfg" class="btn btn-ghost text-[11px]" title="錄影設定 · 儲存資料夾、解析度、FPS" style="padding-left:8px;padding-right:8px;">⚙</button>
         <button id="btnRefs" class="btn text-[11px]">📚 參考</button>
       </div>
     </header>
@@ -1696,7 +1873,11 @@
       </aside>
 
       <!-- ====== CENTER VIEWPORT ====== -->
-      <main class="glass rounded-xl flex flex-col overflow-hidden relative">
+      <!-- id="vpMain" — capture target for the screen-recording feature.
+           Everything inside this <main> (toolbar + action bar + 3D split) is
+           recorded; everything outside (header buttons, side panels, HUD timer)
+           is intentionally excluded. -->
+      <main id="vpMain" class="glass rounded-xl flex flex-col overflow-hidden relative">
         <div class="px-4 py-2.5 border-b border-[var(--line)] flex items-center justify-between shrink-0">
           <div class="flex items-center gap-3">
             <div class="vp-dot"></div>
@@ -2400,6 +2581,91 @@
     </div>
   </div>
 
+  <!-- ========== RECORDING SETTINGS MODAL ==========
+       Lets the user pick a default save folder (via File System Access API),
+       output resolution, and frame rate. Folder handle is persisted in
+       IndexedDB so colleagues only pick it once per browser profile. -->
+  <div id="recModal" class="fixed inset-0 hidden items-center justify-center"
+       style="background: rgba(0,0,0,0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
+    <div class="rec-modal-card flex flex-col">
+      <div class="flex items-center justify-between px-5 py-3"
+           style="border-bottom: 1px solid rgba(239,68,68,0.22);">
+        <div class="flex items-center gap-2">
+          <span style="color:#ef4444;font-size:14px;">●</span>
+          <div class="text-[14px] font-semibold" style="color:#fee2e2;">錄影設定 · Recording Settings</div>
+        </div>
+        <button id="recModalClose" title="關閉"
+                style="width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;
+                       border-radius:6px;border:1px solid rgba(148,163,184,0.30);
+                       background: rgba(239,68,68,0.10); color:#fca5a5; font-size:12px; cursor:pointer;">✕</button>
+      </div>
+      <div class="px-5 py-4 space-y-4 text-[12.5px]">
+        <div>
+          <label class="rec-field">📁 儲存資料夾 · Save folder</label>
+          <div class="rec-folder-row">
+            <span id="recFolderPath" class="rec-folder-path empty">尚未設定 · click 選擇資料夾</span>
+            <button id="recPickFolder" class="btn text-[11px]" style="flex-shrink:0;">選擇資料夾</button>
+          </div>
+          <div class="mt-1.5 text-[10.5px]" style="color:var(--text-2);line-height:1.5;">
+            ※ 首次選擇後會記住此資料夾，之後每段錄影會自動以時間戳命名儲存。<br>
+            ※ 未選擇資料夾時，瀏覽器會以下載方式儲存到「下載」資料夾。
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="rec-field">🎞 解析度 · Resolution</label>
+            <select id="recResolution">
+              <option value="1080">1080p (固定)</option>
+            </select>
+          </div>
+          <div>
+            <label class="rec-field">⏱ 影格率 · FPS</label>
+            <select id="recFps">
+              <option value="30">30 fps (建議)</option>
+              <option value="60">60 fps (順暢)</option>
+              <option value="24">24 fps (電影感)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="rec-field">💾 檔名前綴 · Filename prefix</label>
+          <input id="recPrefix" type="text" value="CarbonSole" maxlength="40">
+          <div class="mt-1.5 text-[10.5px]" style="color:var(--text-2);">
+            檔名格式:<span style="font-family:'JetBrains Mono',monospace;color:#cbd5e1;"> {prefix}_YYYYMMDD_HHmmss.webm</span>
+          </div>
+        </div>
+
+        <div class="px-3 py-2.5 rounded-lg" style="background:rgba(34,211,238,0.06);border:1px solid rgba(34,211,238,0.20);">
+          <div class="text-[11px] font-semibold mb-1" style="color:#67e8f9;">💡 使用提示 · How it works</div>
+          <ul class="text-[10.5px] leading-relaxed" style="color:#cbd5e1;list-style:disc;padding-left:18px;">
+            <li>點下「● 錄影」後，瀏覽器會請你選擇分享來源 — 請選「<b>此分頁</b>」以正確裁切到 3D 視窗範圍。</li>
+            <li>錄影僅擷取中央 3D 視窗 (紅框內) 的所有畫面與操作；左右側面板與此設定不會被錄到。</li>
+            <li>儲存格式:WebM (VP9)，可直接拖入 PowerPoint / 剪映 / DaVinci。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-5 py-3"
+           style="border-top: 1px solid rgba(255,255,255,0.10);">
+        <button id="recModalCancel" class="btn btn-ghost text-[11px]">取消</button>
+        <button id="recModalSave" class="btn text-[11px]"
+                style="background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:rgba(255,255,255,0.30);color:#fff;font-weight:600;">儲存設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== RECORDING TIMER HUD ==========
+       Floats at top-center of the screen DURING recording. Deliberately sits
+       OUTSIDE the captured red-box region so it does NOT appear in the saved
+       video. Shows red pulsing dot, elapsed time, file size, and a Stop btn. -->
+  <div id="recHud" role="status" aria-live="polite">
+    <span class="rec-dot"></span>
+    <span class="rec-timer" id="recTimer">00:00</span>
+    <span class="rec-size" id="recSize">0.0 MB</span>
+    <button id="recHudStop" class="rec-stop-btn">■ 停止</button>
+  </div>
+
 <script type="module">
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -2430,6 +2696,43 @@
       '📜 滾動': '📜 Scroll', '🔒 固定': '🔒 Fixed',
       '↺ 重置': '↺ Reset',
       '📚 參考': '📚 References',
+      // ===== Recording controls =====
+      '● 錄影': '● REC',
+      '■ 停止': '■ Stop',
+      '■ 停止 ': '■ Stop ',
+      '開始/停止錄影 · 只錄中央 3D 視窗': 'Start/stop recording · captures only the 3D viewport',
+      '錄影設定 · 儲存資料夾、解析度、FPS': 'Recording settings · folder, resolution, FPS',
+      '錄影設定 · Recording Settings': 'Recording Settings',
+      '關閉': 'Close',
+      '📁 儲存資料夾 · Save folder': '📁 Save folder',
+      '尚未設定 · click 選擇資料夾': 'Not set · click to choose folder',
+      '選擇資料夾': 'Choose folder',
+      '※ 首次選擇後會記住此資料夾，之後每段錄影會自動以時間戳命名儲存。': '※ Folder is remembered for next time; each recording is auto-named with a timestamp.',
+      '※ 未選擇資料夾時，瀏覽器會以下載方式儲存到「下載」資料夾。': '※ If no folder is set, the browser saves to the default Downloads folder.',
+      '🎞 解析度 · Resolution': '🎞 Resolution',
+      '1080p (固定)': '1080p (locked)',
+      '⏱ 影格率 · FPS': '⏱ Frame rate',
+      '30 fps (建議)': '30 fps (recommended)',
+      '60 fps (順暢)': '60 fps (smooth)',
+      '24 fps (電影感)': '24 fps (cinematic)',
+      '💾 檔名前綴 · Filename prefix': '💾 Filename prefix',
+      '💡 使用提示 · How it works': '💡 How it works',
+      '點下「● 錄影」後，瀏覽器會請你選擇分享來源 — 請選「此分頁」以正確裁切到 3D 視窗範圍。': 'After clicking "● REC", the browser asks for a share source — pick "This Tab" so the 3D viewport region crops correctly.',
+      '錄影僅擷取中央 3D 視窗 (紅框內) 的所有畫面與操作；左右側面板與此設定不會被錄到。': 'Only the central 3D viewport (red box) is recorded — side panels and this settings dialog are excluded.',
+      '儲存格式:WebM (VP9)，可直接拖入 PowerPoint / 剪映 / DaVinci。': 'Format: WebM (VP9) — drop directly into PowerPoint / CapCut / DaVinci.',
+      '取消': 'Cancel',
+      '儲存設定': 'Save settings',
+      '此分頁': 'This Tab',
+      '已開始錄影': 'Recording started',
+      '錄影已停止': 'Recording stopped',
+      '已儲存到': 'Saved to',
+      '已下載到瀏覽器「下載」資料夾': 'Downloaded to browser Downloads folder',
+      '錄影失敗': 'Recording failed',
+      '請選擇「此分頁」以正確錄影 3D 視窗': 'Please choose "This Tab" so the 3D viewport is captured',
+      '此瀏覽器不支援畫面錄影 (需 Chrome / Edge)': 'This browser does not support screen recording (requires Chrome / Edge)',
+      '資料夾權限已遺失，請重新選擇': 'Folder permission lost, please reselect',
+      '⚠ 來源僅 ': '⚠ Source is only ',
+      'p — 影片會略為模糊。建議最大化視窗或按 F11 進入全螢幕後重新錄影。': 'p — output will be slightly soft. Maximize the window or press F11 for fullscreen and record again.',
       '左右拖曳調整面板寬度': 'Drag to resize panel width',
       // ===== Left panel — Profile =====
       '🏃 使用者輪廓': '🏃 Athlete Profile',
@@ -4257,6 +4560,60 @@
     if (pivotRing){  viewB.pivotRing  = pivotRing.clone(true);  viewB.scene.add(viewB.pivotRing);  }
     if (cutArrow){   viewB.cutArrow   = cutArrow.clone(true);   viewB.scene.add(viewB.cutArrow);   }
     if (plateHalo){  viewB.plateHalo  = plateHalo.clone();      viewB.scene.add(viewB.plateHalo);  }
+    // ===== Centerline energy-flow particles =====
+    // The gold/cyan dotted stream that runs along the plate centerline lives
+    // as a single global `particleSystem` Points object in the main scene.
+    // Three.js `Object3D.clone()` shares geometry + material by reference,
+    // which is exactly what we want here: updateParticles() rewrites the
+    // position/color buffers and tweaks material.opacity/size every frame,
+    // and those changes propagate automatically to the cloned wrapper in
+    // viewB.scene — no per-frame buffer copy needed. Only visibility and
+    // transform need explicit sync (handled by _syncFx in animate()).
+    if (particleSystem) {
+      viewB.particleSystem = particleSystem.clone();
+      viewB.scene.add(viewB.particleSystem);
+    }
+
+    // ===== A/B camera sync =====
+    // The user expects A and B to behave as ONE coordinated view:
+    //  (a) auto-rotate runs in lock-step on both sides (counterclockwise),
+    //      with the only stop trigger being the user toggling 自轉/停轉.
+    //  (b) Dragging EITHER viewport rotates BOTH — manual orbit, pan, and
+    //      zoom on A mirror to B, and vice versa.
+    // Implemented by listening to OrbitControls 'change' on each side and
+    // copying camera.position + controls.target + zoom across. A re-entry
+    // guard (_abSyncing) prevents the inevitable ping-pong from the mirror
+    // setting off the other side's 'change' event in an infinite loop.
+    if (controls && viewB.controls) {
+      let _abSyncing = false;
+      const mirror = (src, dst) => {
+        if (_abSyncing) return;
+        _abSyncing = true;
+        try {
+          dst.object.position.copy(src.object.position);
+          dst.target.copy(src.target);
+          if (dst.object.isPerspectiveCamera && src.object.isPerspectiveCamera) {
+            dst.object.zoom = src.object.zoom;
+            dst.object.updateProjectionMatrix();
+          }
+          dst.update();
+        } finally {
+          _abSyncing = false;
+        }
+      };
+      controls.addEventListener('change',      () => mirror(controls, viewB.controls));
+      viewB.controls.addEventListener('change', () => mirror(viewB.controls, controls));
+      // Initial alignment — match B's starting pose to A so any later sync
+      // doesn't snap-pull B from a stale default.
+      mirror(controls, viewB.controls);
+
+      // Counterclockwise auto-rotate on both sides at identical speed.
+      // OrbitControls' positive autoRotateSpeed rotates the camera "to the
+      // left" — i.e. counterclockwise when viewed from above (+Y looking
+      // down), which is what the user asked for.
+      viewB.controls.autoRotateSpeed = controls.autoRotateSpeed;
+      viewB.controls.autoRotate = !!state.autoRotate;
+    }
   }
 
   // =====================================================================
@@ -7398,7 +7755,15 @@
     // Action animation also applied to viewB's shoe so the deformation
     // difference (each slot's own D11) is visible in real time.
     if (state.viewSlot === 'AB' && viewB.renderer && viewB.scene){
-      if (viewB.controls) viewB.controls.update();
+      // Keep B's auto-rotate locked to A's so toggling 自轉/停轉 spins both
+      // viewports together. Same speed → same angular velocity → views stay
+      // aligned even without per-frame camera mirroring (the OrbitControls
+      // 'change' listener already mirrors any user drag).
+      if (viewB.controls) {
+        viewB.controls.autoRotate      = !!state.autoRotate;
+        viewB.controls.autoRotateSpeed = controls.autoRotateSpeed;
+        viewB.controls.update();
+      }
       // ===== Auto-recovery for missing viewB.shoeMesh =====
       if (!viewB.shoeMesh && typeof rebuildViewBContent === 'function'){
         const now = performance.now();
@@ -7489,10 +7854,11 @@
           }
         }
       };
-      _syncFx(forceArrow, viewB.forceArrow);
-      _syncFx(pivotRing,  viewB.pivotRing);
-      _syncFx(cutArrow,   viewB.cutArrow);
-      _syncFx(plateHalo,  viewB.plateHalo);
+      _syncFx(forceArrow,    viewB.forceArrow);
+      _syncFx(pivotRing,     viewB.pivotRing);
+      _syncFx(cutArrow,      viewB.cutArrow);
+      _syncFx(plateHalo,     viewB.plateHalo);
+      _syncFx(particleSystem, viewB.particleSystem);
 
       // Layer meshes: transform + geometry buffer mirror — ONLY during action.
       // When no action runs, each viewport's layer stack must reflect its own
@@ -10738,6 +11104,596 @@
 
   // initial sport label
   $('#sportLabel').textContent = SPORTS.find(s=>s.id===state.sport).label.split(' ')[1] || 'Run';
+
+  // =====================================================================
+  //  SCREEN RECORDER  —  captures only the <main id="vpMain"> red-box region
+  //
+  //  Pipeline:
+  //    getDisplayMedia (preferCurrentTab)  →  hidden <video> element
+  //      → requestAnimationFrame loop draws the videoEl region matching
+  //        vpMain.getBoundingClientRect() into a hidden <canvas>
+  //      → canvas.captureStream(fps) feeds MediaRecorder (VP9/VP8 WebM)
+  //      → MediaRecorder chunks accumulate; on stop, blob is written via
+  //        File System Access API (showDirectoryPicker handle persisted in
+  //        IndexedDB) or, as a fallback, triggered as a browser download.
+  //
+  //  Why this approach (and not canvas.captureStream(threeCanvas)):
+  //    The shoe-industry HUD overlays (HEEL/TOE badges, A/B watermarks,
+  //    viewport toolbar buttons, action-bar clicks) are HTML on top of the
+  //    WebGL canvas. A pure WebGL captureStream would miss them. Display
+  //    capture + crop preserves the COMPLETE viewport visual — including
+  //    every click, hover, and overlay the user performs.
+  // =====================================================================
+  (() => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia ||
+        typeof MediaRecorder === 'undefined') {
+      const btn = document.getElementById('btnRec');
+      if (btn) {
+        btn.disabled = true;
+        btn.title = '此瀏覽器不支援畫面錄影 (需 Chrome / Edge)';
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      }
+      return;
+    }
+
+    // ----- Persistent settings (folder handle in IndexedDB; rest in localStorage) -----
+    const SETTINGS_KEY = 'tei.carbonsole.rec.settings.v1';
+    const DB_NAME = 'tei-carbonsole-rec';
+    const DB_STORE = 'handles';
+    const FOLDER_KEY = 'saveFolder';
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbGet(key) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const req = tx.objectStore(DB_STORE).get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function idbSet(key, value) {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+    async function idbDel(key) {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).delete(key);
+        tx.oncomplete = () => resolve();
+      });
+    }
+
+    const defaultSettings = { resolution: '1080', fps: '30', prefix: 'CarbonSole' };
+    // Resolutions that are still selectable. 720p was removed for the
+    // internal-quality bar — any legacy stored value below 1080p is migrated
+    // up so the dropdown doesn't show an invalid option.
+    const ALLOWED_RES = new Set(['1080']);
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        const merged = raw ? { ...defaultSettings, ...JSON.parse(raw) } : { ...defaultSettings };
+        if (!ALLOWED_RES.has(merged.resolution)) merged.resolution = '1080';
+        return merged;
+      } catch { return { ...defaultSettings }; }
+    }
+    function saveSettings(s) {
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
+    }
+
+    let settings = loadSettings();
+    let folderHandle = null;   // FileSystemDirectoryHandle (only re-read on demand)
+
+    async function getFolderHandle({ verifyPermission = true } = {}) {
+      const h = await idbGet(FOLDER_KEY);
+      if (!h) return null;
+      if (!verifyPermission) return h;
+      try {
+        // Permission may have lapsed between sessions; request silently first,
+        // then prompt if needed. Some browsers require a user gesture.
+        const opts = { mode: 'readwrite' };
+        if ((await h.queryPermission(opts)) === 'granted') return h;
+        if ((await h.requestPermission(opts)) === 'granted') return h;
+      } catch (e) { /* fallthrough — handle stale */ }
+      return null;
+    }
+
+    async function pickFolder() {
+      if (!window.showDirectoryPicker) {
+        alert('此瀏覽器不支援資料夾選擇 (需 Chrome / Edge)');
+        return null;
+      }
+      try {
+        const h = await window.showDirectoryPicker({ mode: 'readwrite' });
+        await idbSet(FOLDER_KEY, h);
+        folderHandle = h;
+        return h;
+      } catch (e) { return null; }   // user canceled
+    }
+
+    // ----- Modal wiring -----
+    const $ = sel => document.querySelector(sel);
+    const recModal      = $('#recModal');
+    const recModalClose = $('#recModalClose');
+    const recModalCancel= $('#recModalCancel');
+    const recModalSave  = $('#recModalSave');
+    const recPickFolder = $('#recPickFolder');
+    const recFolderPath = $('#recFolderPath');
+    const recResolution = $('#recResolution');
+    const recFps        = $('#recFps');
+    const recPrefix     = $('#recPrefix');
+
+    function showModal() {
+      recResolution.value = settings.resolution;
+      recFps.value = settings.fps;
+      recPrefix.value = settings.prefix;
+      refreshFolderLabel();
+      recModal.classList.remove('hidden');
+      recModal.classList.add('flex');
+    }
+    function hideModal() {
+      recModal.classList.add('hidden');
+      recModal.classList.remove('flex');
+    }
+    async function refreshFolderLabel() {
+      const h = folderHandle || await idbGet(FOLDER_KEY);
+      if (h && h.name) {
+        recFolderPath.textContent = '📁 ' + h.name;
+        recFolderPath.classList.remove('empty');
+      } else {
+        recFolderPath.textContent = '尚未設定 · click 選擇資料夾';
+        recFolderPath.classList.add('empty');
+      }
+    }
+
+    recModalClose.addEventListener('click', hideModal);
+    recModalCancel.addEventListener('click', hideModal);
+    recModal.addEventListener('click', (e) => { if (e.target === recModal) hideModal(); });
+    recPickFolder.addEventListener('click', async () => {
+      const h = await pickFolder();
+      if (h) refreshFolderLabel();
+    });
+    recModalSave.addEventListener('click', () => {
+      settings = {
+        resolution: recResolution.value,
+        fps: recFps.value,
+        prefix: (recPrefix.value || 'CarbonSole').trim().replace(/[\\/:*?"<>|]/g, '_')
+      };
+      saveSettings(settings);
+      hideModal();
+    });
+
+    document.getElementById('btnRecCfg').addEventListener('click', showModal);
+
+    // ----- Toast helper -----
+    function toast(msg, opts = {}) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      const isError = !!opts.error;
+      t.style.cssText = `
+        position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+        z-index: 9800; padding: 10px 18px; border-radius: 999px;
+        background: ${isError ? 'linear-gradient(135deg,rgba(239,68,68,0.95),rgba(185,28,28,0.90))'
+                              : 'linear-gradient(135deg,rgba(16,185,129,0.95),rgba(5,150,105,0.90))'};
+        color: #fff; font-size: 12.5px; font-weight: 600;
+        font-family: 'Inter','Noto Sans TC',sans-serif;
+        box-shadow: 0 14px 36px -8px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.15);
+        opacity: 0; transition: opacity 200ms, transform 200ms;
+        pointer-events: none; max-width: 80vw;
+        text-align: center;
+      `;
+      document.body.appendChild(t);
+      requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translate(-50%,-6px)'; });
+      setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 250);
+      }, opts.long ? 4200 : 2400);
+    }
+
+    // ----- Recording state machine -----
+    const btnRec  = $('#btnRec');
+    const recHud  = $('#recHud');
+    const recTimer= $('#recTimer');
+    const recSize = $('#recSize');
+    const recHudStop = $('#recHudStop');
+
+    let state = 'idle';          // 'idle' | 'starting' | 'recording' | 'stopping'
+    let displayStream = null;
+    let videoEl = null;
+    let cropCanvas = null;
+    let cropCtx = null;
+    let outStream = null;
+    let mediaRecorder = null;
+    let chunks = [];
+    let rafId = null;
+    let timerInterval = null;
+    let startedAt = 0;
+    let totalBytes = 0;
+
+    // Read current language from the I18N system's source of truth — the
+    // <html lang> attribute and the persisted 'cps_lang' key. We resolve the
+    // label here instead of relying on the MutationObserver to retranslate,
+    // because the observer is best-effort and can race with rapid state flips.
+    function curLang() {
+      try {
+        const persisted = localStorage.getItem('cps_lang');
+        if (persisted === 'en' || persisted === 'zh') return persisted;
+      } catch {}
+      const htmlLang = (document.documentElement.lang || '').toLowerCase();
+      return htmlLang.startsWith('en') ? 'en' : 'zh';
+    }
+    const REC_LABELS = {
+      idle:      { zh: '● 錄影',  en: '● REC'  },
+      starting:  { zh: '...',      en: '...'    },
+      recording: { zh: '■ 停止',  en: '■ Stop' },
+    };
+
+    function setBtnState(s) {
+      state = s;
+      const lang = curLang();
+      if (s === 'recording') {
+        btnRec.classList.remove('rec-idle');
+        btnRec.classList.add('rec-active');
+        btnRec.textContent = REC_LABELS.recording[lang];
+        // Floating HUD intentionally NOT shown — the pulsing red REC button
+        // in the global header is the sole on-screen indicator while
+        // recording. The HUD overlapped the viewport toolbar (Stress/Strain/
+        // Layers, A|B toggle, Edit) which confused users about whether the
+        // overlay was being recorded. Hiding it keeps the recorded frame
+        // pristine and matches the user's "no on-screen HUD" requirement.
+        recHud.classList.remove('on');
+      } else if (s === 'starting') {
+        btnRec.textContent = REC_LABELS.starting[lang];
+      } else {
+        btnRec.classList.add('rec-idle');
+        btnRec.classList.remove('rec-active');
+        btnRec.textContent = REC_LABELS.idle[lang];
+        recHud.classList.remove('on');
+      }
+    }
+
+    // The user can flip language while the recorder is in any state. Listen
+    // for the click on #btnLang (no language-change event exists in this app)
+    // and refresh the button label after I18N has had a tick to apply.
+    const btnLang = document.getElementById('btnLang');
+    if (btnLang) {
+      btnLang.addEventListener('click', () => {
+        // I18N toggle runs on the same tick; defer one frame so localStorage
+        // and <html lang> are updated before we read them.
+        setTimeout(() => setBtnState(state), 0);
+      });
+    }
+
+    function fmtTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const hh = Math.floor(s / 3600);
+      const mm = Math.floor((s % 3600) / 60);
+      const ss = s % 60;
+      const pad = n => String(n).padStart(2, '0');
+      return hh > 0 ? `${pad(hh)}:${pad(mm)}:${pad(ss)}` : `${pad(mm)}:${pad(ss)}`;
+    }
+    function fmtSize(b) {
+      if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+      if (b < 1024 * 1024 * 1024) return (b / 1024 / 1024).toFixed(1) + ' MB';
+      return (b / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+    }
+    function startTimer() {
+      startedAt = performance.now();
+      totalBytes = 0;
+      recTimer.textContent = '00:00';
+      recSize.textContent = '0.0 MB';
+      timerInterval = setInterval(() => {
+        recTimer.textContent = fmtTime(performance.now() - startedAt);
+        recSize.textContent  = fmtSize(totalBytes);
+      }, 500);
+    }
+    function stopTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+
+    function pickMimeType() {
+      const candidates = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      for (const m of candidates) {
+        if (MediaRecorder.isTypeSupported(m)) return m;
+      }
+      return '';
+    }
+
+    function timestamp() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}` +
+             `_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+
+    async function startRecording() {
+      if (state !== 'idle') return;
+      setBtnState('starting');
+
+      let stream;
+      try {
+        // preferCurrentTab + selfBrowserSurface:'include' nudges Chrome to
+        // surface "This Tab" as the default pick so users don't accidentally
+        // share their whole desktop. Audio off — silent screen recording.
+        // ===== High-resolution capture hints =====
+        // getDisplayMedia('browser') only honors `ideal` (and `max`) on width
+        // and height — `min` throws "min constraints are not supported" in
+        // Chrome. Use ideal as the target; Chrome clamps to whatever the tab
+        // surface can produce, so this just nudges the encoder toward a
+        // higher-res frame when the display itself supports it.
+        const outResH = settings.resolution === 'source'
+          ? Math.max(1080, Math.round(window.innerHeight * (window.devicePixelRatio || 1)))
+          : Math.max(1080, parseInt(settings.resolution, 10) || 1080);
+        const hintW = Math.round(outResH * 16 / 9);
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            displaySurface: 'browser',
+            frameRate: { ideal: parseInt(settings.fps, 10) || 30 },
+            width:  { ideal: hintW },
+            height: { ideal: outResH },
+          },
+          audio: false,
+          preferCurrentTab: true,
+          selfBrowserSurface: 'include',
+          surfaceSwitching: 'exclude',
+          systemAudio: 'exclude'
+        });
+      } catch (err) {
+        setBtnState('idle');
+        if (err && err.name !== 'NotAllowedError') {
+          toast('錄影失敗: ' + (err.message || err.name || '未知錯誤'), { error: true });
+        }
+        return;
+      }
+
+      const track = stream.getVideoTracks()[0];
+      const surface = track.getSettings().displaySurface;
+      if (surface && surface !== 'browser') {
+        // User picked window or monitor — coordinates won't line up with the
+        // viewport DOM. Stop and ask them to pick "This Tab".
+        stream.getTracks().forEach(t => t.stop());
+        setBtnState('idle');
+        toast('請選擇「此分頁」以正確錄影 3D 視窗', { error: true, long: true });
+        return;
+      }
+
+      displayStream = stream;
+
+      videoEl = document.createElement('video');
+      videoEl.muted = true;
+      videoEl.playsInline = true;
+      videoEl.srcObject = stream;
+      try { await videoEl.play(); } catch {}
+      if (!videoEl.videoWidth) {
+        await new Promise(res => videoEl.addEventListener('loadedmetadata', res, { once: true }));
+      }
+
+      // Soft-output warning: only fire when the source is SUBSTANTIALLY below
+      // 1080p (≥ 20% upscale = source < 900p), which is the threshold where
+      // upscale softness becomes visually noticeable. Earlier the threshold
+      // was 1080p strict — that tripped at 1068p (a 1.1% upscale, totally
+      // imperceptible) and was just noise. The 1080p output FLOOR is enforced
+      // separately in the canvas pipeline so quality is still 1080p, this
+      // warning is only about source-vs-target visual fidelity.
+      const SOFT_WARN_THRESHOLD = 900;
+      if (videoEl.videoHeight && videoEl.videoHeight < SOFT_WARN_THRESHOLD) {
+        toast(
+          '⚠ 來源僅 ' + videoEl.videoHeight + 'p — 影片會略為模糊。建議最大化視窗或按 F11 進入全螢幕後重新錄影。',
+          { error: true, long: true }
+        );
+      }
+
+      // Build the crop canvas at the chosen output resolution
+      const vpMain = document.getElementById('vpMain');
+      const initRect = vpMain.getBoundingClientRect();
+      const aspect = initRect.width / Math.max(initRect.height, 1);
+
+      // ===== Output resolution =====
+      // Floor at 720p so colleagues never get sub-720p footage even if their
+      // window is small or they accidentally choose a low source resolution.
+      let outH;
+      if (settings.resolution === 'source') {
+        outH = Math.round(initRect.height * (window.devicePixelRatio || 1));
+      } else {
+        outH = parseInt(settings.resolution, 10) || 1080;
+      }
+      outH = Math.max(1080, outH);  // hard floor at 1080p — internal-tool quality bar
+      // Keep dimensions even (most codecs require even width/height for chroma sub-sampling)
+      const outW = Math.round(outH * aspect / 2) * 2;
+      const evenH = Math.round(outH / 2) * 2;
+
+      cropCanvas = document.createElement('canvas');
+      cropCanvas.width = outW;
+      cropCanvas.height = evenH;
+      cropCtx = cropCanvas.getContext('2d', { alpha: false, desynchronized: true });
+      cropCtx.imageSmoothingEnabled = true;
+      cropCtx.imageSmoothingQuality = 'high';
+
+      // Frame loop — recompute the source crop rect each frame because the
+      // user might resize the window, collapse a side panel, or toggle the
+      // bottom analysis dock while recording.
+      function frame() {
+        if (state !== 'recording' && state !== 'starting') return;
+        const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+        if (vw && vh) {
+          // getDisplayMedia('browser') captures the tab viewport. Map DOM
+          // pixels (window.innerWidth × innerHeight) to source video pixels.
+          const r = vpMain.getBoundingClientRect();
+          const sxR = vw / Math.max(window.innerWidth, 1);
+          const syR = vh / Math.max(window.innerHeight, 1);
+          const sx = Math.max(0, r.left * sxR);
+          const sy = Math.max(0, r.top  * syR);
+          const sw = Math.min(vw - sx, r.width  * sxR);
+          const sh = Math.min(vh - sy, r.height * syR);
+          if (sw > 0 && sh > 0) {
+            try {
+              cropCtx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, cropCanvas.width, cropCanvas.height);
+            } catch { /* video frame not ready */ }
+          }
+        }
+        rafId = requestAnimationFrame(frame);
+      }
+      rafId = requestAnimationFrame(frame);
+
+      const targetFps = parseInt(settings.fps, 10) || 30;
+      outStream = cropCanvas.captureStream(targetFps);
+
+      const mime = pickMimeType();
+      // ===== Bitrate — tuned for sharp CAE text/edges =====
+      // CAE recordings need higher bitrates than typical screencasts because
+      // the carbon-ply stack has lots of high-contrast thin lines and fine
+      // gradient color maps. The old defaults (5/8/14 Mbps) compressed those
+      // details into a blur. New values are ~2x — closer to UHD Blu-ray
+      // territory — to keep ply edges crisp and color bands clean. FPS also
+      // factors in (60fps needs more bits than 30fps for same per-frame
+      // quality), so we scale up another 30% above 30fps.
+      const fpsNum = parseInt(settings.fps, 10) || 30;
+      const fpsScale = fpsNum >= 60 ? 1.35 : fpsNum >= 48 ? 1.18 : 1.0;
+      const baseBitrate =
+        outH >= 1440 ? 24_000_000 :
+        outH >= 1080 ? 16_000_000 :
+        outH >=  720 ? 10_000_000 :
+                        8_000_000;
+      try {
+        mediaRecorder = new MediaRecorder(outStream, {
+          mimeType: mime || undefined,
+          videoBitsPerSecond: Math.round(baseBitrate * fpsScale)
+        });
+      } catch (err) {
+        cleanupStreams();
+        setBtnState('idle');
+        toast('錄影失敗: ' + (err.message || err.name), { error: true });
+        return;
+      }
+
+      chunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+          totalBytes += e.data.size;
+        }
+      };
+      mediaRecorder.onstop = onMediaRecorderStop;
+      mediaRecorder.onerror = (e) => {
+        toast('錄影錯誤: ' + (e.error && e.error.name || 'unknown'), { error: true });
+      };
+
+      // If user clicks browser-native "Stop sharing", end the recording too.
+      track.addEventListener('ended', () => {
+        if (state === 'recording') stopRecording();
+      });
+
+      mediaRecorder.start(1000);  // 1s timeslice so totalBytes ticks up nicely
+      setBtnState('recording');
+      startTimer();
+      toast('已開始錄影');
+    }
+
+    function cleanupStreams() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      if (displayStream) {
+        displayStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+        displayStream = null;
+      }
+      if (videoEl) {
+        try { videoEl.pause(); } catch {}
+        videoEl.srcObject = null;
+        videoEl = null;
+      }
+      if (outStream) {
+        outStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+        outStream = null;
+      }
+      cropCanvas = null;
+      cropCtx = null;
+    }
+
+    async function onMediaRecorderStop() {
+      stopTimer();
+      const mime = mediaRecorder ? (mediaRecorder.mimeType || 'video/webm') : 'video/webm';
+      const blob = new Blob(chunks, { type: mime.split(';')[0] });
+      chunks = [];
+      mediaRecorder = null;
+      cleanupStreams();
+
+      const filename = `${settings.prefix || 'CarbonSole'}_${timestamp()}.webm`;
+
+      // Try the persisted folder first; fall back to a download anchor.
+      let saved = false;
+      try {
+        const dir = await getFolderHandle({ verifyPermission: true });
+        if (dir) {
+          const fh = await dir.getFileHandle(filename, { create: true });
+          const w  = await fh.createWritable();
+          await w.write(blob);
+          await w.close();
+          saved = true;
+          toast('已儲存到 ' + dir.name + ' / ' + filename, { long: true });
+        }
+      } catch (err) {
+        // Permission may have lapsed mid-session; fall through to download.
+        toast('資料夾權限已遺失，請重新選擇', { error: true });
+      }
+
+      if (!saved) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        toast('已下載到瀏覽器「下載」資料夾', { long: true });
+      }
+
+      setBtnState('idle');
+    }
+
+    function stopRecording() {
+      if (state !== 'recording') return;
+      state = 'stopping';
+      try { mediaRecorder && mediaRecorder.stop(); }
+      catch (err) {
+        cleanupStreams();
+        setBtnState('idle');
+      }
+    }
+
+    btnRec.addEventListener('click', () => {
+      if (state === 'idle') startRecording();
+      else if (state === 'recording') stopRecording();
+    });
+    recHudStop.addEventListener('click', () => {
+      if (state === 'recording') stopRecording();
+    });
+
+    // Restore folder handle reference on boot so refreshFolderLabel can show it
+    idbGet(FOLDER_KEY).then(h => { folderHandle = h || null; });
+
+    // Init button label
+    setBtnState('idle');
+  })();
 </script>
 </body>
 </html>
