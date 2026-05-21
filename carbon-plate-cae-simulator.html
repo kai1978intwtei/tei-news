@@ -1886,6 +1886,7 @@
               <button data-mode="stress" class="active">應力 Stress</button>
               <button data-mode="strain">應變 Strain</button>
               <button data-mode="energy">能量流 Energy</button>
+              <button data-mode="plate" title="純成型碳板（隱藏鞋款、不分解）">純板 Plate</button>
               <button data-mode="layers">疊層 Layers</button>
             </div>
             <!-- ===== A/B slot comparison toggle =====
@@ -5226,8 +5227,12 @@
     plateMesh.userData = { mainMesh: main, top: topMesh, bot: botMesh };
     (_renderTarget || scene).add(plateMesh);
 
-    // ===== EXPLODED LAYER VIEW — hide shoe + main plate, show only carbon stack =====
+    // ===== Geometry mode after rebuild =====
+    //   shoe-mode  : shoe + plate visible · no explode
+    //   plate-mode : plate only · no explode (shoe hidden)
+    //   layers     : exploded stack only (shoe + main plate hidden)
     const layersMode = (state.cutaway || state.viewMode === 'layers');
+    const plateOnly  = (state.viewMode === 'plate');
 
     // Always build the shoe so it's available when user toggles back
     buildShoeShell(Lshoe, W, totalT);
@@ -5241,6 +5246,10 @@
       // Hide the dressed-up shoe + main plate visualization
       if (shoeMesh)  shoeMesh.visible  = false;
       if (plateMesh) plateMesh.visible = false;
+    } else if (plateOnly){
+      // Pure formed carbon plate — shoe hidden, plate kept assembled
+      if (shoeMesh)  shoeMesh.visible  = false;
+      if (plateMesh) plateMesh.visible = true;
     } else {
       if (shoeMesh)  shoeMesh.visible  = true;
       if (plateMesh) plateMesh.visible = true;
@@ -9179,9 +9188,13 @@
 
   // ===== view modes =====
   function setViewMode(mode){
-    // Remember the previous non-layers mode so the floating HUD toggle can
-    // restore the user's stress/strain/energy choice when flipping back.
-    if (state.viewMode !== 'layers' && mode === 'layers') state._prevViewMode = state.viewMode;
+    // Remember the previous data-coloring mode (stress / strain / energy) so
+    // the floating HUD toggle can restore it when cycling back out of the
+    // shoe-hidden modes (plate / layers).
+    const isDataMode = (m) => (m === 'stress' || m === 'strain' || m === 'energy');
+    if (isDataMode(state.viewMode) && (mode === 'layers' || mode === 'plate')) {
+      state._prevViewMode = state.viewMode;
+    }
     state.viewMode = mode;
     $$('#viewModeToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
     if (typeof updateTemplateHud === 'function') updateTemplateHud();
@@ -9204,15 +9217,20 @@
       legendBox.querySelector('.text-\\[var\\(--text-2\\)\\]').textContent = 'Strain ε (%)';
     } else if (mode === 'energy'){
       legendBox.querySelector('.text-\\[var\\(--text-2\\)\\]').textContent = 'Energy density';
+    } else if (mode === 'plate'){
+      legendBox.querySelector('.text-\\[var\\(--text-2\\)\\]').textContent = 'Formed plate · no data';
     } else {
       legendBox.querySelector('.text-\\[var\\(--text-2\\)\\]').textContent = 'Layer angle';
     }
 
     const layersMode = (mode === 'layers') || state.cutaway;
+    const plateOnly  = (mode === 'plate');
 
-    // ===== Hide shoe + main plate completely in layers/cutaway mode =====
-    // Engineer view: only the exploded carbon stack remains.
-    if (shoeMesh)  shoeMesh.visible  = !layersMode;
+    // ===== Visibility rules per geometry mode =====
+    //   shoe-mode  : shoe visible · plate visible · no explode
+    //   plate-mode : shoe HIDDEN  · plate visible · no explode
+    //   layers     : shoe HIDDEN  · plate HIDDEN  · explode shown
+    if (shoeMesh)  shoeMesh.visible  = !(layersMode || plateOnly);
     if (plateMesh) plateMesh.visible = !layersMode;
 
     // Build / clear exploded stack (parent-aware so slot groups work too)
@@ -9240,8 +9258,8 @@
     // via the same try/finally state-swap pattern rebuildViewBContent uses.
     if (state.viewSlot === 'AB' && viewB.scene){
       try {
-        // Visibility on viewB's main meshes
-        if (viewB.shoeMesh)  viewB.shoeMesh.visible  = !layersMode;
+        // Visibility on viewB's main meshes (matches the A-slot rules above)
+        if (viewB.shoeMesh)  viewB.shoeMesh.visible  = !(layersMode || plateOnly);
         if (viewB.plateMesh) viewB.plateMesh.visible = !layersMode;
         // Clear viewB's previous layer/particle meshes
         (viewB.layerMeshes || []).forEach(m => {
@@ -9406,6 +9424,14 @@
       layersBtn.style.cursor  = hasPlate ? '' : 'not-allowed';
       layersBtn.title = hasPlate ? '' : '⚠ 無碳板無法分解顯示疊層';
     }
+    // Plate-only view-mode pill button (same plate-required rule)
+    const plateBtn = document.querySelector('#viewModeToggle button[data-mode="plate"]');
+    if (plateBtn){
+      plateBtn.disabled = !hasPlate;
+      plateBtn.style.opacity = hasPlate ? '' : '0.35';
+      plateBtn.style.cursor  = hasPlate ? '' : 'not-allowed';
+      plateBtn.title = hasPlate ? '純成型碳板（隱藏鞋款、不分解）' : '⚠ 無碳板無法顯示純板視圖';
+    }
     // Floating HUD 「🧬 顯示疊構」 toggle — same plate-required logic
     const tplToggle = document.getElementById('tplHudToggle');
     if (tplToggle){
@@ -9434,7 +9460,7 @@
       const cutawayCb = document.getElementById('cutaway');
       if (cutawayCb) cutawayCb.checked = false;
     }
-    if (state.viewMode === 'layers'){
+    if (state.viewMode === 'layers' || state.viewMode === 'plate'){
       state.viewMode = state._prevViewMode || 'stress';
       const pillBtns = document.querySelectorAll('#viewModeToggle button');
       pillBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === state.viewMode));
@@ -9641,14 +9667,22 @@
     }
 
     // ----- toggle button reflects current viewMode (A-slot only) -----
+    // 3-step cycle: shoe → plate → layers → shoe. The label always names the
+    // NEXT view the user will get when they click.
     const btn = document.getElementById('tplHudToggle');
     if (btn){
-      const inLayers = (state.viewMode === 'layers');
-      btn.classList.toggle('active', inLayers);
-      btn.innerHTML = inLayers ? '🥿 顯示鞋款' : '🧬 顯示疊構';
-      btn.title = inLayers
-        ? '目前：疊構分解視圖。點擊切回完整鞋款 3D 模型'
-        : '目前：完整鞋款 3D 模型。點擊切到疊構分解視圖（每層碳板分離）';
+      const cur = state.viewMode;
+      btn.classList.toggle('active', cur === 'layers' || cur === 'plate');
+      if (cur === 'layers'){
+        btn.innerHTML = '🥿 顯示鞋款';
+        btn.title = '目前：疊構分解視圖。點擊切回完整鞋款 3D 模型';
+      } else if (cur === 'plate'){
+        btn.innerHTML = '🧬 顯示疊構';
+        btn.title = '目前：純成型碳板。點擊切到疊構分解視圖';
+      } else {
+        btn.innerHTML = '◐ 顯示純碳板';
+        btn.title = '目前：完整鞋款。點擊切到純成型碳板（隱藏鞋型、不分解）';
+      }
     }
   }
 
@@ -10230,17 +10264,19 @@
       });
     }
 
-    // ===== Template-HUD toggle: full shoe ⇄ exploded layer view =====
-    // Flips state.viewMode between 'layers' and the previously-selected mode
-    // (defaulting to 'stress'). The HUD button label/colour is refreshed
-    // inside updateTemplateHud() which setViewMode now calls.
+    // ===== Template-HUD toggle: 3-step cycle =====
+    //   shoe (stress/strain/energy)  → plate  → layers  → shoe (restored)
+    // _prevViewMode (set inside setViewMode) remembers the data-coloring
+    // choice so coming back from layers/plate restores it cleanly.
     const tplToggleBtn = document.getElementById('tplHudToggle');
     if (tplToggleBtn){
       tplToggleBtn.addEventListener('click', () => {
         if (state.viewMode === 'layers'){
           setViewMode(state._prevViewMode || 'stress');
-        } else {
+        } else if (state.viewMode === 'plate'){
           setViewMode('layers');
+        } else {
+          setViewMode('plate');
         }
       });
     }
