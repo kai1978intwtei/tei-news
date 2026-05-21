@@ -2767,7 +2767,17 @@
       '應力 Stress': 'Stress',
       '應變 Strain': 'Strain',
       '能量流 Energy': 'Energy Flow',
+      '純板 Plate': 'Plate',
       '疊層 Layers': 'Layers',
+      '純成型碳板（隱藏鞋款、不分解）': 'Pure formed carbon plate (shoe hidden, not exploded)',
+      '⚠ 無碳板無法顯示純板視圖': '⚠ No carbon plate — cannot show plate-only view',
+      'Formed plate · no data': 'Formed plate · no data',
+      '◐ 顯示純碳板': '◐ Show Bare Plate',
+      '🧬 顯示疊構': '🧬 Show Layup',
+      '🥿 顯示鞋款': '🥿 Show Shoe',
+      '目前：純成型碳板。點擊切到疊構分解視圖': 'Currently: pure formed carbon plate. Click to switch to exploded layer view',
+      '目前：完整鞋款。點擊切到純成型碳板（隱藏鞋型、不分解）': 'Currently: full shoe. Click to switch to pure formed carbon plate (shoe hidden, not exploded)',
+      '目前：疊構分解視圖。點擊切回完整鞋款 3D 模型': 'Currently: exploded layer view. Click to switch back to full shoe 3D model',
       '顯示配方 A': 'Show Recipe A',
       '顯示配方 B': 'Show Recipe B',
       'A 與 B 並排比較': 'Compare A and B side-by-side',
@@ -9204,8 +9214,12 @@
     if (!pm || !pm.userData) return;
     const m = pm.userData.mainMesh, t = pm.userData.top, b = pm.userData.bot;
     if (!t || !b) return;
-    const totalT = state.plies.reduce((a,p)=>a+p.t,0) * 40;  // visual offset baked in
-    const trueT  = state.plies.reduce((a,p)=>a+p.t,0);        // mm, 1× scale
+    const sumMM  = state.plies.reduce((a,p)=>a+p.t,0);  // ≈ 1.12 mm
+    const totalT = sumMM * 40;   // visual offset baked into geometry
+    // Render at 12× true mm for plate-only mode — keeps the "single
+    // 1.12 mm slab" identity but exaggerates Y so the plate reads as a
+    // confidently thick part rather than two near-touching sheets.
+    const trueT  = sumMM * 12;
     const shrink = (totalT - trueT) / 2;
     if (m) m.visible = false;
     t.position.y = -shrink;
