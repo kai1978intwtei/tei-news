@@ -5542,6 +5542,24 @@
   }
 
   // Sprite-text helper — used for anatomical TOE / HEEL orientation labels in layer view
+  // ===== Anatomy label text — language-aware =====
+  // Returns the TOE / HEEL caption strings for the current i18n mode.
+  // Canvas-baked sprite text cannot be retranslated by the DOM observer,
+  // so we read localStorage.cps_lang at sprite-build time and rebuildPlate
+  // is re-fired on language toggle (see btnLang listener) to refresh them.
+  function _anatomyLabels(){
+    let isEn = false;
+    try {
+      const p = localStorage.getItem('cps_lang');
+      if (p === 'en') isEn = true;
+      else if (p === 'zh') isEn = false;
+      else isEn = (document.documentElement.lang || '').toLowerCase().startsWith('en');
+    } catch {}
+    return isEn
+      ? { toe: '▶ TOE',       heel: 'HEEL ◀' }
+      : { toe: '▶ TOE 前掌',  heel: 'HEEL 後跟 ◀' };
+  }
+
   function makeTextSprite(text, color){
     const c = document.createElement('canvas');
     c.width = 384; c.height = 80;
@@ -5636,10 +5654,11 @@
       arrowGrp.add(outlineMesh);
 
       // TOE / HEEL text sprites (anatomical orientation, not for fiber direction)
-      const toeSpr  = makeTextSprite('▶ TOE 前掌',  '#22d3ee'); toeSpr.scale.set(48, 12, 1);
+      const _lbls = _anatomyLabels();
+      const toeSpr  = makeTextSprite(_lbls.toe,  '#22d3ee'); toeSpr.scale.set(48, 12, 1);
       toeSpr.position.set(Lshoe/2 + 30, arrowY + 8, 0);
       arrowGrp.add(toeSpr);
-      const heelSpr = makeTextSprite('HEEL 後跟 ◀', '#fb923c'); heelSpr.scale.set(48, 12, 1);
+      const heelSpr = makeTextSprite(_lbls.heel, '#fb923c'); heelSpr.scale.set(48, 12, 1);
       heelSpr.position.set(-Lshoe/2 - 30, arrowY + 8, 0);
       arrowGrp.add(heelSpr);
 
@@ -9256,6 +9275,28 @@
     if (b){ b.visible = false; b.position.y = 0; }
     // Hide every other child (wireframe etc.)
     pm.children.forEach(c => { if (c !== m && c !== t && c !== b) c.visible = false; });
+    // ===== TOE / HEEL anatomy labels =====
+    // Same convention as the layers view — cyan at toe, amber at heel,
+    // positioned beyond plate ends. Language follows _anatomyLabels().
+    if (pm.userData._anatomyLabels){
+      pm.userData._anatomyLabels.forEach(l => { if (l.parent) l.parent.remove(l); });
+      pm.userData._anatomyLabels = null;
+    }
+    if (typeof makeTextSprite === 'function' && typeof shoeLengthMM === 'function'){
+      try {
+        const Lshoe = shoeLengthMM();
+        const lbls  = _anatomyLabels();
+        const toeSpr  = makeTextSprite(lbls.toe,  '#22d3ee');
+        toeSpr.scale.set(48, 12, 1);
+        toeSpr.position.set( Lshoe/2 + 30, 8, 0);
+        pm.add(toeSpr);
+        const heelSpr = makeTextSprite(lbls.heel, '#fb923c');
+        heelSpr.scale.set(48, 12, 1);
+        heelSpr.position.set(-Lshoe/2 - 30, 8, 0);
+        pm.add(heelSpr);
+        pm.userData._anatomyLabels = [toeSpr, heelSpr];
+      } catch {}
+    }
   }
   function _restorePlate(pm){
     if (!pm || !pm.userData) return;
@@ -9275,6 +9316,12 @@
     }
     if (b){ b.visible = true; b.position.y = 0; }
     pm.children.forEach(c => { if (c !== m && c !== t && c !== b) c.visible = true; });
+    // Tear down the plate-only TOE/HEEL labels (they only belong to plate
+    // mode; layers mode builds its own pair inside buildExplodedLayers).
+    if (pm.userData._anatomyLabels){
+      pm.userData._anatomyLabels.forEach(l => { if (l.parent) l.parent.remove(l); });
+      pm.userData._anatomyLabels = null;
+    }
   }
 
   // ===== view modes =====
@@ -10037,6 +10084,24 @@
     }));
 
     $$('#viewModeToggle button').forEach(b => b.addEventListener('click', () => setViewMode(b.dataset.mode)));
+
+    // ===== Language toggle → rebuild plate so canvas-baked sprite text
+    // (TOE / HEEL anatomy labels) regenerates with the new locale. The
+    // DOM mutation observer in the i18n module can't reach text inside
+    // a Three.js CanvasTexture, so we re-run the build pipeline. =====
+    const _btnLang = document.getElementById('btnLang');
+    if (_btnLang){
+      _btnLang.addEventListener('click', () => {
+        // Defer to next tick so the i18n apply() finishes flipping
+        // localStorage.cps_lang before our rebuild reads it.
+        setTimeout(() => {
+          try { rebuildPlate(); } catch {}
+          if (state.viewSlot === 'AB' && typeof rebuildViewBContent === 'function'){
+            try { rebuildViewBContent(); } catch {}
+          }
+        }, 30);
+      });
+    }
 
     // ===== A/B slot toggle wiring =====
     function refreshSlotToggleUI(){
