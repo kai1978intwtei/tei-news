@@ -5092,6 +5092,11 @@
     const colors = [];
     const indices = [];
     const normals = [];
+    const uvs = [];   // ← per-vertex UVs so plate-only mode (and any other
+                       //   textured material we assign to mainMesh) can show
+                       //   the carbon weave correctly. Without this, weave
+                       //   changes look like "no change" because the sampler
+                       //   reads a single texel for the whole surface.
 
     function widthAt(nx){
       let halfW;
@@ -5157,6 +5162,9 @@
         const z = nz * halfW;
         const y = yBase;
         positions.push(x, y, z);
+        // UV mapped to the (i,j) grid coordinates → carbon weave tiles
+        // evenly across the plate when texture.repeat is applied.
+        uvs.push(i/segX, j/segZ);
 
         const s = stressField(nxShoe, nz);
         const c = stressColor(s);
@@ -5181,6 +5189,7 @@
     }
     geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geom.setAttribute('color',    new THREE.Float32BufferAttribute(colors, 3));
+    geom.setAttribute('uv',       new THREE.Float32BufferAttribute(uvs, 2));
     geom.setIndex(indices);
     geom.computeVertexNormals();
 
