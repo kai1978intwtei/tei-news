@@ -11645,19 +11645,18 @@
           }
         }
         // TEi watermark — drawn only to the recording canvas, never to the
-        // live DOM. ~10% of frame width, bottom-right with 2.5% margin.
-        // White-tinted with a soft dark halo so it stays readable on both
-        // dark UI panels and bright magenta/gradient viewports.
+        // live DOM. Large centered hero watermark (~50% width) spanning the
+        // A/B comparison viewports. Lower opacity (18%) because it's big and
+        // sits over the main content; soft halo keeps it readable on any BG.
         if (wmReady && wmTinted.width > 0) {
-          const wmW = cropCanvas.width * 0.10;
+          const wmW = cropCanvas.width * 0.50;
           const wmH = wmW * (wmTinted.height / wmTinted.width);
-          const wmMargin = cropCanvas.width * 0.025;
-          const wmX = cropCanvas.width  - wmW - wmMargin;
-          const wmY = cropCanvas.height - wmH - wmMargin;
+          const wmX = (cropCanvas.width  - wmW) / 2;
+          const wmY = (cropCanvas.height - wmH) / 2;
           cropCtx.save();
-          cropCtx.shadowColor = 'rgba(0,0,0,0.55)';
-          cropCtx.shadowBlur  = Math.max(6, cropCanvas.width * 0.005);
-          cropCtx.globalAlpha = 0.32;
+          cropCtx.shadowColor = 'rgba(0,0,0,0.45)';
+          cropCtx.shadowBlur  = Math.max(8, cropCanvas.width * 0.008);
+          cropCtx.globalAlpha = 0.18;
           cropCtx.drawImage(wmTinted, wmX, wmY, wmW, wmH);
           cropCtx.restore();
         }
