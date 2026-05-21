@@ -5247,9 +5247,13 @@
       if (shoeMesh)  shoeMesh.visible  = false;
       if (plateMesh) plateMesh.visible = false;
     } else if (plateOnly){
-      // Pure formed carbon plate — shoe hidden, plate kept assembled
+      // Pure formed carbon plate — shoe hidden, plate kept assembled, and
+      // the 3-shell stack collapsed into a single 1.12 mm slab look.
       if (shoeMesh)  shoeMesh.visible  = false;
-      if (plateMesh) plateMesh.visible = true;
+      if (plateMesh){
+        plateMesh.visible = true;
+        if (typeof _applyPlateOnly === 'function') _applyPlateOnly(plateMesh);
+      }
     } else {
       if (shoeMesh)  shoeMesh.visible  = true;
       if (plateMesh) plateMesh.visible = true;
@@ -9186,6 +9190,49 @@
     `).join('');
   }
 
+  // ===== Plate-only mode visual override =====
+  // The plateMesh group has 3 children — mainMesh (data-tinted middle),
+  // topMesh (semi-transparent carbon-weave top shell), botMesh (carbon-
+  // weave bottom shell). They're spaced apart by 40× exaggerated thickness
+  // (1.12 mm true → 44.8 visual units) so the exploded-layer view reads
+  // clearly. In plate-only mode we want a SINGLE monolithic-looking plate
+  // at TRUE 1.12 mm thickness, so we (a) hide mainMesh to remove any data
+  // tinting, (b) make topMesh fully opaque, and (c) compensate the baked
+  // 40× offset via mesh.position.y so top + bot sit close together as a
+  // thin slab.
+  function _applyPlateOnly(pm){
+    if (!pm || !pm.userData) return;
+    const m = pm.userData.mainMesh, t = pm.userData.top, b = pm.userData.bot;
+    if (!t || !b) return;
+    const totalT = state.plies.reduce((a,p)=>a+p.t,0) * 40;  // visual offset baked in
+    const trueT  = state.plies.reduce((a,p)=>a+p.t,0);        // mm, 1× scale
+    const shrink = (totalT - trueT) / 2;
+    if (m) m.visible = false;
+    t.position.y = -shrink;
+    b.position.y = +shrink;
+    if (t.material){
+      t.material.transparent = false;
+      t.material.opacity = 1.0;
+      t.material.depthWrite = true;
+      t.material.needsUpdate = true;
+    }
+  }
+  function _restorePlate(pm){
+    if (!pm || !pm.userData) return;
+    const m = pm.userData.mainMesh, t = pm.userData.top, b = pm.userData.bot;
+    if (m) m.visible = true;
+    if (t){
+      t.position.y = 0;
+      if (t.material){
+        t.material.transparent = true;
+        t.material.opacity = 0.78;
+        t.material.depthWrite = false;
+        t.material.needsUpdate = true;
+      }
+    }
+    if (b) b.position.y = 0;
+  }
+
   // ===== view modes =====
   function setViewMode(mode){
     // Remember the previous data-coloring mode (stress / strain / energy) so
@@ -9232,6 +9279,8 @@
     //   layers     : shoe HIDDEN  · plate HIDDEN  · explode shown
     if (shoeMesh)  shoeMesh.visible  = !(layersMode || plateOnly);
     if (plateMesh) plateMesh.visible = !layersMode;
+    // Apply / undo the single-slab plate-only override
+    if (plateMesh){ plateOnly ? _applyPlateOnly(plateMesh) : _restorePlate(plateMesh); }
 
     // Build / clear exploded stack (parent-aware so slot groups work too)
     layerMeshes.forEach(m => {
@@ -9261,6 +9310,7 @@
         // Visibility on viewB's main meshes (matches the A-slot rules above)
         if (viewB.shoeMesh)  viewB.shoeMesh.visible  = !(layersMode || plateOnly);
         if (viewB.plateMesh) viewB.plateMesh.visible = !layersMode;
+        if (viewB.plateMesh){ plateOnly ? _applyPlateOnly(viewB.plateMesh) : _restorePlate(viewB.plateMesh); }
         // Clear viewB's previous layer/particle meshes
         (viewB.layerMeshes || []).forEach(m => {
           if (m.parent) m.parent.remove(m);
