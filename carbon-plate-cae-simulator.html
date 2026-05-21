@@ -4188,9 +4188,11 @@
     //              user can choose either via the "✏ 編輯 A/B" toggle.
     slots: {
       A: { plies: TEMPLATES['run-fast'].map(p => ({angle:p.a, fiber:p.f, resin:p.r, t:p.t, weave: p.w || 'UD'})),
-           templateKey: 'run-fast', templateLabel: '通用 · 跑鞋競速 (8 ply)', region: 'full' },
+           templateKey: 'run-fast', templateLabel: '通用 · 跑鞋競速 (8 ply)', region: 'full',
+           viewMode: 'stress', _prevViewMode: 'stress' },
       B: { plies: TEMPLATES['nike-vap-next3'].map(p => ({angle:p.a, fiber:p.f, resin:p.r, t:p.t, weave: p.w || 'UD'})),
-           templateKey: 'nike-vap-next3', templateLabel: 'NIKE · ZoomX Vaporfly NEXT% 3 (8 ply, 1.40mm)', region: 'full' },
+           templateKey: 'nike-vap-next3', templateLabel: 'NIKE · ZoomX Vaporfly NEXT% 3 (8 ply, 1.40mm)', region: 'full',
+           viewMode: 'stress', _prevViewMode: 'stress' },
     },
     viewSlot: 'A',
     editSlot: 'A',
@@ -4658,6 +4660,7 @@
     const saved = {
       plies: state.plies, templateKey: state.templateKey,
       templateLabel: state.templateLabel, region: state.region,
+      viewMode: state.viewMode, _prevViewMode: state._prevViewMode,
       plateMesh, shoeMesh,
       layerMeshes: layerMeshes.slice(),
       layerParticleSystems: layerParticleSystems.slice(),
@@ -4672,6 +4675,12 @@
       state.templateKey = slotB.templateKey;
       state.templateLabel = slotB.templateLabel;
       state.region = slotB.region;
+      // Apply slot B's OWN viewMode while building viewB so the secondary
+      // scene reflects B's independent mode (may differ from A in AB view).
+      if (slotB.viewMode){
+        state.viewMode      = slotB.viewMode;
+        state._prevViewMode = slotB._prevViewMode || 'stress';
+      }
       // Reset globals so rebuildPlate's cleanup doesn't dispose slot A's meshes
       plateMesh = null; shoeMesh = null;
       layerMeshes = []; layerParticleSystems = [];
@@ -4703,6 +4712,8 @@
       state.templateKey = saved.templateKey;
       state.templateLabel = saved.templateLabel;
       state.region = saved.region;
+      state.viewMode = saved.viewMode;
+      state._prevViewMode = saved._prevViewMode;
       plateMesh = saved.plateMesh;
       shoeMesh = saved.shoeMesh;
       layerMeshes = saved.layerMeshes;
@@ -9262,10 +9273,24 @@
 
   // ===== view modes =====
   function setViewMode(mode){
-    // Remember the previous data-coloring mode (stress / strain / energy) so
-    // the floating HUD toggle can restore it when cycling back out of the
-    // shoe-hidden modes (plate / layers).
+    // ===== Per-slot viewMode persistence =====
+    // viewSlot 'A'  → write only slots.A
+    // viewSlot 'B'  → write only slots.B
+    // viewSlot 'AB' → write BOTH (only AB view forces a bulk update)
+    // Each slot keeps its own _prevViewMode so the HUD cycle back to a
+    // data-coloring mode (stress / strain / energy) is per-slot too.
     const isDataMode = (m) => (m === 'stress' || m === 'strain' || m === 'energy');
+    const targetKeys = (state.viewSlot === 'AB') ? ['A','B'] : [state.viewSlot];
+    targetKeys.forEach(k => {
+      const s = state.slots && state.slots[k];
+      if (!s) return;
+      if (isDataMode(s.viewMode) && (mode === 'layers' || mode === 'plate')) {
+        s._prevViewMode = s.viewMode;
+      }
+      s.viewMode = mode;
+    });
+    // Mirror the active editSlot's previous-mode into the top-level field so
+    // existing callers (HUD toggle, legend click, applyNoPlate) keep working.
     if (isDataMode(state.viewMode) && (mode === 'layers' || mode === 'plate')) {
       state._prevViewMode = state.viewMode;
     }
@@ -10152,6 +10177,12 @@
       // Before switching, save the current state into whichever slot we were editing,
       // so unsaved ply / template tweaks aren't lost.
       syncStateToSlot(state.editSlot);
+      // Also persist the current viewMode into the slot we're leaving, so the
+      // user's mode choice (stress / plate / layers / ...) sticks to that slot.
+      if (state.slots && state.slots[state.editSlot]){
+        state.slots[state.editSlot].viewMode      = state.viewMode;
+        state.slots[state.editSlot]._prevViewMode = state._prevViewMode || 'stress';
+      }
       state.viewSlot = slotKey;
       // In single mode the visible slot is also the edit target.
       // In AB mode keep the previous editSlot (so user choices feel sticky).
@@ -10159,6 +10190,16 @@
       // Load the (new) edit-target slot into state so the rest of the app
       // (renderPlies / rebuildPlate / HUD / etc.) reads the right data.
       syncStateFromSlot(state.editSlot);
+      // Restore the edit-target slot's own viewMode so each slot remembers
+      // independently. viewB (slot B's secondary scene) will apply slots.B's
+      // viewMode separately via rebuildViewBContent's state swap.
+      const targetSlot = state.slots && state.slots[state.editSlot];
+      if (targetSlot && targetSlot.viewMode){
+        state.viewMode      = targetSlot.viewMode;
+        state._prevViewMode = targetSlot._prevViewMode || 'stress';
+        // Update the viewModeToggle pill highlight to reflect the loaded mode
+        $$('#viewModeToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.viewMode));
+      }
       renderPlies();
       // Reflow the split-canvas layout BEFORE rebuilding so renderer.setSize
       // picks up the new canvas dimensions
