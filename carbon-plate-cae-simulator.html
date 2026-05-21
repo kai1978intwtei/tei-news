@@ -10185,8 +10185,13 @@
       }
       state.viewSlot = slotKey;
       // In single mode the visible slot is also the edit target.
-      // In AB mode keep the previous editSlot (so user choices feel sticky).
+      // In AB mode FORCE editSlot to 'A' so the main canvas always shows
+      // slot A and viewB always shows slot B — otherwise entering AB from
+      // single-B would leave both panes showing B (editSlot=B → main also
+      // renders B, viewB also renders B). User wants left=A right=B with
+      // each pane keeping its own remembered viewMode.
       if (slotKey === 'A' || slotKey === 'B') state.editSlot = slotKey;
+      else if (slotKey === 'AB') state.editSlot = 'A';
       // Load the (new) edit-target slot into state so the rest of the app
       // (renderPlies / rebuildPlate / HUD / etc.) reads the right data.
       syncStateFromSlot(state.editSlot);
@@ -10268,10 +10273,22 @@
     const _editTargetBtn = document.getElementById('editTargetBtn');
     if (_editTargetBtn){
       _editTargetBtn.addEventListener('click', () => {
-        // Save current state into the OLD edit slot, flip target, load new
+        // Save current state + viewMode into the OLD edit slot, flip target,
+        // load the new slot AND its remembered viewMode so the main canvas
+        // visualisation matches the slot now being edited.
         syncStateToSlot(state.editSlot);
+        if (state.slots && state.slots[state.editSlot]){
+          state.slots[state.editSlot].viewMode      = state.viewMode;
+          state.slots[state.editSlot]._prevViewMode = state._prevViewMode || 'stress';
+        }
         state.editSlot = (state.editSlot === 'A') ? 'B' : 'A';
         syncStateFromSlot(state.editSlot);
+        const ts = state.slots && state.slots[state.editSlot];
+        if (ts && ts.viewMode){
+          state.viewMode      = ts.viewMode;
+          state._prevViewMode = ts._prevViewMode || 'stress';
+          $$('#viewModeToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.viewMode));
+        }
         renderPlies();
         // Use the slot-aware rebuild path so AB mode keeps both plates visible
         if (typeof rebuildAllSlots === 'function') rebuildAllSlots();
