@@ -9201,42 +9201,49 @@
   }
 
   // ===== Plate-only mode visual override =====
-  // The plateMesh group has 3 children — mainMesh (data-tinted middle),
-  // topMesh (semi-transparent carbon-weave top shell), botMesh (carbon-
-  // weave bottom shell). They're spaced apart by 40× exaggerated thickness
-  // (1.12 mm true → 44.8 visual units) so the exploded-layer view reads
-  // clearly. In plate-only mode we want a SINGLE monolithic-looking plate
-  // at TRUE 1.12 mm thickness, so we (a) hide mainMesh to remove any data
-  // tinting, (b) make topMesh fully opaque, and (c) compensate the baked
-  // 40× offset via mesh.position.y so top + bot sit close together as a
-  // thin slab.
+  // plateMesh has 4 children — mainMesh (data-tinted middle surface),
+  // topMesh (semi-transparent weave top shell), botMesh (weave bottom),
+  // and a wireframe overlay. In stress/strain/energy modes those layer
+  // up to suggest thickness with see-through; in plate-only mode that
+  // exact see-through reveals a hollow gap from side angles, so the user
+  // perceives "another layer". The clean fix: hide all but mainMesh and
+  // swap its material to a solid carbon-formed look (no vertex colors).
+  // Result is a single monolithic surface representing the finished part.
   function _applyPlateOnly(pm){
     if (!pm || !pm.userData) return;
     const m = pm.userData.mainMesh, t = pm.userData.top, b = pm.userData.bot;
-    if (!t || !b) return;
-    const sumMM  = state.plies.reduce((a,p)=>a+p.t,0);  // ≈ 1.12 mm
-    const totalT = sumMM * 40;   // visual offset baked into geometry
-    // Render at 12× true mm for plate-only mode — keeps the "single
-    // 1.12 mm slab" identity but exaggerates Y so the plate reads as a
-    // confidently thick part rather than two near-touching sheets.
-    const trueT  = sumMM * 12;
-    const shrink = (totalT - trueT) / 2;
-    if (m) m.visible = false;
-    t.position.y = -shrink;
-    b.position.y = +shrink;
-    if (t.material){
-      t.material.transparent = false;
-      t.material.opacity = 1.0;
-      t.material.depthWrite = true;
-      t.material.needsUpdate = true;
+    if (!m) return;
+    // Cache original material once for clean restore
+    if (!pm.userData._origMainMat) pm.userData._origMainMat = m.material;
+    // Lazily build the solid carbon material on first plate-mode entry
+    if (!pm.userData._plateMat){
+      pm.userData._plateMat = new THREE.MeshPhysicalMaterial({
+        color: 0x14161a,
+        metalness: 0.32,
+        roughness: 0.40,
+        clearcoat: 0.55,
+        clearcoatRoughness: 0.22,
+        sheen: 0.18,
+        sheenColor: new THREE.Color(0x8aa6c2),
+        side: THREE.DoubleSide,
+      });
     }
+    m.visible  = true;
+    m.material = pm.userData._plateMat;
+    if (t){ t.visible = false; t.position.y = 0; }
+    if (b){ b.visible = false; b.position.y = 0; }
+    // Hide every other child (wireframe etc.)
+    pm.children.forEach(c => { if (c !== m && c !== t && c !== b) c.visible = false; });
   }
   function _restorePlate(pm){
     if (!pm || !pm.userData) return;
     const m = pm.userData.mainMesh, t = pm.userData.top, b = pm.userData.bot;
-    if (m) m.visible = true;
+    if (m){
+      m.visible = true;
+      if (pm.userData._origMainMat) m.material = pm.userData._origMainMat;
+    }
     if (t){
-      t.position.y = 0;
+      t.visible = true; t.position.y = 0;
       if (t.material){
         t.material.transparent = true;
         t.material.opacity = 0.78;
@@ -9244,7 +9251,8 @@
         t.material.needsUpdate = true;
       }
     }
-    if (b) b.position.y = 0;
+    if (b){ b.visible = true; b.position.y = 0; }
+    pm.children.forEach(c => { if (c !== m && c !== t && c !== b) c.visible = true; });
   }
 
   // ===== view modes =====
