@@ -7954,16 +7954,21 @@
       // these so the same logic runs on slot B's data, then restore.
       if (viewB.layerParticleSystems && viewB.layerParticleSystems.length && state.slots && state.slots.B){
         const _sB = state.slots.B;
-        const _saved_lps    = layerParticleSystems;
-        const _saved_plies  = state.plies;
-        const _saved_region = state.region;
-        const _saved_clt    = { D11: state._cltD11, D22: state._cltD22, D66: state._cltD66, Ex: state._cltEx };
+        const _saved_lps      = layerParticleSystems;
+        const _saved_plies    = state.plies;
+        const _saved_region   = state.region;
+        const _saved_clt      = { D11: state._cltD11, D22: state._cltD22, D66: state._cltD66, Ex: state._cltEx };
+        const _saved_viewMode = state.viewMode;
         layerParticleSystems = viewB.layerParticleSystems;
         state.plies  = _sB.plies;
         // Slot B's plate region drives plateRange() — without this swap,
         // particle traversal uses slot A's region (e.g., 'full' vs 'midfoot')
         // and particles cluster wrongly into the centre.
         state.region = _sB.region || 'full';
+        // Apply slot B's OWN viewMode so updateLayerParticles' visibility
+        // gate (energy || layers) uses B's mode, not the main scene's. Fixes
+        // missing particles when A is in stress and B is in layers in AB view.
+        if (_sB.viewMode) state.viewMode = _sB.viewMode;
         if (_sB._cltD11 !== undefined){
           state._cltD11 = _sB._cltD11;
           state._cltD22 = _sB._cltD22;
@@ -7976,6 +7981,7 @@
           layerParticleSystems = _saved_lps;
           state.plies  = _saved_plies;
           state.region = _saved_region;
+          state.viewMode = _saved_viewMode;
           state._cltD11 = _saved_clt.D11;
           state._cltD22 = _saved_clt.D22;
           state._cltD66 = _saved_clt.D66;
