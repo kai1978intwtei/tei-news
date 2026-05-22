@@ -5290,10 +5290,13 @@
     }
 
     // ===== centerline curve for particles (follows the plate's range only) =====
+    // Build the curve TOE → HEEL so particles travel from forefoot toward
+    // the heel — the correct biomechanical direction (forefoot strikes first
+    // and the impulse propagates rearward through the plate before toe-off).
     const curvePts = [];
     for (let i = 0; i <= 60; i++){
       const u = i/60;
-      const nxShoe = range.start + u * (range.end - range.start);
+      const nxShoe = range.end - u * (range.end - range.start);
       const x = -Lshoe/2 + nxShoe * Lshoe;
       const y = plateProfileY(x, Lshoe, state.arch, state.toeAngle, state.drop) + totalT/2 + 4;
       curvePts.push(new THREE.Vector3(x, y, 0));
@@ -5610,9 +5613,12 @@
     const segX = 50, segZ = 14;
 
     // ===== Directional indicators on the GROUND so engineer immediately knows toe vs heel =====
+    // Energy flow direction: forefoot strike enters at the TOE end and
+    // propagates back toward the HEEL, so the arrow head sits at -x (heel)
+    // and the shaft points TOE → HEEL. This matches forefoot-striker
+    // biomechanics, which is what carbon-plate competition shoes target.
     {
       const arrowGrp = new THREE.Group();
-      // long arrow on the ground pointing to TOE
       const arrowY = plateProfileY(0, Lshoe, state.arch, state.toeAngle, state.drop) - 80;
       const arrowLen = Lshoe * 0.78;
       const shaft = new THREE.Mesh(
@@ -5626,8 +5632,8 @@
         new THREE.ConeGeometry(8, 16, 14),
         new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 })
       );
-      head.rotation.z = -Math.PI/2;
-      head.position.set(arrowLen/2 + 8, arrowY, 0);
+      head.rotation.z = Math.PI/2;                // point toward -x (HEEL)
+      head.position.set(-arrowLen/2 - 8, arrowY, 0);
       arrowGrp.add(head);
       // foot silhouette outline beneath layers
       const footShape = new THREE.Shape();
