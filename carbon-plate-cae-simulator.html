@@ -5632,9 +5632,23 @@
         new THREE.ConeGeometry(8, 16, 14),
         new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 })
       );
-      head.rotation.z = Math.PI/2;                // point toward -x (HEEL)
+      // Use quaternion lookAt — bullet-proof against any inherited rotation:
+      // align the cone's default +Y axis with world -X (heel direction).
+      head.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(-1, 0, 0)
+      );
       head.position.set(-arrowLen/2 - 8, arrowY, 0);
       arrowGrp.add(head);
+      // Small ring at the TAIL (toe end of the shaft) marks where the flow
+      // starts — visual reinforcement that the arrow runs TOE → HEEL.
+      const tailRing = new THREE.Mesh(
+        new THREE.TorusGeometry(7, 1.4, 6, 24),
+        new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.7 })
+      );
+      tailRing.rotation.y = Math.PI/2;            // ring faces along X
+      tailRing.position.set(arrowLen/2 + 4, arrowY, 0);  // toe end of shaft
+      arrowGrp.add(tailRing);
       // foot silhouette outline beneath layers
       const footShape = new THREE.Shape();
       const N = 60;
