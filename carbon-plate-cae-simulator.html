@@ -4244,13 +4244,17 @@
     const tt = Math.max(0, Math.min(1, t));
     switch(id){
       case 'walk': {
-        const nx = 0.18 + 0.62*tt;
+        // Forefoot-strike model: load enters at the toe and shifts rearward
+        // toward the heel through stance — matches carbon-plate competition
+        // shoe biomechanics. (Was 0.18→0.80; now 0.80→0.18.)
+        const nx = 0.80 - 0.62*tt;
         const intensity = Math.exp(-Math.pow((tt-0.22)/0.13,2))*0.45 + Math.exp(-Math.pow((tt-0.70)/0.18,2))*0.55;
-        const strike = tt<0.40?'heel':(tt<0.78?'mid':'fore');
+        const strike = tt<0.22?'fore':(tt<0.60?'mid':'heel');
         return { nx, nz:0, intensity, force: ACTIONS.walk.peakBW*intensity, strikeName: strike };
       }
       case 'jump': {
-        const nx = 0.50 + 0.05*Math.sin(tt*Math.PI*4);
+        // Forefoot-centred jump (launch + landing both via toe).
+        const nx = 0.65 + 0.05*Math.sin(tt*Math.PI*4);
         let intensity = 0;
         if      (tt < 0.10) intensity = 0.55*(tt/0.10);                                  // crouch buildup
         else if (tt < 0.22) intensity = Math.exp(-Math.pow((tt-0.16)/0.045,2))*1.55;     // launch impulse
@@ -4261,43 +4265,50 @@
         return { nx, nz:0, intensity, force: ACTIONS.jump.peakBW*intensity, strikeName: phase };
       }
       case 'jog': {
-        const nx = 0.18 + 0.62*tt;
+        // Forefoot-strike model — toe touches first, weight shifts rearward.
+        const nx = 0.80 - 0.62*tt;
         const intensity = Math.exp(-Math.pow((tt-0.18)/0.10,2))*0.65 + Math.exp(-Math.pow((tt-0.62)/0.16,2))*0.85;
-        const strike = tt<0.35?'heel':(tt<0.70?'mid':'fore');
+        const strike = tt<0.30?'fore':(tt<0.65?'mid':'heel');
         return { nx, nz:0, intensity, force: ACTIONS.jog.peakBW*intensity, strikeName: strike };
       }
       case 'run': {
-        const nx = 0.20 + 0.62*tt;
+        // Forefoot-strike model.
+        const nx = 0.82 - 0.62*tt;
         const intensity = Math.exp(-Math.pow((tt-0.45)/0.22,2))*1.1;
-        const strike = tt<0.30?'heel':(tt<0.65?'mid':'fore');
+        const strike = tt<0.35?'fore':(tt<0.70?'mid':'heel');
         return { nx, nz:0, intensity, force: ACTIONS.run.peakBW*intensity, strikeName: strike };
       }
       case 'sprint': {
+        // Sprint already stays on the forefoot — keep elevated nx.
         const nx = 0.74 + 0.06*Math.sin(tt*Math.PI);
         const intensity = Math.exp(-Math.pow((tt-0.32)/0.13,2))*1.45;
         return { nx, nz:0, intensity, force: ACTIONS.sprint.peakBW*intensity, strikeName: 'fore' };
       }
       case 'jumpUp': {
-        const nx = 0.50 + 0.10*tt;
+        // Toe-off launch: weight starts on forefoot then settles slightly back.
+        const nx = 0.60 - 0.10*tt;
         const intensity = tt<0.45 ? 0.5*(tt/0.45) : Math.exp(-Math.pow((tt-0.62)/0.10,2))*1.55;
         return { nx, nz:0, intensity, force: ACTIONS.jumpUp.peakBW*intensity, strikeName: 'fore' };
       }
       case 'land': {
-        const nx = 0.12 + 0.40*tt;
+        // Forefoot landing — toe takes first hit, then load propagates toward heel.
+        const nx = 0.85 - 0.40*tt;
         const intensity = Math.exp(-Math.pow((tt-0.10)/0.06,2))*1.65 + Math.exp(-Math.pow((tt-0.50)/0.18,2))*0.75;
-        const strike = tt<0.25?'heel':(tt<0.60?'mid':'fore');
+        const strike = tt<0.25?'fore':(tt<0.60?'mid':'heel');
         return { nx, nz:0, intensity, force: ACTIONS.land.peakBW*intensity, strikeName: strike };
       }
       case 'cut': {
-        const nx = 0.34 + 0.18*tt;
+        // Lateral cut planted on forefoot, sliding slightly rearward.
+        const nx = 0.72 - 0.18*tt;
         const nz = -0.55 + 0.85*Math.sin(tt*Math.PI);
         const intensity = Math.exp(-Math.pow((tt-0.42)/0.18,2))*1.35;
         return { nx, nz, intensity, force: ACTIONS.cut.peakBW*intensity, strikeName: 'lateral' };
       }
       case 'stop': {
-        const nx = 0.16 + 0.04*Math.sin(tt*Math.PI);
+        // Forefoot brake (carbon-plate sprinters stop on the forefoot, not heel).
+        const nx = 0.84 + 0.04*Math.sin(tt*Math.PI);
         const intensity = Math.exp(-Math.pow((tt-0.18)/0.07,2))*1.7;
-        return { nx, nz:0, intensity, force: ACTIONS.stop.peakBW*intensity, strikeName: 'heel' };
+        return { nx, nz:0, intensity, force: ACTIONS.stop.peakBW*intensity, strikeName: 'fore' };
       }
       case 'pivot': {
         const nx = 0.50;
@@ -6100,6 +6111,12 @@
       layerMeshes.push(m);
 
       // ===== fiber-direction indicator line drawn on top of each sheet =====
+      // Arrowhead placed at the -dirX end of the line so the per-ply arrow
+      // visually travels TOE → HEEL (same convention as the ground energy
+      // arrow + centerline particles). For 0° UD plies this is unambiguous;
+      // for ±30°/45°/60° plies the arrow points toward the heel-side end of
+      // the fiber. The line itself is symmetric so fiber orientation reads
+      // identically; only the arrowhead's pointing direction changes.
       const angRad = p.angle * Math.PI / 180;
       const lineLen = Math.min(slabW, slabD) * 0.85;
       const dirX = Math.cos(angRad);
@@ -6117,15 +6134,15 @@
       scene.add(dirLine);
       layerMeshes.push(dirLine);
 
-      // small arrowhead (cone) at end of line
+      // Arrowhead at the -dirX (heel-side) end of the fiber line.
       const headGeo = new THREE.ConeGeometry(2.2, 5, 8);
       const headMat = new THREE.MeshBasicMaterial({ color: angleColor(p.angle) });
       const head = new THREE.Mesh(headGeo, headMat);
-      head.position.set(cutOffsetX + dirX * lineLen/2, yMid + tShown/2 + 0.4, dirZ * lineLen/2);
-      // align cone Y-axis with line direction
+      head.position.set(cutOffsetX - dirX * lineLen/2, yMid + tShown/2 + 0.4, -dirZ * lineLen/2);
+      // Cone's default +Y axis aligned with (-dirX, 0, -dirZ) → toward heel
       head.quaternion.setFromUnitVectors(
         new THREE.Vector3(0, 1, 0),
-        new THREE.Vector3(dirX, 0, dirZ).normalize()
+        new THREE.Vector3(-dirX, 0, -dirZ).normalize()
       );
       scene.add(head);
       layerMeshes.push(head);
