@@ -5957,12 +5957,17 @@
 
     layerParticleSystems.forEach(ps => {
       const angRad = ps.userData.angle * Math.PI / 180;
-      const dirX = Math.cos(angRad);
-      const dirZ = -Math.sin(angRad);
+      // ===== Energy-flow direction: TOE → HEEL =====
+      // We negate both X and Z so the particle traverses the fiber axis in
+      // the reverse direction. For a 0° ply that means flowing toward -X
+      // (heel), matching forefoot-strike energy propagation. The fiber line
+      // is unchanged — we just travel along it the opposite way.
+      const dirX = -Math.cos(angRad);
+      const dirZ =  Math.sin(angRad);
       // Perpendicular axis (weft direction for woven fabrics) — rotate 90°
       const pAngRad = angRad + Math.PI / 2;
-      const pDirX = Math.cos(pAngRad);
-      const pDirZ = -Math.sin(pAngRad);
+      const pDirX = -Math.cos(pAngRad);
+      const pDirZ =  Math.sin(pAngRad);
       const isWoven = !!ps.userData.isWoven;
       const yPly = ps.userData.yOffset;
       const baseColor = new THREE.Color(angleColor(ps.userData.angle));
