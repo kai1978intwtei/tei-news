@@ -6978,16 +6978,34 @@
     // change resin/fiber/etc.
     const isEnergy = state.viewMode === 'energy';
     particleSystem.visible = true;
-    particleSystem.material.opacity = isEnergy ? 0.95 : 0.55;
 
     // ----- Pull material visual signature & action intensity -----
     const sig = materialVisualSignature();
     const action = state.activeAction ? ACTIONS[state.activeAction] : null;
-    const load = action ? actionLoadProfile(state.activeAction, state.actionT) : { intensity: 0.18 };
+    const load = action ? actionLoadProfile(state.activeAction, state.actionT) : { intensity: 0.18, nx: 0.5 };
     const intensity = load.intensity || 0.18;
+
+    // ===== Energy-flow gating: only transmit when forefoot is loaded =====
+    // Biomechanics: a forefoot-strike runner contacts ground with the toe
+    // region first; the impulse then propagates rearward through the carbon
+    // plate. We model that by activating the toe→heel flow ONLY while the
+    // load-centre nx sits in the forefoot half of the plate. Outside that
+    // window the particles fade and freeze, giving the visualisation a
+    // proper "transmission begins now" beat instead of constant motion.
+    const isForefootLoaded = !!state.activeAction
+      && load.nx  >= 0.50
+      && load.intensity > 0.10;
+    // When idle (no action) we keep a faint ambient flow so the user can
+    // still see resin / fiber identity. During an action we gate strictly.
+    const flowGate = state.activeAction ? (isForefootLoaded ? 1.0 : 0.0) : 1.0;
+    particleSystem.material.opacity = (isEnergy ? 0.95 : 0.55) * (state.activeAction
+      ? (isForefootLoaded ? 1.0 : 0.10)
+      : 1.0);
     // Speed combines: base random per-particle × material speedMul × action drive
+    // × forefoot-loading gate (0 when not in transmission window → particles
+    // pause). Idle (no action) keeps the gate at 1 for ambient material flow.
     const actionDrive = 0.7 + 1.8 * intensity;
-    const speedFactor = sig.speedMul * actionDrive;
+    const speedFactor = sig.speedMul * actionDrive * flowGate;
     // Density — fade out particles beyond the active count
     const activeN = Math.floor(particleData.length * sig.densityFrac);
     // Size — modulated by toughness + action intensity, plus pulse boost
