@@ -3151,8 +3151,8 @@ function messageDetail(m) {
       </div>
       <div class="flex gap-1 flex-shrink-0">
         ${externalUrl ? `
-          <a href="${externalUrl}" target="_blank" rel="noopener"
-             class="btn-ghost text-[11px]" style="padding: 6px 10px;" title="在 ${SOURCE_META[m.source].label} 開啟原始對話">
+          <a href="${externalUrl}"
+             class="btn-ghost text-[11px]" style="padding: 6px 10px;" title="在 ${SOURCE_META[m.source].label} 開啟原始對話（同窗）">
             <i data-lucide="external-link" class="w-3 h-3"></i>${SOURCE_META[m.source].label}
           </a>
         ` : ''}
