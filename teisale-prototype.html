@@ -3526,13 +3526,19 @@
     // 在 demo 切換器中所有人都能切換到他們以模擬視角
     const tierRank = { assistant:-1, shipping:-1, staff:0, supervisor:1, manager:2, exec:3 };
     const myRank = tierRank[p.tier];
+    const isSideways = myRank < 0;  // 業助/船務 demo 中可自由切換到任何 persona
 
-    // DEMO 浮動切換器：同樣的階層規則（外加底部「重設 Demo」escape 鈕）
+    // DEMO 浮動切換器:
+    // - 在指揮鏈內 (myRank >= 0):只能切換到 tier 比自己低的人
+    // - 業助/船務 (sideways):demo 中允許切換到任何 persona,避免操作者卡在無法切回的情境
     let visibleCount = 0;
     document.querySelectorAll("#demoDropdown button[data-persona]").forEach(b=>{
       const tk = b.dataset.persona;
       const tt = personas[tk].tier;
-      const hide = (tk===key) || (tierRank[tt] >= myRank);
+      let hide;
+      if (tk === key) hide = true;
+      else if (isSideways) hide = false;
+      else hide = (tierRank[tt] >= myRank);
       b.hidden = hide;
       if(!hide) visibleCount++;
     });
