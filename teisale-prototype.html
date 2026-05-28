@@ -1397,6 +1397,32 @@
   .ship-item .ship-meta{font-size:11px;color:var(--text-sub);}
   .ship-empty{padding:32px 12px;text-align:center;color:var(--text-muted);font-size:12px;}
 
+  /* 船務 ‧ 報關資訊 / EDI badge */
+  .customs-row{
+    margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);
+    font-family:var(--font-mono);font-size:10px;color:var(--text-sub);
+    display:flex;flex-wrap:wrap;gap:6px;
+  }
+  .customs-row .cf{padding:1px 6px;background:var(--surface-soft);border-radius:4px;}
+  .edi-badge{
+    display:inline-flex;align-items:center;gap:3px;padding:2px 6px;
+    border-radius:4px;font-size:10px;font-weight:700;font-family:var(--font-mono);
+  }
+  .edi-pending  { color:#92400E;background:#FEF3C7; }
+  .edi-submitted{ color:#1E40AF;background:#DBEAFE; }
+  .edi-cleared  { color:#065F46;background:#D1FAE5; }
+  .edi-rejected { color:#991B1B;background:#FEE2E2; }
+  .edi-na       { color:var(--text-muted);background:var(--surface-soft); }
+  .edi-badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+  .customs-edit-btn{
+    margin-top:8px;width:100%;
+    background:var(--surface-soft);color:var(--text-sub);border:1px solid var(--border);
+    border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:4px;
+  }
+  .customs-edit-btn:hover{background:var(--surface);color:var(--accent-dark);border-color:var(--accent-border);}
+
   /* --- 聯絡簿:表格 --- */
   .contacts-tabs{
     display:flex;gap:6px;margin-bottom:14px;
@@ -2910,6 +2936,52 @@
   </div>
 </div>
 
+<!-- ===== MINI MODAL ‧ 報關 / EDI 編輯（船務專屬） ===== -->
+<div class="mini-modal-backdrop" id="customsEditBackdrop" data-open="false">
+  <div class="mini-modal" style="max-width:580px;">
+    <h3>報關 / EDI 資訊</h3>
+    <div class="mm-sub" id="ceShipTitle">—</div>
+    <label>報單號碼 ‧ Customs No.</label>
+    <input type="text" id="ceCustomsNo" placeholder="例:BC-2026-0042-01" style="font-family:var(--font-mono);" />
+    <label>報關日期</label>
+    <input type="date" id="ceCustomsDate" />
+    <label>提單號碼 ‧ B/L 或 AWB No.</label>
+    <input type="text" id="ceBlNo" placeholder="例:EMCU-12345678 或 297-12345678" style="font-family:var(--font-mono);" />
+    <label>預計到貨日 ‧ ETA</label>
+    <input type="date" id="ceEta" />
+    <label>報關文件連結(雲端 PDF / 影像)</label>
+    <input type="text" id="ceCustomsDocUrl" placeholder="例:https://drive.google.com/.../報單.pdf" style="font-family:var(--font-mono);font-size:12px;" />
+    <label>備註</label>
+    <textarea id="ceNotes" placeholder="若有特殊狀況可註記" style="font-size:12px;"></textarea>
+
+    <!-- ===== EDI / 海關 API stub ===== -->
+    <div style="margin-top:18px;padding:14px;background:var(--surface-soft);border:1px solid var(--border);border-radius:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);">EDI / 海關 API 介接</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">將上方報關資訊送至海關電子系統(模擬:正式版接 EDI gateway)</div>
+        </div>
+        <span class="edi-badge edi-na" id="ceEdiBadge"><span class="dot"></span>未送出</span>
+      </div>
+      <div id="ceEdiLastSync" style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">尚未同步</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="filter-pill" id="ceEdiSendBtn" style="background:#DBEAFE;border-color:#93C5FD;color:#1E40AF;font-weight:600;cursor:pointer;">📤 送出 EDI</button>
+        <button class="filter-pill" id="ceEdiCheckBtn" style="cursor:pointer;">🔍 查詢狀態</button>
+        <button class="filter-pill" id="ceEdiSimulateCleared" style="cursor:pointer;color:var(--ok);">✓ 模擬清關回傳</button>
+        <button class="filter-pill" id="ceEdiSimulateRejected" style="cursor:pointer;color:var(--danger);">✗ 模擬退單回傳</button>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">
+        ⓘ 此為 prototype stub ‧ 正式部署時改接 customs.tw EDI gateway 或物流商 API
+      </div>
+    </div>
+
+    <div class="mm-actions">
+      <button class="btn-cancel" id="ceCancel">關閉</button>
+      <button class="btn-submit" id="ceSubmit">儲存報關資訊</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MINI MODAL ‧ 新增聯絡人 ===== -->
 <div class="mini-modal-backdrop" id="newContactBackdrop" data-open="false">
   <div class="mini-modal">
@@ -3503,10 +3575,14 @@
   //   dueAt: 'YYYY-MM-DD' | null
   //   attachments: [{ name, url }]
   const assistantTasks = [];
-  // shippingItems: {id, type, mode, requestedBy, title, party, port, status, createdAt}
-  //   type: 'inbound' | 'outbound' | 'sample'
-  //   mode: 'sea' | 'air'
-  //   status: 'requested' | 'booked' | 'customs' | 'delivered'
+  // shippingItems:
+  //   {id, type, mode, requestedBy, title, party, port, status, createdAt,
+  //    customsNo, customsDate, blNo, eta, customsDocUrl, customsNotes,
+  //    ediStatus, ediSyncedAt}
+  //   type:    'inbound' | 'outbound' | 'sample'
+  //   mode:    'sea' | 'air'
+  //   status:  'requested' | 'booked' | 'customs' | 'delivered'
+  //   ediStatus: null | 'pending' | 'submitted' | 'cleared' | 'rejected'
   const shippingItems = [];
   // contacts: {id, kind:'customer'|'supplier', company, person, phone, email, addr, owner}
   const contacts = [];
@@ -3562,6 +3638,11 @@
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       ${labelMap[st]} ${dueAt}
     </span>`;
+  }
+  function renderEdiBadge(it){
+    if(!it.ediStatus) return '';
+    const labelMap = { pending:'EDI 排程', submitted:'EDI 已送', cleared:'已清關', rejected:'EDI 退單' };
+    return `<span class="edi-badge edi-${it.ediStatus}"><span class="dot"></span>${labelMap[it.ediStatus]}</span>`;
   }
   function attachmentsHtml(atts){
     if(!atts || !atts.length) return '';
@@ -3857,6 +3938,21 @@
         itEl.className = "ship-item";
         const requester = personas[it.requestedBy];
         const typeLabel = ({inbound:'進貨',outbound:'出貨',sample:'樣本'})[it.type];
+
+        // 報關 / EDI 資訊區塊(若有任一欄位填寫過才顯示)
+        const hasCustoms = it.customsNo || it.blNo || it.customsDate || it.eta || it.customsDocUrl;
+        const customsHtml = hasCustoms ? `<div class="customs-row">
+          ${it.customsNo ? `<span class="cf">報單 ${it.customsNo}</span>` : ''}
+          ${it.blNo     ? `<span class="cf">B/L ${it.blNo}</span>` : ''}
+          ${it.customsDate ? `<span class="cf">報關 ${it.customsDate}</span>` : ''}
+          ${it.eta      ? `<span class="cf">ETA ${it.eta}</span>` : ''}
+          ${it.customsDocUrl ? `<a class="cf" href="${it.customsDocUrl}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer;">📎 文件</a>` : ''}
+          ${renderEdiBadge(it)}
+        </div>` : (it.ediStatus ? `<div class="customs-row">${renderEdiBadge(it)}</div>` : '');
+
+        const customsBtn = (isShipping && ['booked','customs','delivered'].includes(it.status))
+          ? `<button class="customs-edit-btn" data-ship-customs="${it.id}">📋 報關 / EDI</button>` : '';
+
         itEl.innerHTML = `
           <div class="si-head">
             <span class="ship-no">${it.id} ‧ ${typeLabel}</span>
@@ -3865,9 +3961,11 @@
           <div class="ship-title">${it.title}</div>
           <div class="ship-meta">${it.party||'—'} ‧ ${it.port||'—'}</div>
           <div class="ship-meta" style="margin-top:4px;">${requester.emoji} ${requester.name} 派發 ‧ ${it.createdAt.split(' ')[0]}</div>
-          ${isShipping ? `<div style="margin-top:8px;display:flex;gap:4px;">
+          ${customsHtml}
+          ${isShipping ? `<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
             ${statuses.filter(s=>s!==it.status).map(s=>`<button class="filter-pill" data-ship-id="${it.id}" data-set-status="${s}" style="font-size:10px;padding:3px 8px;">→ ${({requested:'重設待處',booked:'訂艙',customs:'報關',delivered:'到貨'})[s]}</button>`).join("")}
           </div>` : ''}
+          ${customsBtn}
         `;
         col.appendChild(itEl);
       });
@@ -3877,7 +3975,14 @@
     document.querySelectorAll("#shipKanban button[data-ship-id]").forEach(btn=>{
       btn.addEventListener("click",()=>{
         const it = shippingItems.find(x=>x.id===btn.dataset.shipId);
-        if(it){ it.status = btn.dataset.setStatus; renderShipping(currentKey); renderOverview(); renderMyShipOnPersonal(currentUserKey); }
+        if(it){ it.status = btn.dataset.setStatus; renderShipping(currentKey); renderOverview(); renderMyShipOnPersonal(currentUserKey); renderTeamFull(); }
+      });
+    });
+
+    // 船務:開啟報關 / EDI 編輯
+    document.querySelectorAll("#shipKanban button[data-ship-customs]").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        openCustomsEdit(btn.dataset.shipCustoms);
       });
     });
   }
@@ -4040,6 +4145,10 @@
       port: $("nsPort").value.trim(),
       status: "requested",
       createdAt: nowStr(),
+      // 報關 / EDI(由船務後續填寫)
+      customsNo: "", customsDate: "", blNo: "", eta: "",
+      customsDocUrl: "", customsNotes: "",
+      ediStatus: null, ediSyncedAt: null,
     });
     closeNewShip();
     renderMyShipOnPersonal(currentUserKey);
@@ -4047,6 +4156,101 @@
     renderOverview();
   });
   nsBackdrop.addEventListener("click",(e)=>{ if(e.target===nsBackdrop) closeNewShip(); });
+
+  // ----- Modal: 報關 / EDI 編輯(船務專屬) -----
+  const ceBackdrop = $("customsEditBackdrop");
+  let ceCurrentItemId = null;
+  function openCustomsEdit(itemId){
+    const it = shippingItems.find(x=>x.id===itemId);
+    if(!it) return;
+    ceCurrentItemId = itemId;
+    $("ceShipTitle").textContent = `${it.id} ‧ ${({inbound:'進貨',outbound:'出貨',sample:'樣本'})[it.type]} ‧ ${it.title}`;
+    $("ceCustomsNo").value      = it.customsNo || "";
+    $("ceCustomsDate").value    = it.customsDate || "";
+    $("ceBlNo").value           = it.blNo || "";
+    $("ceEta").value            = it.eta || "";
+    $("ceCustomsDocUrl").value  = it.customsDocUrl || "";
+    $("ceNotes").value          = it.customsNotes || "";
+    refreshEdiUi(it);
+    ceBackdrop.dataset.open = "true";
+  }
+  function closeCustomsEdit(){
+    ceBackdrop.dataset.open = "false";
+    ceCurrentItemId = null;
+  }
+  function refreshEdiUi(it){
+    const b = $("ceEdiBadge");
+    const ls = $("ceEdiLastSync");
+    const map = {
+      pending:   {cls:"edi-pending",   text:"排程中"},
+      submitted: {cls:"edi-submitted", text:"已送出"},
+      cleared:   {cls:"edi-cleared",   text:"已清關"},
+      rejected:  {cls:"edi-rejected",  text:"已退單"},
+    };
+    if(it.ediStatus && map[it.ediStatus]){
+      b.className = `edi-badge ${map[it.ediStatus].cls}`;
+      b.innerHTML = `<span class="dot"></span>${map[it.ediStatus].text}`;
+    } else {
+      b.className = "edi-badge edi-na";
+      b.innerHTML = `<span class="dot"></span>未送出`;
+    }
+    ls.textContent = it.ediSyncedAt ? `最近同步:${it.ediSyncedAt}` : "尚未同步";
+  }
+  $("ceCancel").addEventListener("click", closeCustomsEdit);
+  ceBackdrop.addEventListener("click",(e)=>{ if(e.target===ceBackdrop) closeCustomsEdit(); });
+  $("ceSubmit").addEventListener("click", ()=>{
+    const it = shippingItems.find(x=>x.id===ceCurrentItemId);
+    if(!it) return;
+    it.customsNo     = $("ceCustomsNo").value.trim();
+    it.customsDate   = $("ceCustomsDate").value;
+    it.blNo          = $("ceBlNo").value.trim();
+    it.eta           = $("ceEta").value;
+    it.customsDocUrl = $("ceCustomsDocUrl").value.trim();
+    it.customsNotes  = $("ceNotes").value.trim();
+    closeCustomsEdit();
+    renderShipping(currentUserKey);
+    renderOverview();
+    renderTeamFull();
+  });
+
+  // EDI / 海關 API stub
+  // 正式部署時改接 customs.tw EDI gateway 或物流商 API(SOAP/REST)
+  $("ceEdiSendBtn").addEventListener("click",()=>{
+    const it = shippingItems.find(x=>x.id===ceCurrentItemId);
+    if(!it) return;
+    if(!it.customsNo){ alert("請先填寫報單號碼"); return; }
+    it.ediStatus = "submitted";
+    it.ediSyncedAt = nowStr();
+    refreshEdiUi(it);
+    renderShipping(currentUserKey);
+  });
+  $("ceEdiCheckBtn").addEventListener("click",()=>{
+    const it = shippingItems.find(x=>x.id===ceCurrentItemId);
+    if(!it) return;
+    if(!it.ediStatus){ alert("尚未送出 EDI"); return; }
+    it.ediSyncedAt = nowStr();
+    refreshEdiUi(it);
+    renderShipping(currentUserKey);
+  });
+  $("ceEdiSimulateCleared").addEventListener("click",()=>{
+    const it = shippingItems.find(x=>x.id===ceCurrentItemId);
+    if(!it) return;
+    if(it.ediStatus!=="submitted" && it.ediStatus!=="pending"){ alert("此狀態無法模擬清關"); return; }
+    it.ediStatus = "cleared";
+    it.ediSyncedAt = nowStr();
+    if(!it.eta) it.eta = new Date(Date.now()+5*24*3600*1000).toISOString().slice(0,10);
+    refreshEdiUi(it);
+    renderShipping(currentUserKey);
+  });
+  $("ceEdiSimulateRejected").addEventListener("click",()=>{
+    const it = shippingItems.find(x=>x.id===ceCurrentItemId);
+    if(!it) return;
+    if(it.ediStatus!=="submitted"){ alert("此狀態無法模擬退單"); return; }
+    it.ediStatus = "rejected";
+    it.ediSyncedAt = nowStr();
+    refreshEdiUi(it);
+    renderShipping(currentUserKey);
+  });
 
   // ----- Modal: 新增聯絡人 -----
   const ncBackdrop = $("newContactBackdrop");
