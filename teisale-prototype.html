@@ -559,6 +559,16 @@
   .audience-radio label:has(input:checked) .t{color:var(--accent-dark);}
 
   .member-checks{display:flex;flex-direction:column;gap:6px;}
+  .member-checks .grp-head{
+    font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--text-muted);padding:6px 4px 2px;display:flex;align-items:center;gap:6px;
+  }
+  .member-checks .grp-head .grp-line{flex:1;height:1px;background:var(--border);}
+  .member-checks .grp-head:first-child{padding-top:0;}
+  .member-checks .tier-mini{
+    font-size:9px;padding:1px 5px;border-radius:4px;font-family:var(--font-mono);font-weight:700;
+    letter-spacing:0.06em;margin-left:auto;margin-right:8px;
+  }
   .member-checks label{
     display:flex;align-items:center;gap:10px;
     padding:8px 12px;border-radius:8px;
@@ -4828,17 +4838,38 @@
     const aud = document.querySelector('input[name="aud"]:checked').value;
     const allMode = (aud === "all");
     const list = $("castMemberList");
-    list.innerHTML = others.map(k => {
-      const p = personas[k];
-      return `
-        <label class="${allMode?'disabled':''}">
-          <input type="checkbox" data-key="${k}" ${allMode?'checked disabled':''} />
-          <span class="em">${p.emoji}</span>
-          <span class="nm">${p.name}</span>
-          <span class="tt">${p.title}</span>
-        </label>
-      `;
+
+    // 依 tier 分組
+    const tierOrder = ["exec","manager","supervisor","staff","assistant","shipping"];
+    const groupLabel = {
+      exec:"總經理(觀察視角)", manager:"業務經理",
+      supervisor:"課長 / 副課長",  staff:"業務",
+      assistant:"業務助理",           shipping:"船務",
+    };
+    const grouped = {};
+    others.forEach(k=>{
+      const t = personas[k].tier;
+      (grouped[t] = grouped[t] || []).push(k);
+    });
+
+    const html = tierOrder.filter(t => grouped[t]).map(t => {
+      const header = `<div class="grp-head">${groupLabel[t]}<span class="grp-line"></span></div>`;
+      const items = grouped[t].map(k=>{
+        const p = personas[k];
+        return `
+          <label class="${allMode?'disabled':''}">
+            <input type="checkbox" data-key="${k}" ${allMode?'checked disabled':''} />
+            <span class="em">${p.emoji}</span>
+            <span class="nm">${p.name}</span>
+            <span class="tt">${p.title}</span>
+            <span class="tier-mini tier-${p.tier}">${tierMeta[p.tier].short}</span>
+          </label>
+        `;
+      }).join("");
+      return header + items;
     }).join("");
+
+    list.innerHTML = html;
     updateCastSelectedCount();
   }
   function updateCastSelectedCount(){
