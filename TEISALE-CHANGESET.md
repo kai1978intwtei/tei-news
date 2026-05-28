@@ -29,13 +29,17 @@ ALTER TYPE profile_tier ADD VALUE 'shipping';
 
 ### 2.2 新增 profile rows(placeholder ‧ 待真實姓名填入)
 
-| key (前端) | name | en | title | tier | unit | ext | emoji |
-|-----|------|-----|-------|------|------|-----|-------|
-| `lily` | 林莉莉 | Lily Lin | 業務助理 | `assistant` | 業務開發課 SD | 431 | 🐰 |
-| `mia` | 楊咪雅 | Mia Yang | 業務助理 | `assistant` | 業務開發課 SD | 432 | 🦋 |
-| `marco` | 周船仔 | Marco Chou | 船務 | `shipping` | 營運支援課 OPS | 441 | 🐳 |
+| key (前端) | name | en | title | tier | unit | ext | emoji | id (placeholder) |
+|-----|------|-----|-------|------|------|-----|-------|------|
+| `lily` | 林莉莉 | Lily Lin | 業務助理 | `assistant` | 業務開發課 SD | 431 | 🐰 | `placeholder-assistant-1` |
+| `mia` | 楊咪雅 | Mia Yang | 業務助理 | `assistant` | 業務開發課 SD | 432 | 🦋 | `placeholder-assistant-2` |
+| `marco` | 周船仔 | Marco Chou | 船務 | `shipping` | 營運支援課 OPS | 441 | 🐳 | `placeholder-shipping-1` |
 
-> ⚠️ `id` 欄位前端目前用 `placeholder-assistant-1` 等占位字串,正式部署時請替換為 ProjFlow 真實 UUID。
+> ⚠️ **本輪確認保留佔位** ‧ 後續真名上線時需:
+> 1. 更新 `personas[].id` 為 ProjFlow 真實 UUID
+> 2. 同步替換姓名 / 英文名 / 分機 / emoji
+> 3. 若姓名變動,在 `demoDropdown` 三個 `<button data-persona>` 同步調整
+> 4. SQL migration 中 INSERT 佔位 profile 的 row 應對應替換
 
 ---
 
