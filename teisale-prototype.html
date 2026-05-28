@@ -1182,6 +1182,41 @@
   }
 
   /* ===========================================
+     READ-ONLY 觀察視角 banner + 同步寫入指示
+  ============================================ */
+  .observe-banner{
+    display:flex;align-items:center;gap:12px;padding:12px 18px;
+    background:linear-gradient(90deg,#F0F9FF 0%,#E0F2FE 100%);
+    border:1px solid #BAE6FD;border-radius:12px;margin-bottom:18px;
+    font-size:13px;color:#075985;
+  }
+  .observe-banner .ob-icon{
+    width:28px;height:28px;border-radius:8px;background:#0EA5E9;color:#fff;
+    display:grid;place-items:center;flex-shrink:0;
+  }
+  .observe-banner .ob-text{flex:1;line-height:1.5;}
+  .observe-banner .ob-title{font-weight:700;}
+  .observe-banner .ob-sub{font-size:12px;color:#0369A1;margin-top:1px;}
+  .observe-banner .ob-tag{
+    font-size:10px;padding:3px 8px;border-radius:6px;background:#0EA5E9;color:#fff;
+    font-family:var(--font-mono);font-weight:700;letter-spacing:0.06em;
+  }
+
+  /* 寫入目標標籤(個人作業頁顯示) */
+  .sync-target{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
+    background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;
+    font-size:11px;color:#92400E;font-weight:600;
+  }
+  .sync-target .st-dot{width:6px;height:6px;border-radius:50%;background:#F59E0B;}
+  .sync-target.read-only{background:#E0F2FE;border-color:#BAE6FD;color:#075985;}
+  .sync-target.read-only .st-dot{background:#0EA5E9;}
+
+  /* sync-bar 內的分頁寫入描述 */
+  .sync-bar .sync-pages{font-size:11px;color:var(--text-muted);margin-left:12px;}
+  .sync-bar .sync-pages strong{color:var(--text-sub);font-weight:600;}
+
+  /* ===========================================
      新增分頁:全公司總覽 / 協助任務 / 船務作業 / 聯絡簿
   ============================================ */
 
@@ -1495,6 +1530,10 @@
       <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       權限管理
     </button>
+    <button data-page="team_full" hidden>
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/></svg>
+      全員狀態
+    </button>
     <button data-page="overview" hidden>
       <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/></svg>
       全公司總覽
@@ -1533,6 +1572,12 @@
         </h1>
         <div class="me-sub" id="meSub">
           年度業績目標 <strong>尚未設定</strong> ‧ 請於「個人目標設定」填寫年/季/月目標
+        </div>
+        <div style="margin-top:8px;">
+          <span class="sync-target" id="personalSyncTag">
+            <span class="st-dot"></span>
+            個人作業 ‧ 會寫入 ProjFlow.kpi_events / reception_visits / teisale.deal
+          </span>
         </div>
       </div>
       <div class="me-actions">
@@ -1892,6 +1937,17 @@
        PAGE 2 ‧ 團隊看板（課長級以上可看）
   ============================================ -->
   <section class="page" data-page="team">
+    <div class="observe-banner">
+      <div class="ob-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="ob-text">
+        <div class="ob-title">觀察視角 ‧ 不寫入 ProjFlow</div>
+        <div class="ob-sub">業績、拜訪、案件等數字由各業務於自己的「我的衝刺」頁面寫入;您在此僅讀取彙整結果。</div>
+      </div>
+      <span class="ob-tag">READ-ONLY</span>
+    </div>
+
     <div class="dept-header">
       <div>
         <div class="me-title">部門看板 ‧ Team Board</div>
@@ -2182,9 +2238,93 @@
   </section>
 
   <!-- ===========================================
+       PAGE ‧ 全員狀態（經理視角專屬 ‧ GM 也可看）
+       READ-ONLY 觀察:不寫入 ProjFlow
+  ============================================ -->
+  <section class="page" data-page="team_full">
+    <div class="observe-banner">
+      <div class="ob-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="ob-text">
+        <div class="ob-title">觀察視角 ‧ 不寫入 ProjFlow</div>
+        <div class="ob-sub">此頁面顯示的所有資料皆由各人員自行於其個人作業頁維護;您在此僅讀取彙整結果,無同步動作。</div>
+      </div>
+      <span class="ob-tag">READ-ONLY</span>
+    </div>
+
+    <div class="dept-header">
+      <div>
+        <div class="me-title">全員狀態 ‧ Team Status</div>
+        <h1 class="dept-name">經理觀察視角<span class="en">業務團隊 + 業助 + 船務</span></h1>
+        <div class="dept-sub">
+          業務 <strong>5</strong> 人 ‧ 業助 <strong>2</strong> 人 ‧ 船務 <strong>1</strong> 人 ‧ 本月部門目標 <strong>尚未設定</strong>
+        </div>
+      </div>
+      <div class="me-actions">
+        <button class="btn-text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 匯出觀察報告</button>
+      </div>
+    </div>
+
+    <div class="period-bar">
+      <div class="period-label">時間尺度</div>
+      <div class="period-pills">
+        <div class="pill" data-period="year">2026<span class="kbd">年</span></div>
+        <div class="pill" data-period="quarter">Q2<span class="kbd">季</span></div>
+        <div class="pill active" data-period="month">5月<span class="kbd">月</span></div>
+        <div class="pill" data-period="week">W21<span class="kbd">週</span></div>
+      </div>
+    </div>
+
+    <!-- 業務團隊 -->
+    <div class="role-block">
+      <div class="rb-head">
+        <div class="rb-title">業務團隊 <span class="badge">BXD ‧ 5</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">您直接管理</div>
+      </div>
+      <div class="rb-mini-cards" id="tfSalesCards">
+        <!-- 由 JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- 業務助理 -->
+    <div class="role-block">
+      <div class="rb-head">
+        <div class="rb-title">業務助理 <span class="badge">BXD ‧ 2</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">跨業務協助 ‧ 不在指揮鏈 ‧ 您可指派任務但看不到他們對其他人的協助內容</div>
+      </div>
+      <div class="rb-mini-cards" id="tfAssistCards">
+        <!-- 由 JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- 船務 -->
+    <div class="role-block">
+      <div class="rb-head">
+        <div class="rb-title">船務 <span class="badge">OPS ‧ 1</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">跨部門協作 ‧ 接收進出貨需求並處理報關</div>
+      </div>
+      <div class="rb-mini-cards" id="tfShipCards">
+        <!-- 由 JS 渲染 -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ===========================================
        PAGE ‧ 全公司總覽（總經理 GM 專屬）
   ============================================ -->
   <section class="page" data-page="overview">
+    <div class="observe-banner">
+      <div class="ob-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="ob-text">
+        <div class="ob-title">GM 觀察視角 ‧ 不寫入 ProjFlow</div>
+        <div class="ob-sub">總經理為全公司觀察身分,不設個人業績/拜訪,任何頁面皆為唯讀彙整。</div>
+      </div>
+      <span class="ob-tag">READ-ONLY</span>
+    </div>
+
     <div class="dept-header">
       <div>
         <div class="me-title">全公司總覽 ‧ Company Overview</div>
@@ -3177,22 +3317,56 @@
     const isShipping = p.tier==="shipping";
     const isSalesChain = ["staff","supervisor","manager"].includes(p.tier);
 
+    const isManager = p.tier==="manager";
     const navBtns = document.querySelectorAll("#navTabs button");
     navBtns.forEach(b=>{
       const page = b.dataset.page;
       let show = true;
-      if (page==="personal") show = !p.hidePersonal;
-      if (page==="profit")   show = !p.hidePersonal && isSalesChain;
-      if (page==="gantt")    show = !p.hidePersonal && isSalesChain;
-      if (page==="brand")    show = isSalesChain || isExec;
-      if (page==="team")     show = meta.canSeeTeam;
-      if (page==="admin")    show = meta.canAdmin;
-      if (page==="overview") show = isExec;
-      if (page==="assist")   show = isSalesChain || isExec || isAssistant;
-      if (page==="shipping") show = isExec || isAssistant || isShipping;
-      if (page==="contacts") show = isSalesChain || isExec || isShipping;
+      if (page==="personal")  show = !p.hidePersonal;
+      if (page==="profit")    show = !p.hidePersonal && isSalesChain;
+      if (page==="gantt")     show = !p.hidePersonal && isSalesChain;
+      if (page==="brand")     show = isSalesChain || isExec;
+      // team:課長/副課長 看(BXD 業務團隊聚焦);經理使用 team_full 已涵蓋
+      if (page==="team")      show = p.tier==="supervisor";
+      if (page==="admin")     show = meta.canAdmin;
+      if (page==="overview")  show = isExec;
+      // team_full:經理觀察視角(BXD 業務 + 業助 + 船務),GM 亦可看
+      if (page==="team_full") show = isManager || isExec;
+      if (page==="assist")    show = isSalesChain || isExec || isAssistant;
+      if (page==="shipping")  show = isExec || isAssistant || isShipping;
+      if (page==="contacts")  show = isSalesChain || isExec || isShipping;
       b.hidden = !show;
     });
+
+    // ----- personal 頁的 sync-target 標籤(依身分) -----
+    const pst = $("personalSyncTag");
+    if (pst) {
+      const stMap = {
+        staff:      {cls:"", text:"個人作業 ‧ 會寫入 ProjFlow.kpi_events / reception_visits / teisale.deal"},
+        supervisor: {cls:"", text:"個人作業 ‧ 會寫入 ProjFlow.kpi_events / reception_visits / teisale.deal"},
+        manager:    {cls:"", text:"個人作業 ‧ 會寫入 ProjFlow.kpi_events / reception_visits / teisale.deal ‧ 此處只含您自己的數字"},
+      };
+      const info = stMap[p.tier];
+      pst.style.display = info ? "" : "none";
+      if (info) {
+        pst.className = "sync-target "+info.cls;
+        pst.innerHTML = '<span class="st-dot"></span>'+info.text;
+      }
+    }
+
+    // ----- sync-bar 依身分切換寫入描述 -----
+    const syncMsgEl = $("syncMsg");
+    if (syncMsgEl) {
+      const syncMap = {
+        staff:      "已登入 ProjFlow ‧ 業績/拜訪/案件 → kpi_events ‧ reception_visits ‧ teisale.deal",
+        supervisor: "已登入 ProjFlow ‧ 業績/拜訪/案件 → kpi_events ‧ reception_visits ‧ teisale.deal (含團隊看板觀察)",
+        manager:    "已登入 ProjFlow ‧ 個人作業寫入 kpi_events / reception_visits / teisale.deal ‧ 「全員狀態」為唯讀觀察,不寫入",
+        exec:       "已登入 ProjFlow ‧ 總經理觀察視角 ‧ 不寫入任何資料表",
+        assistant:  "已登入 ProjFlow ‧ 協助任務狀態 → teisale.assistant_task",
+        shipping:   "已登入 ProjFlow ‧ 進出貨/報關 → teisale.shipping_item ‧ 聯絡簿 → teisale.contact",
+      };
+      syncMsgEl.textContent = syncMap[p.tier] || syncMap.staff;
+    }
 
     // ----- 成本利潤 & 案件時程 & 品牌合作 渲染 -----
     if (isSalesChain) {
@@ -3203,6 +3377,7 @@
 
     // ----- 新分頁渲染 -----
     renderOverview();
+    renderTeamFull();
     renderAssist(key);
     renderShipping(key);
     renderContacts(key);
@@ -3382,6 +3557,59 @@
     // 船務 mini cards
     const sEl = $("gmShipCards");
     if(sEl){
+      sEl.innerHTML = ["marco"].map(k=>{
+        const p = personas[k];
+        return `<div class="mini-card">
+          <div class="emo">${p.emoji}</div>
+          <div>
+            <div class="nm">${p.name}</div>
+            <div class="ttl">${p.title} ‧ 分機 ${p.ext}</div>
+          </div>
+          <div class="stat"><div class="v">${inTransit}</div><div class="l">在途 / 共 ${shippingItems.length}</div></div>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  // ----- 全員狀態頁(經理觀察視角 / GM 亦可看) -----
+  // 渲染邏輯與 overview 類似但更聚焦在「全員」而非「KPI 聚合」。
+  // 全頁面為唯讀;不會觸發 ProjFlow 寫入。
+  function renderTeamFull(){
+    const salesEl = $("tfSalesCards");
+    if(salesEl){
+      const salesKeys = ["june","sunny","stanley","kate","keira"];
+      salesEl.innerHTML = salesKeys.map(k=>{
+        const p = personas[k];
+        const dealsN = (dealsByPersona[k]||[]).length;
+        return `<div class="mini-card">
+          <div class="emo">${p.emoji}</div>
+          <div>
+            <div class="nm">${p.name}</div>
+            <div class="ttl">${p.title} ‧ 分機 ${p.ext}</div>
+          </div>
+          <div class="stat"><div class="v">${dealsN}</div><div class="l">在手案件</div></div>
+        </div>`;
+      }).join("");
+    }
+    const aEl = $("tfAssistCards");
+    if(aEl){
+      aEl.innerHTML = ["lily","mia"].map(k=>{
+        const p = personas[k];
+        const tasks = assistantTasks.filter(t=>t.assignedTo===k);
+        const todo = tasks.filter(t=>t.status!=="done").length;
+        return `<div class="mini-card">
+          <div class="emo">${p.emoji}</div>
+          <div>
+            <div class="nm">${p.name}</div>
+            <div class="ttl">${p.title} ‧ 分機 ${p.ext}</div>
+          </div>
+          <div class="stat"><div class="v">${todo}</div><div class="l">待辦 / 共 ${tasks.length}</div></div>
+        </div>`;
+      }).join("");
+    }
+    const sEl = $("tfShipCards");
+    if(sEl){
+      const inTransit = shippingItems.filter(i=>["requested","booked","customs"].includes(i.status)).length;
       sEl.innerHTML = ["marco"].map(k=>{
         const p = personas[k];
         return `<div class="mini-card">

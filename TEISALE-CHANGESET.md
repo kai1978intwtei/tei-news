@@ -354,7 +354,137 @@ $$;
 
 ---
 
-## 11. 未涵蓋(下一輪)
+## 11. ProjFlow 同步寫入規則(critical ‧ 避免資料錯亂)
+
+**核心原則**:每個 tier 只寫入自己職能對應的表;觀察頁面一律唯讀,前端不會觸發 `INSERT/UPDATE`。
+
+### 11.1 各 tier 的寫入範圍
+
+| tier | 可寫入 ProjFlow 表 | 唯讀(觀察) |
+|------|---------------------|----------------|
+| `staff` 業務 | `kpi_events` ‧ `reception_visits` ‧ `teisale.deal` ‧ `teisale.contact` ‧ `teisale.assistant_task`(派發) ‧ `teisale.shipping_item`(發起) | — |
+| `supervisor` 課長 | 同上(自己的) | 團隊看板(`team` page)|
+| `manager` 經理 | 同上(自己的) + `profiles.tier`(調整下屬權限) | **全員狀態(`team_full` page) ‧ 業助任務全表 ‧ 船務全表** |
+| `exec` 總經理 | **不寫入任何表** | 所有頁面 |
+| `assistant` 業助 | `teisale.assistant_task`(只更新自己被指派的 status) | — |
+| `shipping` 船務 | `teisale.shipping_item`(status / customs_no / customs_date / bl_no / eta) ‧ `teisale.contact` | — |
+
+### 11.2 頁面 ↔ 寫入目標映射
+
+> 此表用於前端在每個頁面顯示「sync target 標籤」與「READ-ONLY banner」。
+
+| 前端頁面 | 寫入 ProjFlow | 在 UI 顯示 |
+|----------|---------------|-----------|
+| `personal` 我的衝刺 | `kpi_events` / `reception_visits` / `teisale.deal` | 黃色 sync-target tag |
+| `profit` 成本利潤 | `teisale.deal`(更新收款/成本) | 黃色 sync-target tag |
+| `gantt` 案件時程 | `teisale.deal`(更新 status / dates) | 黃色 sync-target tag |
+| `brand` 品牌合作 | `teisale.brand_partnership`(暫定) | 黃色 sync-target tag |
+| **`team` 團隊看板** | **無** | 藍色 READ-ONLY banner |
+| **`team_full` 全員狀態** | **無** | 藍色 READ-ONLY banner |
+| **`overview` 全公司總覽** | **無** | 藍色 READ-ONLY banner |
+| `admin` 權限管理 | `profiles.tier` | 黃色 sync-target tag |
+| `assist` 協助任務 | `teisale.assistant_task` | 黃色 sync-target tag(業助/派發人) |
+| `shipping` 船務作業 | `teisale.shipping_item` | 黃色 sync-target tag(船務) |
+| `contacts` 聯絡簿 | `teisale.contact` | 黃色 sync-target tag(GM 為藍色 READ-ONLY) |
+
+### 11.3 防呆原則(後端 enforcement)
+
+即使前端誤判,RLS policies 必須阻擋:
+
+1. **業助/船務 不能寫入 `kpi_events` / `reception_visits` / `teisale.deal`**
+   ```sql
+   CREATE POLICY deal_write_block_non_sales ON teisale.deal
+     FOR INSERT WITH CHECK (
+       EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid()
+               AND p.tier IN ('staff','supervisor','manager'))
+     );
+   -- kpi_events / reception_visits 同樣阻擋
+   ```
+
+2. **GM(exec) 不能寫入任何 teisale.* 業務表**(完全觀察身分)
+   ```sql
+   CREATE POLICY teisale_deal_block_exec ON teisale.deal
+     FOR INSERT, UPDATE, DELETE
+     USING (
+       NOT EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.tier = 'exec')
+     );
+   -- 對 assistant_task / shipping_item / contact 同樣處理
+   ```
+
+3. **觀察頁面送來的 PATCH 一律拒絕**
+   - 後端 API 層應在 `team` / `team_full` / `overview` 對應的 endpoint 不開放 `PATCH`/`POST`
+   - 即使前端誤送,API 層回 405 Method Not Allowed
+
+### 11.4 經理視角的關鍵分離
+
+> 解決客戶提出的「經理不便、避免資訊錯亂」問題:
+
+- **`personal` 頁** = 經理「自己的業績/拜訪/案件」 → **會寫入 ProjFlow**
+- **`team_full` 頁(新)** = 經理「觀察全員狀態」(BXD 業務 + 業助 + 船務) → **不寫入 ProjFlow**
+- 兩頁面以**不同分頁 tab** 區隔,UI 上以 sync-target tag 與 READ-ONLY banner 明示
+- 經理在 `team_full` 看到的「別人的業績」是 ProjFlow 透過 RLS 聚合的唯讀資料,**經理無權更新他人 `kpi_events`**
+
+---
+
+## 12. 業助/船務 對 ProjFlow 的同步行為(常見問題)
+
+**Q: 業助跟船務在 ProjFlow 是否沒有東西可同步?**  
+**A: 有,但同步到的是新表,不會混入業務的同步資料表。**
+
+### 12.1 業助的同步行為
+
+| 動作 | ProjFlow 寫入 |
+|------|---------------|
+| 接到任務後標記「處理中」 | `UPDATE teisale.assistant_task SET status='doing', updated_at=now() WHERE assigned_to=auth.uid() AND id=$1` |
+| 完成任務 | 同上,status='done' |
+| 暫無附件上傳功能(下一輪) | — |
+
+業助 **不會**寫入 `kpi_events`、`reception_visits`、`teisale.deal`、`teisale.contact`,也**看不到**這些表的內容(RLS 阻擋)。
+
+### 12.2 船務的同步行為
+
+| 動作 | ProjFlow 寫入 |
+|------|---------------|
+| 接到進出貨需求後「訂艙」 | `UPDATE teisale.shipping_item SET status='booked', updated_at=now()` |
+| 提交報關 | `UPDATE teisale.shipping_item SET status='customs', customs_no=$1, customs_date=$2, bl_no=$3` |
+| 標記到貨 | `UPDATE teisale.shipping_item SET status='delivered', eta=$1` |
+| 新增/編輯客戶或供應商 | `INSERT/UPDATE teisale.contact` |
+| 新建船務單(由船務發起) | `INSERT INTO teisale.shipping_item (requested_by, type, mode, ...)` 其中 `requested_by` = 船務自己 |
+
+船務 **不會**寫入 `kpi_events`、`reception_visits`、`teisale.deal`、`teisale.assistant_task`。
+
+### 12.3 結論:資料表所有權清單
+
+```
+sales 數據(業務指揮鏈獨佔寫入):
+  kpi_events            <- staff / supervisor / manager
+  reception_visits      <- staff / supervisor / manager
+  teisale.deal          <- staff / supervisor / manager
+
+協助任務:
+  teisale.assistant_task  
+    INSERT <- staff / supervisor / manager / exec(透過 RPC assign_task)
+    UPDATE status <- assistant(只能改自己被指派的) + requester(取消/重啟)
+
+船務數據:
+  teisale.shipping_item
+    INSERT <- staff / supervisor / manager / assistant / shipping
+    UPDATE status / customs / bl_no <- shipping ONLY
+
+聯絡簿:
+  teisale.contact
+    INSERT / UPDATE / DELETE <- staff / supervisor / manager / shipping
+    SELECT <- 上述 + exec(只讀)
+
+權限資料:
+  profiles.tier <- manager(對下層) / exec(全部)
+```
+
+每個表的寫入權限互不重疊,因此 **不可能發生「經理在觀察別人時誤觸寫入造成 ProjFlow 資料錯亂」** 的情境 — RLS 在資料庫層攔截,前端 UI 透過 banner + sync-target tag 明示。
+
+---
+
+## 13. 未涵蓋(下一輪)
 
 以下功能本次原型 **未實作**,但 ProjFlow 可預先規劃 schema:
 
