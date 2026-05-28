@@ -4763,10 +4763,35 @@
   });
 
   // ===== BRAND PARTNERSHIPS ‧ 對標 ProjFlow brands + brand_cooperations =====
-  // mock 資料；上線後 TEiSale 直接讀寫 ProjFlow 同名表，雙向同步
-  // 品牌合作 — 等與 ProjFlow 同步或手動建立
-  const mockBrands = [];
-  const mockCoops = [];
+  // 樣本資料(虛構品牌,風格貼近 TEi Composites 真實業務場域)
+  // 上線後 TEiSale 直接讀寫 ProjFlow 同名表,雙向同步
+  const mockBrands = [
+    { id:"b_hyper",  logo:"🏎️", name:"Hyperion Motors",   contact:"R. Schmidt" },
+    { id:"b_sky",    logo:"✈️", name:"Skyforge Aerospace", contact:"K. Tanaka"  },
+    { id:"b_apex",   logo:"🚴", name:"Apex Cycling",       contact:"M. Dubois"  },
+    { id:"b_veloc",  logo:"🏍️", name:"Velocity Moto",      contact:"J. Park"    },
+    { id:"b_nova",   logo:"🔋", name:"NovaEV",             contact:"L. Chen"    },
+    { id:"b_cascad", logo:"🛹", name:"Cascadia Sports",    contact:"E. Olsson"  },
+  ];
+  const mockCoops = [
+    // 洽談中
+    { id:"c01", title:"限量超跑碳纖維單體車身", brand:"b_hyper",  amount: 12_400_000, by:"june",    status:"negotiating" },
+    { id:"c02", title:"2027 環法競速車架競標",   brand:"b_apex",   amount:  3_800_000, by:"sunny",   status:"negotiating" },
+    // 已簽約
+    { id:"c03", title:"SUV 電池保護殼模具開發",   brand:"b_nova",   amount:  8_600_000, by:"stanley", status:"signed" },
+    { id:"c04", title:"2026 旗艦重機尾整流罩",    brand:"b_veloc",  amount:  2_200_000, by:"kate",    status:"signed" },
+    // 執行中
+    { id:"c05", title:"客機艙門複材組件 Phase 2", brand:"b_sky",    amount: 18_500_000, by:"june",    status:"executing" },
+    { id:"c06", title:"高山滑雪板量產 ‧ FW26",    brand:"b_cascad", amount:  4_100_000, by:"keira",   status:"executing" },
+    // 已結案
+    { id:"c07", title:"春季 競速車架 200 套",     brand:"b_apex",   amount:  5_300_000, by:"sunny",   status:"closed" },
+    { id:"c08", title:"NovaEV 試作件評估報告",    brand:"b_nova",   amount:    600_000, by:"stanley", status:"closed" },
+  ];
+
+  // 自動計算每個品牌的合作案數
+  mockBrands.forEach(b => {
+    b.coopCount = mockCoops.filter(c => c.brand === b.id).length;
+  });
 
   function renderBrandPartnerships(){
     // 品牌主檔
@@ -4781,6 +4806,12 @@
       <div class="brand-card add">＋ 新增品牌</div>
     `;
     $("bpBrandCount").textContent = mockBrands.length;
+    $("bpCoopCount").textContent  = mockCoops.length;
+    const totalAmt = mockCoops.reduce((s,c)=>s+c.amount, 0);
+    const subEl = $("bpSubLine");
+    if(subEl){
+      subEl.textContent = `${mockBrands.length} 個品牌 ‧ ${mockCoops.length} 個合作案 ‧ 總額 ¥${(totalAmt/1_000_000).toFixed(2)}M ‧ 與 ProjFlow 即時雙向同步`;
+    }
 
     // 合作案看板
     const cols = [
