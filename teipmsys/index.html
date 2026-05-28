@@ -1,0 +1,3566 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TEi-PMSYS · 專案人員工作檯</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232F5D50'/%3E%3Ctext x='32' y='24' font-family='Georgia,serif' font-size='11' font-weight='700' fill='%23ffffff' fill-opacity='0.72' text-anchor='middle' letter-spacing='1.2'%3ETEi%3C/text%3E%3Ctext x='32' y='49' font-family='Georgia,serif' font-size='20' font-weight='700' fill='white' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #FAFAF7;
+    --paper:        #FFFFFF;
+    --bg-subtle:    #F4F2EC;
+    --bg-warm:      #F8F3EA;
+    --border:       #ECEAE4;
+    --border-soft:  #F2F0EA;
+    --border-strong:#D9D6CD;
+    --text:         #1F1F1C;
+    --text-2:       #555550;
+    --text-3:       #8E8B83;
+    --ink:          #2F5D50;
+    --ink-hover:    #244A40;
+    --ink-soft:     #EBF1EE;
+    --ink-ring:     rgba(47,93,80,.18);
+    --caramel:      #C77B45;
+    --caramel-hover:#B26A37;
+    --caramel-soft: #FBF1E8;
+    --rust:         #A85C2D;
+    --moss:         #4A7C5A;
+    --plum:         #7A4C66;
+    --shadow-1: 0 1px 2px rgba(31,31,28,.04), 0 2px 6px rgba(31,31,28,.04);
+    --shadow-2: 0 1px 2px rgba(31,31,28,.04), 0 8px 24px rgba(31,31,28,.06);
+    --shadow-3: 0 4px 12px rgba(31,31,28,.06), 0 24px 48px rgba(31,31,28,.08);
+  }
+
+  html, body {
+    font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+  .serif { font-family: 'Noto Serif TC', 'Noto Sans TC', serif; }
+  .mono  { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -.02em; }
+  .ui    { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+
+  /* Paper card */
+  .paper {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-1);
+  }
+  .paper-lift { transition: box-shadow .2s, transform .2s; }
+  .paper-lift:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+
+  /* Buttons */
+  .btn-ink {
+    background: var(--ink); color: #fff;
+    border-radius: 8px; padding: 8px 16px;
+    font-weight: 500; font-size: 13px;
+    transition: background .15s, transform .1s, box-shadow .15s;
+    box-shadow: 0 1px 2px rgba(47,93,80,.18);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-ink:hover { background: var(--ink-hover); box-shadow: 0 2px 8px rgba(47,93,80,.25); }
+  .btn-ink:active { transform: translateY(1px); }
+
+  .btn-ghost {
+    background: transparent; color: var(--text-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px; padding: 7px 14px;
+    font-size: 13px; font-weight: 500;
+    transition: all .15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-ghost:hover { background: var(--bg-subtle); color: var(--text); border-color: var(--text-3); }
+
+  .btn-caramel {
+    background: var(--caramel); color: #fff;
+    border-radius: 8px; padding: 8px 16px;
+    font-weight: 500; font-size: 13px;
+    transition: background .15s, box-shadow .15s;
+    box-shadow: 0 1px 2px rgba(199,123,69,.2);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-caramel:hover { background: var(--caramel-hover); box-shadow: 0 2px 8px rgba(199,123,69,.28); }
+
+  /* 金色 — 一秒跳 ProjFlow 專用 */
+  .btn-gold {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
+    color: #4A2F0F;
+    background: linear-gradient(135deg, #F2CE6E 0%, #D6A93E 50%, #BE8B2B 100%);
+    border: 1px solid #A87819;
+    box-shadow:
+      0 1px 2px rgba(102,68,15,.25),
+      inset 0 1px 0 rgba(255,255,255,.45),
+      inset 0 -1px 0 rgba(102,68,15,.15);
+    transition: transform .12s, box-shadow .15s, background .15s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-gold:hover {
+    background: linear-gradient(135deg, #F8DC8A 0%, #E5BC59 50%, #CB9A35 100%);
+    box-shadow:
+      0 3px 10px rgba(166,128,30,.4),
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 -1px 0 rgba(102,68,15,.18);
+    transform: translateY(-1px);
+  }
+  .btn-gold:active {
+    transform: translateY(0);
+    box-shadow:
+      0 1px 2px rgba(102,68,15,.3),
+      inset 0 2px 4px rgba(102,68,15,.18);
+  }
+  .btn-gold .gold-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #FFFAE6;
+    box-shadow: 0 0 6px rgba(255,250,230,.9);
+    animation: gold-pulse 2s ease-in-out infinite;
+  }
+  @keyframes gold-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .5; transform: scale(.85); }
+  }
+
+  /* ============= 真正的翻書頁動畫（從右往左翻，PMSYS→ProjFlow） ============= */
+  .flip-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    pointer-events: none;
+    perspective: 2400px;
+    perspective-origin: center center;
+  }
+  /* 翻動的「頁」— 有正反兩面，繞左側書脊旋轉 180° */
+  .flip-overlay-page {
+    position: absolute; inset: 0;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transform: rotateY(0deg);
+    /* 2500ms 多階段曲線 — 看清楚整個翻頁過程,動畫即「等候時間」的視覺替代 */
+    animation: bookPageTurnLeft 2500ms cubic-bezier(.32, .04, .18, 1) forwards;
+  }
+  .flip-overlay-front,
+  .flip-overlay-back {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  /* 正面 — 翻起時看到的「離開 PMSYS」的頁面（明顯比底下深一點,讓「掀起」感清楚） */
+  .flip-overlay-front {
+    background: linear-gradient(135deg, #F2EBD7 0%, #E8DCBE 50%, #DCC998 100%);
+    box-shadow: inset 0 0 100px rgba(120,80,40,.12);
+  }
+  .flip-overlay-front::after {
+    /* 翻頁時邊緣的陰影漸層 — 強化紙張立體感（加深 + 加寬） */
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to right, transparent 40%, rgba(0,0,0,.22) 100%);
+    pointer-events: none;
+  }
+  /* 反面 — 翻過後看到的 ProjFlow 目的地 */
+  .flip-overlay-back {
+    background: linear-gradient(135deg, #0a0e1a 0%, #161a2e 50%, #1f1430 100%);
+    transform: rotateY(180deg);
+  }
+  .flip-overlay-back::after {
+    /* 反面的反向陰影 */
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to left, transparent 60%, rgba(0,0,0,.2) 100%);
+    pointer-events: none;
+  }
+  /* 正面 PMSYS 殘影標誌（清楚一點，讓你看見「這頁正在被翻起」） */
+  .flip-overlay-leaving {
+    text-align: center; opacity: .92;
+    transform: scale(1);
+  }
+  .flip-overlay-leaving .lv-chip {
+    display: inline-flex; flex-direction: column; align-items: center;
+    padding: 22px 32px; background: #2F5D50; border-radius: 16px;
+    box-shadow: 0 6px 24px rgba(47,93,80,.32), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  .flip-overlay-leaving .lv-tei {
+    font-family: 'Noto Serif TC', Georgia, serif;
+    font-size: 13px; font-weight: 700;
+    color: rgba(255,255,255,.78);
+    letter-spacing: .18em;
+  }
+  .flip-overlay-leaving .lv-name {
+    font-family: 'Noto Serif TC', Georgia, serif;
+    font-size: 32px; font-weight: 700; color: white;
+    margin-top: 6px; line-height: 1;
+  }
+  .flip-overlay-leaving .lv-sub {
+    font-size: 11px; color: #6B5F45;
+    letter-spacing: .12em; text-transform: uppercase;
+    margin-top: 14px; font-weight: 600;
+  }
+  /* 反面 ProjFlow 目的地標誌 */
+  .flip-overlay-brand {
+    opacity: 0;
+    /* brand 在翻頁過 50% 後浮現,配合背面進入視覺(2500ms × 50% = 1250ms) */
+    animation: flipBrandFade 600ms 1300ms cubic-bezier(.3,.7,.4,1) forwards;
+    text-align: center; color: white;
+  }
+  /* 跑步人 + 文字 — 填補翻頁結束 → ProjFlow 載入完之間的網路等候空檔 */
+  .flip-overlay-runner-wrap {
+    margin-top: 24px;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    opacity: 0;
+    animation: flipBrandFade 420ms 1900ms forwards;
+  }
+  .flip-overlay-runner {
+    font-size: 30px;
+    display: inline-block;
+    animation: runnerCycle 0.55s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+  }
+  .flip-overlay-runner-text {
+    font-size: 12.5px;
+    color: rgba(255,255,255,.65);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  /* 跑步循環：左右擺動 + 上下彈跳 + 輕微傾斜，模擬奔跑節奏 */
+  @keyframes runnerCycle {
+    0%   { transform: translateX(-14px) translateY(0)    rotate(-4deg); }
+    25%  { transform: translateX(-7px)  translateY(-5px) rotate(-2deg); }
+    50%  { transform: translateX(0)     translateY(0)    rotate(2deg); }
+    75%  { transform: translateX(7px)   translateY(-5px) rotate(4deg); }
+    100% { transform: translateX(14px)  translateY(0)    rotate(2deg); }
+  }
+  /* 跑步道地面殘影 — 讓人感覺真的在跑 */
+  .flip-overlay-runner-track {
+    position: relative;
+    width: 80px; height: 2px;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,.18), transparent);
+    overflow: hidden;
+  }
+  .flip-overlay-runner-track::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to right, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%);
+    animation: trackSweep 1.1s linear infinite;
+  }
+  @keyframes trackSweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .flip-overlay-loading span {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(255,255,255,.4);
+    animation: loadingDot 1.2s ease-in-out infinite;
+  }
+  .flip-overlay-loading span:nth-child(2) { animation-delay: .2s; }
+  .flip-overlay-loading span:nth-child(3) { animation-delay: .4s; }
+  @keyframes loadingDot {
+    0%, 100% { opacity: .3; transform: scale(.8); }
+    50%      { opacity: 1;  transform: scale(1.2); background: rgba(255,255,255,.85); }
+  }
+  .flip-overlay-brand .brand-mark {
+    font-family: 'Noto Serif TC', Georgia, serif;
+    font-size: 48px; font-weight: 700;
+    letter-spacing: -.02em;
+    background: linear-gradient(135deg, #ff5577 0%, #ff7a92 50%, #ffaab8 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .flip-overlay-brand .brand-sub {
+    font-size: 12px; color: rgba(255,255,255,.55);
+    letter-spacing: .14em; text-transform: uppercase;
+  }
+  .flip-overlay-brand .brand-dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff7a92;
+    box-shadow: 0 0 14px rgba(255,122,146,.9);
+    margin-right: 8px;
+    animation: brandDotPulse 1s ease-in-out infinite;
+  }
+  /* 翻頁過程中底下的陰影（強化空間感） */
+  .flip-overlay-shadow {
+    position: absolute; inset: 0; z-index: -1;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.25) 0%, transparent 70%);
+    opacity: 0;
+    animation: pageDropShadow 2500ms cubic-bezier(.32, .04, .18, 1) forwards;
+    pointer-events: none;
+  }
+  @keyframes bookPageTurnLeft {
+    /* 多階段：快起（0-35%）→ 中段平滑（35-75%）→ 緩落settle（75-100%）*/
+    0%   { transform: rotateY(0deg);    box-shadow: 0 0 0 rgba(0,0,0,0); }
+    35%  { transform: rotateY(-72deg);  box-shadow: 0 30px 60px rgba(0,0,0,.28); }
+    75%  { transform: rotateY(-152deg); box-shadow: 0 40px 80px rgba(0,0,0,.35); }
+    100% { transform: rotateY(-180deg); box-shadow: -8px 0 28px rgba(0,0,0,.18); }
+  }
+  @keyframes pageDropShadow {
+    0%, 100% { opacity: 0; }
+    50%      { opacity: 1; }
+  }
+  @keyframes flipBrandFade {
+    0%   { opacity: 0; transform: translateX(-12px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes brandDotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .4; transform: scale(.8); }
+  }
+
+  /* Tags */
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: 4px;
+    font-size: 11px; font-weight: 500; letter-spacing: .02em;
+    border: 1px solid transparent;
+  }
+  .tag-ink     { background: var(--ink-soft); color: var(--ink); border-color: #D8E3DE; }
+  .tag-caramel { background: var(--caramel-soft); color: var(--caramel-hover); border-color: #F0DDC7; }
+  .tag-rust    { background: #FBEBE0; color: var(--rust); border-color: #F0D2BA; }
+  .tag-moss    { background: #E8F0E9; color: var(--moss); border-color: #D2E1D4; }
+  .tag-plum    { background: #F1E6EB; color: var(--plum); border-color: #E0CCD3; }
+  .tag-grey    { background: var(--bg-subtle); color: var(--text-2); border-color: var(--border-strong); }
+
+  /* Nav */
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; margin: 0 8px; border-radius: 7px;
+    color: var(--text-2); font-size: 13px; font-weight: 500;
+    transition: background .12s, color .12s;
+    cursor: pointer;
+  }
+  .nav-item:hover { background: var(--bg-subtle); color: var(--text); }
+  .nav-item.active {
+    background: var(--ink-soft); color: var(--ink); font-weight: 600;
+  }
+  .nav-item.active i { color: var(--ink); }
+  .nav-section {
+    font-size: 10px; font-weight: 600; letter-spacing: .12em;
+    color: var(--text-3); text-transform: uppercase;
+    padding: 14px 22px 6px;
+  }
+
+  /* Sync indicator */
+  .sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--moss); display: inline-block;
+    box-shadow: 0 0 0 0 rgba(74,124,90,.6);
+    animation: pulse 2.4s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(74,124,90,.5); }
+    70%  { box-shadow: 0 0 0 6px rgba(74,124,90,0); }
+    100% { box-shadow: 0 0 0 0 rgba(74,124,90,0); }
+  }
+
+  /* Gantt */
+  .gantt-row { display: grid; grid-template-columns: 240px 1fr; align-items: center; min-height: 44px; }
+  .gantt-track {
+    position: relative; height: 44px;
+    background-image:
+      linear-gradient(to right, var(--border-soft) 1px, transparent 1px);
+    background-size: calc(100%/14) 100%;
+  }
+  .gantt-bar {
+    position: absolute; top: 11px; height: 22px;
+    border-radius: 5px;
+    font-size: 11px; font-weight: 500;
+    padding: 3px 10px; color: #fff;
+    white-space: nowrap; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+  }
+  .gantt-today {
+    position: absolute; top: 0; bottom: 0; width: 1px;
+    background: var(--caramel); z-index: 5;
+  }
+  .gantt-today::before {
+    content: '今';
+    position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    background: var(--caramel); color: #fff;
+    font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    font-family: 'Noto Sans TC';
+  }
+
+  /* Schedule */
+  .schedule-cell {
+    border-right: 1px solid var(--border-soft);
+    border-bottom: 1px solid var(--border-soft);
+    min-height: 64px;
+    position: relative;
+    transition: background .12s;
+  }
+  .schedule-cell:hover { background: var(--bg-subtle); }
+  .schedule-event {
+    position: absolute; left: 4px; right: 4px;
+    border-radius: 4px; padding: 4px 6px;
+    font-size: 11px; font-weight: 500;
+    overflow: hidden; cursor: pointer;
+    border-left: 3px solid;
+  }
+
+  /* A4 Paper */
+  .a4-paper {
+    width: 794px;
+    min-height: 1123px;
+    background: var(--paper);
+    padding: 80px 70px;
+    box-shadow: var(--shadow-3);
+    margin: 0 auto;
+    border-radius: 2px;
+    font-family: 'Noto Serif TC', serif;
+    line-height: 1.85;
+    color: #2A2A28;
+  }
+  .a4-paper h1.report-title {
+    font-size: 28px; font-weight: 700;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 12px; margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .a4-paper h2.section { font-size: 18px; font-weight: 600; margin: 32px 0 12px; color: #1F1F1C; }
+  .a4-paper p { margin-bottom: 14px; font-size: 14.5px; }
+  .a4-paper .meta {
+    font-family: 'Inter'; font-size: 12px;
+    color: var(--text-3); margin-bottom: 28px;
+    display: flex; gap: 18px; flex-wrap: wrap;
+  }
+  .a4-paper .meta span strong { color: var(--text-2); margin-right: 4px; font-weight: 500; }
+  .a4-paper .figure {
+    border: 1px solid var(--border);
+    background: var(--bg-subtle);
+    padding: 28px; border-radius: 4px;
+    text-align: center; color: var(--text-3);
+    font-family: 'Inter'; font-size: 12px;
+    margin: 16px 0;
+  }
+  .a4-toolbar {
+    background: var(--paper); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px;
+    display: flex; gap: 4px; align-items: center;
+    box-shadow: var(--shadow-1);
+  }
+  .a4-toolbar button {
+    padding: 6px 10px; border-radius: 6px;
+    color: var(--text-2); transition: background .12s;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500;
+  }
+  .a4-toolbar button:hover { background: var(--bg-subtle); color: var(--text); }
+  .a4-toolbar .divider { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #DAD7D0; border-radius: 5px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-thumb:hover { background: #C2BFB8; }
+
+  /* Subtle fade in */
+  .fade-in { animation: fadeIn .28s ease-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Form inputs */
+  input[type="text"], input[type="search"], textarea, select {
+    background: var(--paper);
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    font-size: 13px;
+    transition: border-color .12s, box-shadow .12s;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, input[type="search"]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px var(--ink-ring);
+  }
+
+  /* Grid helpers */
+  .grid-14 { grid-template-columns: repeat(14, minmax(0, 1fr)); }
+  .grid-7  { grid-template-columns: repeat(7,  minmax(0, 1fr)); }
+  .grid-12-month { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+  /* Priority bar */
+  .priority-bar { width: 3px; height: 28px; border-radius: 2px; }
+  .priority-high   { background: var(--rust); }
+  .priority-medium { background: var(--caramel); }
+  .priority-low    { background: var(--text-3); }
+
+  /* Checkbox */
+  input[type="checkbox"] {
+    appearance: none;
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px;
+    cursor: pointer; vertical-align: middle;
+    transition: all .12s;
+    background: var(--paper);
+    position: relative;
+  }
+  input[type="checkbox"]:checked {
+    background: var(--ink); border-color: var(--ink);
+  }
+  input[type="checkbox"]:checked::after {
+    content: ''; position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  /* ProjFlow badge */
+  .projflow-link {
+    background: linear-gradient(135deg, #1a1f3a, #2a3055);
+    color: #e8ecff;
+    padding: 4px 10px; border-radius: 5px;
+    font-size: 11px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+/* ===== 教學引導 overlay ===== */
+#tutorial-overlay { position:fixed; inset:0; z-index:80; display:none; background:rgba(31,31,28,.55); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:24px; }
+#tutorial-overlay.show { display:flex; }
+#tutorial-card { background:#fffaf2; border:1px solid #e6dfd1; border-radius:14px; box-shadow:0 18px 60px rgba(0,0,0,.25); max-width:520px; width:100%; padding:28px 28px 22px; font-family:inherit; }
+#tutorial-card .t-step  { font-size:11.5px; letter-spacing:.08em; color:#7a6a52; text-transform:uppercase; }
+#tutorial-card .t-title { font-size:22px; font-weight:700; margin:6px 0 12px; color:#1f1f1c; font-family: ui-serif, Georgia, 'Times New Roman', serif; }
+#tutorial-card .t-body  { font-size:14px; line-height:1.7; color:#2c2c28; }
+#tutorial-card .t-body strong { color:#5a3a1a; }
+#tutorial-card .t-foot  { margin-top:22px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+#tutorial-card .t-dots  { display:flex; gap:6px; }
+#tutorial-card .t-dots span { width:7px; height:7px; border-radius:50%; background:#d8cdb6; }
+#tutorial-card .t-dots span.active { background:#5a3a1a; }
+#tutorial-card .t-btn   { padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid transparent; }
+#tutorial-card .t-btn.primary { background:#1f1f1c; color:#fffaf2; }
+#tutorial-card .t-btn.ghost   { background:transparent; color:#6b6b66; border-color:#d8cdb6; }
+#tutorial-card .t-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* ===== ProjFlow 同步按鈕（右上常駐） ===== */
+#pf-sync-btn { display:none; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:#5a3a1a; color:#fffaf2; font-size:12px; font-weight:600; box-shadow:0 3px 10px rgba(90,58,26,.18); cursor:pointer; border:none; white-space:nowrap; }
+#pf-sync-btn.show { display:inline-flex; }
+#pf-sync-btn:hover { background:#704626; }
+#pf-sync-btn .pulse { width:8px; height:8px; border-radius:50%; background:#ffb84a; box-shadow:0 0 0 0 rgba(255,184,74,.7); animation: pfpulse 1.6s infinite; }
+@keyframes pfpulse { 0%{ box-shadow:0 0 0 0 rgba(255,184,74,.7);} 70%{ box-shadow:0 0 0 12px rgba(255,184,74,0);} 100%{ box-shadow:0 0 0 0 rgba(255,184,74,0);} }
+
+/* ===== ProjFlow 同步小提醒（右下浮窗） ===== */
+#pf-sync-toast { position:fixed; bottom:18px; right:18px; z-index:54; max-width:300px; background:#fffaf2; border:1px solid #e6dfd1; border-left:3px solid #c47a3a; border-radius:10px; padding:12px 14px; box-shadow:0 8px 24px rgba(0,0,0,.12); display:none; font-size:13px; color:#2c2c28; }
+#pf-sync-toast.show { display:block; }
+#pf-sync-toast .pf-t-title { font-weight:700; margin-bottom:4px; color:#5a3a1a; }
+#pf-sync-toast .pf-t-body  { font-size:12px; color:#5b574d; line-height:1.5; margin-bottom:10px; }
+#pf-sync-toast .pf-t-actions { display:flex; gap:8px; }
+#pf-sync-toast button { font-size:11.5px; padding:5px 10px; border-radius:6px; border:1px solid #d8cdb6; background:transparent; cursor:pointer; color:#5a3a1a; font-weight:600; }
+#pf-sync-toast button.primary { background:#5a3a1a; color:#fffaf2; border-color:#5a3a1a; }
+
+/* ===== 同步清單 modal ===== */
+#pf-sync-modal { position:fixed; inset:0; z-index:70; display:none; align-items:center; justify-content:center; background:rgba(31,31,28,.45); backdrop-filter:blur(4px); padding:24px; }
+#pf-sync-modal.show { display:flex; }
+#pf-sync-modal .pf-card { background:#fffaf2; border-radius:14px; max-width:640px; width:100%; max-height:88vh; overflow-y:auto; padding:24px 26px; border:1px solid #e6dfd1; }
+#pf-sync-modal h3 { font-family: ui-serif, Georgia, serif; font-size:20px; font-weight:700; color:#1f1f1c; margin:0 0 6px; }
+#pf-sync-modal .pf-sub { font-size:12.5px; color:#7a6a52; margin-bottom:14px; }
+#pf-sync-modal ul { font-size:13px; line-height:1.65; color:#2c2c28; padding-left:18px; margin:0 0 16px; }
+#pf-sync-modal ul li { margin-bottom:6px; }
+#pf-sync-modal code { background:#f1eadd; padding:1px 5px; border-radius:4px; font-size:12px; color:#5a3a1a; }
+#pf-sync-modal .pf-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
+#pf-sync-modal .pf-actions button { padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid #d8cdb6; background:transparent; color:#5a3a1a; }
+#pf-sync-modal .pf-actions button.primary { background:#1f1f1c; color:#fffaf2; border-color:#1f1f1c; }
+</style>
+</head>
+<body>
+
+<!-- ============== 登入畫面 ============== -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center p-6"
+     style="background: linear-gradient(135deg, #FAFAF7 0%, #F4EFE3 100%);">
+  <div class="w-full max-w-5xl grid md:grid-cols-5 gap-0 paper overflow-hidden" style="box-shadow: var(--shadow-3);">
+    <!-- 左：品牌 -->
+    <div class="md:col-span-2 p-12 flex flex-col justify-between" style="background: linear-gradient(180deg, #2F5D50 0%, #244A40 100%); color: #F4F2EC;">
+      <div>
+        <div class="mb-10">
+          <img src="../logo.png" alt="TEi composites" class="h-14 w-auto mb-5" style="filter: brightness(0) invert(1);">
+          <div class="flex items-end gap-2.5">
+            <div class="serif font-bold text-[26px] tracking-tight leading-none">TEi-PMSYS</div>
+            <div class="h-3 w-px mb-1.5" style="background: rgba(244,242,236,.4);"></div>
+            <div class="text-[10px] tracking-[.2em] opacity-70 uppercase pb-1">Project Workstation</div>
+          </div>
+        </div>
+        <h1 class="serif text-3xl font-semibold leading-snug mb-4">專案人員<br>專屬的工作檯</h1>
+        <p class="text-sm leading-relaxed opacity-80">
+          給專案管理中心同仁一個聚焦書寫、追蹤、彙整的環境。<br>
+          資料與 ProjFlow 即時同步，寫一次、兩邊看得到。
+        </p>
+      </div>
+      <div class="space-y-2.5 text-[13px] opacity-90 mt-12">
+        <div class="flex items-center gap-2.5"><i data-lucide="file-text" class="w-3.5 h-3.5"></i><span>A4 報告模式（內嵌甘特、圖片）</span></div>
+        <div class="flex items-center gap-2.5"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i><span>行程表年 / 月 / 週 / 日 / 時</span></div>
+        <div class="flex items-center gap-2.5"><i data-lucide="users" class="w-3.5 h-3.5"></i><span>從 ProjFlow 挑選隊友加入專案</span></div>
+        <div class="flex items-center gap-2.5"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>與 ProjFlow 雙向即時同步</span></div>
+      </div>
+    </div>
+
+    <!-- 右：Email + OTP 登入 -->
+    <div class="md:col-span-3 p-12">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="serif text-2xl font-semibold">進入工作檯</h2>
+        <span class="text-xs" style="color: var(--text-3);"><span class="sync-dot mr-1.5"></span>ProjFlow 認證連線</span>
+      </div>
+      <p class="text-sm mb-7" style="color: var(--text-3);">Email + 驗證碼登入</p>
+
+      <!-- Step 1: Email -->
+      <div id="step-email">
+        <label class="text-[10px] tracking-[.16em] font-semibold mb-2 block uppercase" style="color: var(--text-3);">公司 Email</label>
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="at-sign" class="w-3.5 h-3.5 absolute left-3 top-3.5" style="color: var(--text-3);"></i>
+            <input type="email" id="email-input" placeholder="your.name@tei.com" class="w-full py-2.5 pl-9 pr-3"
+                   onkeydown="if(event.key==='Enter') sendOtp()">
+          </div>
+          <button onclick="sendOtp()" class="btn-ink">寄送驗證碼</button>
+        </div>
+        <div id="email-error" class="hidden mt-2 text-[11.5px] flex items-center gap-1" style="color: var(--rust);">
+          <i data-lucide="alert-circle" class="w-3 h-3"></i>
+          <span id="email-error-text"></span>
+        </div>
+      </div>
+
+      <!-- Step 2: OTP -->
+      <div id="step-otp" class="hidden">
+        <div class="mb-4 p-3 rounded-lg flex items-start gap-2.5" style="background: var(--ink-soft); border: 1px solid #D8E3DE;">
+          <i data-lucide="mail-check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--ink);"></i>
+          <div class="text-[12px] flex-1" style="color: var(--ink);">
+            <div>驗證碼已寄至 <strong id="otp-target-email" class="mono"></strong></div>
+            <div class="text-[10.5px] opacity-70 mt-0.5">原型展示：任何 6 碼數字皆可登入</div>
+          </div>
+        </div>
+        <label class="text-[10px] tracking-[.16em] font-semibold mb-2 block uppercase" style="color: var(--text-3);">6 碼驗證碼</label>
+        <div class="flex gap-2">
+          <input type="text" id="otp-input" maxlength="6" placeholder="000000"
+                 class="flex-1 py-3 px-3 mono text-center text-lg tracking-[0.4em] font-semibold"
+                 onkeydown="if(event.key==='Enter') verifyOtp()"
+                 oninput="this.value=this.value.replace(/\\D/g,'')">
+          <button onclick="verifyOtp()" class="btn-ink">驗證並登入</button>
+        </div>
+        <button onclick="backToEmail()" class="mt-3 text-[11px] flex items-center gap-1" style="color: var(--text-3);">
+          <i data-lucide="chevron-left" class="w-3 h-3"></i>換一個 Email
+        </button>
+      </div>
+
+      <!-- 唯一已登錄真人 -->
+      <div class="mt-7 pt-6 border-t" style="border-color: var(--border);">
+        <div class="text-[10px] tracking-[.16em] font-semibold mb-3 uppercase" style="color: var(--text-3);">快速進入</div>
+        <div class="grid grid-cols-2 gap-2" id="demo-accounts"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 主應用 ============== -->
+<div id="app" class="hidden min-h-screen">
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- 側邊導覽 -->
+    <aside class="w-64 flex flex-col border-r" style="background: var(--paper); border-color: var(--border);">
+      <div class="px-4 py-4 flex items-center gap-3 border-b" style="border-color: var(--border);">
+        <!-- 純粹綠底白字標誌：放棄壓縮的 logo 圖，換成清晰可辨識的文字標 -->
+        <div class="flex-shrink-0 rounded-lg px-2.5 py-2 flex flex-col items-center justify-center leading-none"
+             style="background: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.08); min-width: 56px;">
+          <div class="serif font-bold text-[10px] tracking-[.16em]" style="color: rgba(255,255,255,.72);">TEi</div>
+          <div class="serif font-bold text-[15px] mt-1 tracking-tight" style="color: white;">PMSYS</div>
+        </div>
+        <div class="min-w-0">
+          <div class="text-[10px] tracking-[.18em] uppercase font-semibold leading-snug" style="color: var(--text-2);">Project<br>Workstation</div>
+        </div>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-2" id="sidebar-nav"></nav>
+
+      <!-- 同步狀態 -->
+      <div class="mx-3 mb-3 p-3 rounded-lg" style="background: var(--bg-subtle); border: 1px solid var(--border);">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[11px] font-semibold" style="color: var(--text-2);">ProjFlow 同步</span>
+          <span class="sync-dot"></span>
+        </div>
+        <div class="text-[10px]" style="color: var(--text-3);">最後同步 <span class="mono">2 分鐘前</span></div>
+        <div class="text-[10px] mt-0.5" style="color: var(--text-3);">寫入即時、雙向</div>
+      </div>
+
+      <div class="p-3 border-t flex items-center gap-2.5" style="border-color: var(--border);">
+        <div id="current-user-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold" style="background: var(--ink);"></div>
+        <div class="flex-1 min-w-0">
+          <div id="current-user-name" class="text-[13px] font-medium truncate"></div>
+          <div id="current-user-role" class="text-[10px] truncate" style="color: var(--text-3);"></div>
+        </div>
+        <button onclick="logout()" class="p-1.5 rounded-md hover:bg-stone-100" title="登出">
+          <i data-lucide="log-out" class="w-3.5 h-3.5" style="color: var(--text-3);"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主內容區 -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <header class="h-14 flex items-center justify-between px-7 border-b" style="background: var(--paper); border-color: var(--border);">
+        <div class="flex items-center gap-3">
+          <h1 id="page-title" class="serif font-semibold text-[17px]"></h1>
+          <span id="page-subtitle" class="text-[12px]" style="color: var(--text-3);"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- 原型測試專用切換（正式上線時移除）-->
+          <button onclick="quickSwitch()" class="flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition hover:bg-amber-50"
+                  style="border-color: #E8D9B5; background: #FDF8EC;" title="原型測試：在 PM 與 總經理視角間切換">
+            <i data-lucide="flask-conical" class="w-3 h-3" style="color: var(--caramel-hover);"></i>
+            <span class="text-[9.5px] tracking-[.14em] font-semibold uppercase" style="color: var(--caramel-hover);">原型</span>
+            <span id="quick-switch-label" class="text-[11px] font-medium" style="color: var(--text);"></span>
+            <i data-lucide="repeat-2" class="w-3 h-3" style="color: var(--text-3);"></i>
+          </button>
+          <div class="relative">
+            <input type="search" placeholder="搜尋專案、任務、報告…" class="pl-8 pr-3 py-1.5 w-56">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2.5" style="color: var(--text-3);"></i>
+          </div>
+          <button id="header-bell" class="p-2 rounded-md hover:bg-stone-100 relative" onclick="showView('messages')" title="訊息中心">
+            <i data-lucide="messages-square" class="w-4 h-4" style="color: var(--text-2);"></i>
+            <span id="bell-badge" class="absolute -top-0.5 -right-0.5 mono text-[9px] font-bold px-1 rounded-full hidden"
+                  style="background: var(--caramel); color: white; min-width: 16px; height: 16px; line-height: 16px; text-align: center;"></span>
+          </button>
+          <!-- 同步更新到 ProjFlow（注入頂部工具列，與翻頁鈕並列）-->
+          <button id="pf-sync-btn" onclick="projflowSync.openModal()" title="查看 PMSYS 變更需在 ProjFlow 對齊的清單">
+            <span class="pulse"></span>
+            <span>同步更新到 ProjFlow</span>
+          </button>
+          <!-- 一秒翻頁跳轉 ProjFlow（同窗、不另開分頁） -->
+          <button onclick="flipToProjFlow()"
+                  class="btn-gold" title="翻頁跳轉到您的 ProjFlow 帳號">
+            <span class="gold-dot"></span>
+            <span>翻頁去 ProjFlow</span>
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </header>
+
+      <main id="main-content" class="flex-1 overflow-y-auto px-7 py-6"></main>
+    </div>
+  </div>
+</div>
+
+<!-- ============== Modal 容器 ============== -->
+<div id="modal-root" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(31,31,28,.42); backdrop-filter: blur(4px);">
+  <div id="modal-content" class="paper max-w-4xl w-full max-h-[90vh] overflow-y-auto"></div>
+</div>
+
+<!-- ============== 首次教學引導 ============== -->
+<div id="tutorial-overlay" role="dialog" aria-modal="true">
+  <div id="tutorial-card">
+    <div class="t-step" id="tutorial-step-label">第 1 / 6 步</div>
+    <div class="t-title" id="tutorial-title">歡迎</div>
+    <div class="t-body" id="tutorial-body">…</div>
+    <div class="t-foot">
+      <div class="t-dots" id="tutorial-dots"></div>
+      <div class="flex gap-2">
+        <button class="t-btn ghost" id="tutorial-prev" onclick="tutorialPrev()">上一步</button>
+        <button class="t-btn primary" id="tutorial-next" onclick="tutorialNext()">下一步</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== ProjFlow 同步：提醒浮窗 + 清單 modal（按鈕注入在頂部工具列） ============== -->
+<div id="pf-sync-toast" role="status" aria-live="polite">
+  <div class="pf-t-title">提醒：更新資訊</div>
+  <div class="pf-t-body">PMSYS 這邊有設定變更，記得到 ProjFlow 對齊一次，避免資料同步混亂。</div>
+  <div class="pf-t-actions">
+    <button class="primary" onclick="projflowSync.openModal()">查看同步清單</button>
+    <button onclick="projflowSync.snooze()">稍後再提醒</button>
+  </div>
+</div>
+
+<div id="pf-sync-modal" role="dialog" aria-modal="true">
+  <div class="pf-card">
+    <h3>同步更新到 ProjFlow</h3>
+    <div class="pf-sub">ProjFlow 是獨立部署的另一個系統；以下變更**需要由你在 ProjFlow 後台對應更新**，PMSYS 無法自動推播。</div>
+    <div id="pf-sync-list"></div>
+    <div class="pf-actions">
+      <button onclick="projflowSync.closeModal()">關閉</button>
+      <button class="primary" onclick="projflowSync.openProjFlow()">在 ProjFlow 中開啟並帶提示</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   模擬資料（PMSYS / PMO 視角）
+   ============================================================ */
+
+// ProjFlow org_units（簡化呈現；正式版直接從 ProjFlow Supabase 抓）
+const DEPTS = {
+  exec:  { name: '總事業管理部', color: 'plum',    code: 'EXE' },
+  pmo:   { name: '專案管理中心', color: 'ink',     code: 'PMO', parent: 'exec' },
+  spe:   { name: '策略專案執行課', color: 'ink',   code: 'SPE', parent: 'pmo' },
+  pur:   { name: '採購課',         color: 'plum',  code: 'PUR', parent: 'exec' },
+  hr:    { name: '人資課',         color: 'plum',  code: 'HR',  parent: 'exec' },
+  fin:   { name: '財務課',         color: 'plum',  code: 'FIN', parent: 'exec' },
+  adm:   { name: '行政課',         color: 'plum',  code: 'ADM', parent: 'exec' },
+  dev:   { name: '開發部',         color: 'caramel',code: 'DEV' },
+  sales: { name: '業務部',         color: 'moss',  code: 'SAL' },
+};
+
+// 唯一真人：王耀裕（SPE 課級主管，PMO 唯一專案經理）
+// 總經理保留為後台管理角色（待指派真實姓名）
+// 隊友池（dev/sales）暫以代號顯示，連 ProjFlow Supabase 後會即時抓真人
+const USERS = [
+  // 真人 — 可登入 PMSYS
+  // enName 欄：稱呼優先用英文名；沒填則 fallback 到 name（中文）。ProjFlow 端 profiles 表須對齊此欄位。
+  { id: 'u100', name: '王耀裕', enName: 'Brad Wang', role: 'pm', dept: 'spe', title: '專案經理 · SPE課級主管', avatar: '裕', primary: true, email: 'yu.wang@tei.com' },
+
+  // 後台維護 — 總經理視角（待指派真實姓名 / 接 ProjFlow 後同步）
+  { id: 'u1', name: '總經理', enName: '', role: 'admin', dept: 'exec', title: '後台維護 · 待指派姓名', avatar: '管', email: 'admin@tei.com' },
+
+  // 隊友池 — 跨部門代號顯示（連 ProjFlow Supabase profiles 後替換為真實同仁）
+  { id: 'u5',  name: '開發 A', role: 'staff', dept: 'dev',   title: '資深工程師',   avatar: 'D1', placeholder: true },
+  { id: 'u6',  name: '開發 B', role: 'staff', dept: 'dev',   title: '前端工程師',   avatar: 'D2', placeholder: true },
+  { id: 'u7',  name: '開發 C', role: 'staff', dept: 'dev',   title: '後端工程師',   avatar: 'D3', placeholder: true },
+  { id: 'u8',  name: '開發 D', role: 'staff', dept: 'dev',   title: '全端工程師',   avatar: 'D4', placeholder: true },
+  { id: 'u9',  name: '設計 A', role: 'staff', dept: 'dev',   title: 'UI/UX 設計師', avatar: 'X1', placeholder: true },
+  { id: 'u14', name: '業務 A', role: 'staff', dept: 'sales', title: '資深業務',     avatar: 'S1', placeholder: true },
+  { id: 'u15', name: '業務 B', role: 'staff', dept: 'sales', title: '業務專員',     avatar: 'S2', placeholder: true },
+  // 跨部門池
+  { id: 'u20', name: '採購 A', role: 'staff', dept: 'pur',   title: '採購專員',     avatar: 'P1', placeholder: true },
+  { id: 'u21', name: '採購 B', role: 'staff', dept: 'pur',   title: '採購主任',     avatar: 'P2', placeholder: true },
+  { id: 'u22', name: '人資 A', role: 'staff', dept: 'hr',    title: '人資專員',     avatar: 'H1', placeholder: true },
+  { id: 'u23', name: '財務 A', role: 'staff', dept: 'fin',   title: '會計專員',     avatar: 'F1', placeholder: true },
+  { id: 'u24', name: '財務 B', role: 'staff', dept: 'fin',   title: '財務主任',     avatar: 'F2', placeholder: true },
+  { id: 'u25', name: '行政 A', role: 'staff', dept: 'adm',   title: '行政專員',     avatar: 'A1', placeholder: true },
+  { id: 'u26', name: '執行 A', role: 'staff', dept: 'exec',  title: '特助',         avatar: 'E1', placeholder: true },
+];
+
+// 王耀裕統籌的專案 — 跨三個系統來源（pmsys 主場 + RTM 統整 + ProjFlow 通用）
+// source       = 專案「起源」系統（建立時的主場）
+// lastEdit     = 最近一次內容變動是在哪個系統發生的（顯示雙向同步狀態）
+//   .source     'pmsys' | 'projflow' | 'rtm'
+//   .by         哪位同仁改的（顯示為相對來源系統的使用者）
+//   .when       人話時間（mock；正式版用 lastEdit.updated_at 計算）
+//   .field      改了哪個欄位（顯示給 PMO 知道誰動了什麼）
+const PROJECTS = [
+  // PMSYS 主場（王耀裕本人寫 A4、排行程）
+  { id: 'p1', name: '電商平台 V2 改版策略', code:'P-2604', pm: 'u100', members: ['u100','u5','u6','u9'], start: '2026-04-01', end: '2026-07-15', progress: 42, status: 'on-track',  client: '宜居家居',   source: 'pmsys',
+    lastEdit: { source:'pmsys',    by:'王耀裕（您）',   when:'15 分鐘前', field:'進度 38% → 42%' } },
+  { id: 'p2', name: '客戶後台系統導入',     code:'P-2603', pm: 'u100', members: ['u100','u7','u8'],       start: '2026-03-15', end: '2026-06-30', progress: 68, status: 'on-track',  client: '永泰運通',   source: 'pmsys',
+    lastEdit: { source:'projflow', by:'業務 A（ProjFlow）', when:'1 小時前', field:'客戶聯絡資訊' } },
+  { id: 'p3', name: '行動 App 首版發布',    code:'P-2605', pm: 'u100', members: ['u100','u5','u6','u9'], start: '2026-04-10', end: '2026-09-01', progress: 22, status: 'at-risk',   client: '內部產品',   source: 'pmsys',
+    lastEdit: { source:'pmsys',    by:'王耀裕（您）',   when:'昨天',     field:'狀態改為 at-risk' } },
+  { id: 'p4', name: 'Q2 大客戶導入專案',    code:'P-2606', pm: 'u100', members: ['u100','u14','u15'],    start: '2026-04-05', end: '2026-06-20', progress: 55, status: 'on-track',  client: '友達光電',   source: 'pmsys',
+    lastEdit: { source:'projflow', by:'業務 A（ProjFlow）', when:'3 小時前', field:'交期 6/15 → 6/20' } },
+  // 從 RTM 串入（先進部件部門主導，王耀裕統整 pulse）
+  { id: 'p9', name: '碳纖維結構件量產導入',  code:'RTM-026',pm: 'u100', members: ['u100','u8','u22'],     start: '2026-03-20', end: '2026-08-15', progress: 38, status: 'on-track',  client: '北美客戶 A',  source: 'rtm', extRef: 'RTM · P/S/L 模組',
+    lastEdit: { source:'rtm',      by:'人資 A（RTM）',  when:'2 小時前', field:'SOP-12 試模良率 87%' } },
+  // 從 ProjFlow 通用案串入（總經理指派）
+  { id: 'p10',name: 'Q2 內部組織調整輔導',   code:'PF-067', pm: 'u100', members: ['u100','u26','u22'],    start: '2026-04-20', end: '2026-06-30', progress: 15, status: 'on-track',  client: '內部 · HR',  source: 'projflow', extRef: 'ProjFlow · 任務 / 行政模組',
+    lastEdit: { source:'projflow', by:'總經理（ProjFlow）', when:'今早',  field:'新增指示備註' } },
+];
+
+const today = new Date('2026-05-21');
+const d = (offset) => { const x = new Date(today); x.setDate(x.getDate() + offset); return x.toISOString().slice(0,10); };
+
+// 任務狀態 — 與 ProjFlow 對齊（5 種，雙向同步）
+// todo 待辦 / doing 進行中 / blocked 卡住 / overdue 延遲 / done 已完成
+// blockReason 僅在 status='blocked' 時填，會同步寫回 ProjFlow tasks.block_reason
+const TASKS = [
+  { id:'t1',  title:'會員註冊流程 API 規格定稿', project:'p1', assignee:'u7',  due:d(2),  priority:'high',   status:'doing' },
+  { id:'t2',  title:'首頁改版 UI 第二輪稿',       project:'p1', assignee:'u9',  due:d(5),  priority:'medium', status:'doing' },
+  { id:'t3',  title:'購物車前端整合（逾期）',     project:'p1', assignee:'u6',  due:d(-1), priority:'high',   status:'overdue' },
+  { id:'t4',  title:'付款串接測試',                project:'p1', assignee:'u5',  due:d(10), priority:'high',   status:'blocked', blockReason:'等待客戶確認金流串接規格（友達光電法務審核中）' },
+  { id:'t5',  title:'後台資料表 schema review',    project:'p2', assignee:'u7',  due:d(1),  priority:'medium', status:'doing' },
+  { id:'t6',  title:'權限模組驗收',                project:'p2', assignee:'u8',  due:d(8),  priority:'medium', status:'todo' },
+  { id:'t7',  title:'App 原型互動腳本',            project:'p3', assignee:'u9',  due:d(4),  priority:'high',   status:'doing' },
+  { id:'t8',  title:'推播服務技術選型',            project:'p3', assignee:'u5',  due:d(12), priority:'medium', status:'blocked', blockReason:'第三方 push service 報價尚未到位，等採購回覆' },
+  { id:'t9',  title:'友達 Q2 啟動會議準備',        project:'p4', assignee:'u100',due:d(3),  priority:'high',   status:'doing' },
+  { id:'t10', title:'友達合約附件追蹤',            project:'p4', assignee:'u14', due:d(-2), priority:'medium', status:'overdue' },
+  { id:'t11', title:'本週專案週會議程',            project:'p1', assignee:'u100',due:d(0),  priority:'medium', status:'doing' },
+  { id:'t12', title:'App 專案風險評估報告',        project:'p3', assignee:'u100',due:d(3),  priority:'high',   status:'todo' },
+  { id:'t13', title:'RTM 試模良率 PMO 統整',       project:'p9', assignee:'u100',due:d(1),  priority:'high',   status:'doing' },
+  { id:'t14', title:'量產驗證里程碑會議',          project:'p9', assignee:'u100',due:d(8),  priority:'medium', status:'todo' },
+  { id:'t15', title:'組織調整 KO 簡報',             project:'p10',assignee:'u100',due:d(2),  priority:'high',   status:'doing' },
+  { id:'t16', title:'HR 訪談排程',                  project:'p10',assignee:'u22', due:d(6),  priority:'medium', status:'todo' },
+];
+
+// 任務狀態元資料 — 5 種，跟 ProjFlow TaskStatus 對齊
+const TASK_STATUS_META = {
+  todo:    { label:'待辦',   short:'待辦', icon:'circle-dashed',  bg:'#F1EFE8', fg:'#6B6862', dot:'#A09C92' },
+  doing:   { label:'進行中', short:'進行', icon:'play-circle',    bg:'#EBF1EE', fg:'#2F5D50', dot:'#2F5D50' },
+  blocked: { label:'卡住',   short:'卡住', icon:'octagon-alert',  bg:'#F1E6EB', fg:'#7A4C66', dot:'#7A4C66' },
+  overdue: { label:'延遲',   short:'延遲', icon:'clock-alert',    bg:'#FBEBE0', fg:'#A85C2D', dot:'#A85C2D' },
+  done:    { label:'已完成', short:'已完', icon:'check-circle-2', bg:'#E8F0E9', fg:'#4A7C5A', dot:'#4A7C5A' },
+};
+const TASK_STATUS_ORDER = ['todo','doing','blocked','overdue','done'];
+
+function statusMeta(s) { return TASK_STATUS_META[s] || TASK_STATUS_META.todo; }
+
+const SCHEDULE = [
+  { id:'s1', title:'宜居家居 KO 會議',  owner:'u100', project:'p1', date:d(0),  start:'10:00', end:'11:30', color:'ink' },
+  { id:'s2', title:'技術評審：付款串接', owner:'u100', project:'p1', date:d(0),  start:'14:00', end:'15:00', color:'caramel' },
+  { id:'s3', title:'PMO 週會',           owner:'u100', project:null, date:d(1),  start:'09:30', end:'10:30', color:'plum' },
+  { id:'s4', title:'友達 Q2 預備會',    owner:'u100', project:'p4', date:d(2),  start:'13:30', end:'15:00', color:'moss' },
+  { id:'s5', title:'App 原型 review',   owner:'u100', project:'p3', date:d(3),  start:'11:00', end:'12:00', color:'caramel' },
+  { id:'s6', title:'撰寫 P-2604 週報',  owner:'u100', project:'p1', date:d(4),  start:'16:00', end:'17:30', color:'ink' },
+  { id:'s7', title:'1:1 主管會談',      owner:'u100', project:null, date:d(5),  start:'10:00', end:'10:30', color:'plum' },
+];
+
+const REPORTS = [
+  { id:'r1', project:'p1', title:'宜居家居 V2 改版 · 期中報告',     author:'u100', updated:d(-2), status:'draft',  pages:8  },
+  { id:'r2', project:'p2', title:'永泰運通後台系統 · 第三次進度報告', author:'u100', updated:d(-7), status:'shared', pages:6  },
+  { id:'r3', project:'p3', title:'行動 App · 風險評估與排程調整建議', author:'u100', updated:d(-1), status:'draft',  pages:12 },
+  // 跨系統 — 王耀裕仍可在 PMSYS 寫，內容自動回流 ProjFlow / RTM
+  { id:'r4', project:'p9', title:'碳纖維量產 · PMO 階段彙整（含 RTM 試模數據摘要）', author:'u100', updated:d(0),  status:'draft', pages:10, crossSync:'rtm' },
+  { id:'r5', project:'p10',title:'Q2 組織調整 · 啟動報告',          author:'u100', updated:d(-3), status:'shared', pages:6, crossSync:'projflow' },
+];
+
+const NOTIFICATIONS = [
+  { type:'sync',     text:'P-2604 進度於 ProjFlow 被更新',           time:'10 分鐘前' },
+  { type:'deadline', text:'任務「購物車前端整合」已逾期 1 天',       time:'1 小時前' },
+  { type:'mention',  text:'王總在 P-2605 詳細專案報告留下了評論',   time:'3 小時前' },
+  { type:'team',     text:'開發 B 接受了 P-2604 的隊友邀請',         time:'昨天' },
+];
+
+// 訊息中心 — 與 ProjFlow / RTM 雙向同步的對話/通知
+// type: 'message' = 人對人對話、'notification' = 系統提醒、'mention' = 被 @
+// source: 'pmsys' | 'projflow' | 'rtm'
+// synced: 是否已寫回 ProjFlow（read state、reply、等）
+const MESSAGES = [
+  { id:'msg1', type:'message',      from:'u5',  subject:'付款 API 回呼 URL 待確認',     preview:'王哥，付款串接的 webhook 端點您之前提的網域是 https://api.tei.com/v2/pay-callback 對嗎？我這邊配置好了想再確認一次。', time:'15 分鐘前',  unread:true,  project:'p1',  source:'projflow', synced:true },
+  { id:'msg2', type:'message',      from:'u22', subject:'RTM-026 SOP-12 試模結果',      preview:'剛完成第三輪試模，良率達 87%、孔隙率 < 2%、壓力曲線平穩。下一步要進入量產驗證請您指示時程。',         time:'2 小時前',   unread:true,  project:'p9',  source:'rtm',      synced:true },
+  { id:'msg3', type:'mention',      from:'u1',  subject:'Q2 組織調整 · 進度確認',       preview:'王耀裕，請於本週五前提交 HR 訪談排程草案，總經理會議要用。@王耀裕',                                  time:'今早 09:12', unread:true,  project:'p10', source:'projflow', synced:true },
+  { id:'msg4', type:'message',      from:'u14', subject:'友達合約附件 D 缺漏',          preview:'客戶法務反映合約缺少附件 D，是否需要這週內補上？我可以協助跟法務協調。',                              time:'昨天 16:40', unread:false, project:'p4',  source:'projflow', synced:true },
+  { id:'msg5', type:'notification', from:null,  subject:'P-2603 後台系統權限模組驗收通過', preview:'開發 D 完成驗收，可進入下個里程碑。狀態已自動同步到 ProjFlow。',                                  time:'昨天 14:10', unread:false, project:'p2',  source:'pmsys',    synced:true },
+  { id:'msg6', type:'message',      from:'u9',  subject:'宜居家居首頁 v2 第二輪稿',     preview:'已上傳到 Figma，連結：figma.com/file/abc123，請審視配色和字級。',                                   time:'昨天 11:00', unread:false, project:'p1',  source:'pmsys',    synced:true },
+  { id:'msg7', type:'notification', from:null,  subject:'ProjFlow 推送：3 件任務本週截止', preview:'P-2604 會員註冊 API、P-2603 schema review、P-2605 App 原型互動腳本。',                              time:'今早 08:00', unread:false, project:null,  source:'projflow', synced:true },
+];
+
+/* ============================================================
+   狀態 / 路由
+   ============================================================ */
+
+let currentUser = null;
+let currentView = 'dashboard';
+let scheduleLevel = 'week';
+let activeReportId = null;
+let pendingUser = null;
+let ganttView = 'quarter'; // 'quarter' | 'month' | 'week'
+
+/* 全域稱呼：優先英文名（enName），無則 fallback 中文 name */
+function displayName(u) {
+  return (u && u.enName && String(u.enName).trim()) || (u && u.name) || '';
+}
+
+/* PMSYS 角色允許清單 — 須與 ProjFlow profiles.role 允許清單嚴格一致，避免資料同步混亂 */
+const PMSYS_ALLOWED_ROLES = ['pm', 'pmo'];
+function isAuthorizedForPMSYS(u) { return !!u && PMSYS_ALLOWED_ROLES.includes(u.role); }
+
+/* ============================================================
+   登入（Email + OTP）
+   ============================================================ */
+
+function initLogin() {
+  // 目前唯一已登錄的真人
+  const u = USERS.find(x => x.id === 'u100');
+  document.getElementById('demo-accounts').innerHTML = `
+    <button onclick="fillEmail('${u.email}')" class="col-span-2 text-left p-3 rounded-md border hover:bg-stone-50 transition flex items-center gap-3" style="border-color: var(--border);">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-[13px] flex-shrink-0" style="background: var(--ink);">${u.avatar}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[13px] font-semibold" style="color: var(--text);">${u.name}</div>
+        <div class="text-[11px]" style="color: var(--text-3);">${u.title}</div>
+        <div class="mono text-[10.5px] mt-0.5" style="color: var(--text-3);">${u.email}</div>
+      </div>
+      <i data-lucide="arrow-right" class="w-4 h-4" style="color: var(--text-3);"></i>
+    </button>
+  `;
+  lucide.createIcons();
+}
+
+function fillEmail(email) {
+  document.getElementById('email-input').value = email;
+  sendOtp();
+}
+
+function sendOtp() {
+  const email = document.getElementById('email-input').value.trim().toLowerCase();
+  const errorEl = document.getElementById('email-error');
+  const errorText = document.getElementById('email-error-text');
+
+  if (!email) {
+    errorText.textContent = '請輸入 Email';
+    errorEl.classList.remove('hidden');
+    lucide.createIcons();
+    return;
+  }
+
+  const user = USERS.find(u => u.email?.toLowerCase() === email);
+  if (!user) {
+    errorText.textContent = '此 Email 未登錄於 ProjFlow profiles';
+    errorEl.classList.remove('hidden');
+    lucide.createIcons();
+    return;
+  }
+  if (!isAuthorizedForPMSYS(user)) {
+    errorText.textContent = '此帳號非專案管理體系成員，無權使用 PMSYS（須與 ProjFlow 角色一致）';
+    errorEl.classList.remove('hidden');
+    lucide.createIcons();
+    return;
+  }
+
+  errorEl.classList.add('hidden');
+  pendingUser = user;
+  document.getElementById('otp-target-email').textContent = email;
+  document.getElementById('step-email').classList.add('hidden');
+  document.getElementById('step-otp').classList.remove('hidden');
+  setTimeout(() => document.getElementById('otp-input').focus(), 50);
+  lucide.createIcons();
+}
+
+function verifyOtp() {
+  const otp = document.getElementById('otp-input').value.trim();
+  if (otp.length !== 6) {
+    alert('請輸入 6 碼數字驗證碼');
+    return;
+  }
+  if (!pendingUser) return;
+  login(pendingUser.id);
+}
+
+function backToEmail() {
+  document.getElementById('step-otp').classList.add('hidden');
+  document.getElementById('step-email').classList.remove('hidden');
+  document.getElementById('otp-input').value = '';
+  pendingUser = null;
+  lucide.createIcons();
+}
+
+function login(userId) {
+  const u = USERS.find(x => x.id === userId);
+  if (!isAuthorizedForPMSYS(u)) {
+    alert('此帳號非專案管理體系成員，無權使用 PMSYS');
+    return;
+  }
+  currentUser = u;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  renderUserInfo();
+  renderSidebar();
+  // 總經理進入後台總覽；其他角色進入工作檯
+  showView(currentUser.role === 'admin' ? 'executive' : 'dashboard');
+  // 更新原型切換按鈕標籤
+  const swEl = document.getElementById('quick-switch-label');
+  if (swEl) swEl.textContent = currentUser.id === 'u100' ? '切到後台' : '切到 PM 視角';
+  updateBellBadge();
+  // 閒置 60 分鐘自動登出
+  idleManager.start();
+  // ProjFlow 同步按鈕與提醒
+  projflowSync.mount();
+  // 首次登入強制走教學引導
+  if (!hasSeenTutorial(currentUser.id)) startTutorial({ forced: true });
+}
+
+function updateBellBadge() {
+  const badge = document.getElementById('bell-badge');
+  if (!badge) return;
+  const n = unreadMessageCount();
+  if (n > 0) {
+    badge.textContent = n > 99 ? '99+' : String(n);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function logout(reason) {
+  idleManager.stop();
+  projflowSync.unmount();
+  closeTutorial();
+  currentUser = null;
+  pendingUser = null;
+  document.getElementById('email-input').value = '';
+  document.getElementById('otp-input').value = '';
+  backToEmail();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  if (reason === 'idle') {
+    setTimeout(() => alert('已閒置超過 60 分鐘，系統已自動登出，請重新登入。'), 50);
+  }
+}
+
+/* ============================================================
+   權限過濾 — PM 之間嚴格互看不到
+   ============================================================ */
+
+function visibleProjects() {
+  if (!currentUser) return [];
+  // 總經理 — 看全部
+  if (currentUser.role === 'admin') return PROJECTS;
+  // PMO 主管 — 看所有 PMO/SPE PM 的專案（管理層級例外）
+  if (currentUser.role === 'manager' && (currentUser.dept === 'pmo' || currentUser.dept === 'spe')) {
+    return PROJECTS.filter(p => {
+      const pm = USERS.find(u => u.id === p.pm);
+      return pm && (pm.dept === 'pmo' || pm.dept === 'spe');
+    });
+  }
+  // PM / 助理 — 只看自己統籌或被列為隊友的專案
+  return PROJECTS.filter(p =>
+    p.pm === currentUser.id ||
+    (p.members || []).includes(currentUser.id)
+  );
+}
+
+function visibleTasks() {
+  if (!currentUser) return [];
+  if (currentUser.role === 'admin') return TASKS;
+  const projIds = visibleProjects().map(p => p.id);
+  return TASKS.filter(t => projIds.includes(t.project));
+}
+
+function visibleReports() {
+  if (!currentUser) return [];
+  if (currentUser.role === 'admin') return REPORTS;
+  const projIds = visibleProjects().map(p => p.id);
+  return REPORTS.filter(r => projIds.includes(r.project));
+}
+
+function visibleSchedule() {
+  if (!currentUser) return [];
+  if (currentUser.role === 'admin') return SCHEDULE;
+  // PMO 主管 — 看所有 PMO PM 的行程
+  if (currentUser.role === 'manager' && (currentUser.dept === 'pmo' || currentUser.dept === 'spe')) {
+    const pmoUserIds = USERS.filter(u => u.dept === 'pmo' || u.dept === 'spe').map(u => u.id);
+    return SCHEDULE.filter(s => pmoUserIds.includes(s.owner));
+  }
+  // 其他 — 只看自己的行程
+  return SCHEDULE.filter(s => s.owner === currentUser.id);
+}
+
+function renderUserInfo() {
+  document.getElementById('current-user-avatar').textContent = currentUser.avatar;
+  document.getElementById('current-user-name').textContent = displayName(currentUser);
+  document.getElementById('current-user-role').textContent = currentUser.title;
+}
+
+/* ============================================================
+   側邊導覽
+   ============================================================ */
+
+function renderSidebar() {
+  let nav;
+  if (currentUser.role === 'admin') {
+    // 總經理：以總覽為主
+    nav = [
+      { section: '總經理視角' },
+      { id:'executive', icon:'crown',           label:'全公司總覽' },
+      { id:'projects',  icon:'folders',         label:'全部專案' },
+      { id:'tasks',     icon:'check-square',    label:'全部任務' },
+      { id:'schedule',  icon:'calendar-days',   label:'全部行程' },
+      { section: '彙整' },
+      { id:'reports',   icon:'file-text',       label:'詳細專案報告' },
+      { id:'teammates', icon:'users',           label:'全公司同仁' },
+      { id:'messages',  icon:'messages-square', label:'訊息中心', badge: 'unread' },
+      { section: '系統' },
+      { id:'sync',      icon:'refresh-cw',      label:'ProjFlow 同步' },
+      { id:'settings',  icon:'settings',        label:'設定' },
+    ];
+  } else if (currentUser.role === 'manager') {
+    // PMO 主管：看部門
+    nav = [
+      { section: '部門管理' },
+      { id:'dashboard', icon:'layout-dashboard', label:'部門總覽' },
+      { id:'projects',  icon:'folders',         label:'部門專案' },
+      { id:'tasks',     icon:'check-square',    label:'部門任務' },
+      { id:'schedule',  icon:'calendar-days',   label:'部門行程' },
+      { section: '撰寫與彙整' },
+      { id:'reports',   icon:'file-text',       label:'部門報告' },
+      { id:'teammates', icon:'users',           label:'部門隊友' },
+      { id:'messages',  icon:'messages-square', label:'訊息中心', badge: 'unread' },
+      { section: '系統' },
+      { id:'sync',      icon:'refresh-cw',      label:'ProjFlow 同步' },
+      { id:'settings',  icon:'settings',        label:'設定' },
+    ];
+  } else {
+    // 一般 PM / 助理
+    nav = [
+      { section: '工作' },
+      { id:'dashboard', icon:'layout-dashboard', label:'工作檯' },
+      { id:'projects',  icon:'folders',          label:'我的專案' },
+      { id:'tasks',     icon:'check-square',     label:'任務看板' },
+      { id:'schedule',  icon:'calendar-days',    label:'行程表' },
+      { section: '撰寫與彙整' },
+      { id:'reports',   icon:'file-text',        label:'A4 報告' },
+      { id:'teammates', icon:'users',            label:'隊友與部門' },
+      { id:'messages',  icon:'messages-square',  label:'訊息中心', badge: 'unread' },
+      { section: '系統' },
+      { id:'sync',      icon:'refresh-cw',       label:'ProjFlow 同步' },
+      { id:'settings',  icon:'settings',         label:'設定' },
+    ];
+  }
+
+  document.getElementById('sidebar-nav').innerHTML = nav.map(item => {
+    if (item.section) return `<div class="nav-section">${item.section}</div>`;
+    let badgeHtml = '';
+    if (item.badge === 'unread') {
+      const n = unreadMessageCount();
+      if (n > 0) {
+        badgeHtml = `<span class="ml-auto mono text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style="background: var(--caramel); color: white; min-width: 18px; text-align: center;">${n}</span>`;
+      }
+    }
+    return `
+      <div onclick="showView('${item.id}')" data-view="${item.id}" class="nav-item">
+        <i data-lucide="${item.icon}" class="w-4 h-4" style="color: var(--text-3);"></i>
+        <span>${item.label}</span>
+        ${badgeHtml}
+      </div>
+    `;
+  }).join('');
+
+  lucide.createIcons();
+  highlightNav();
+}
+
+function highlightNav() {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === currentView);
+  });
+}
+
+function showView(view) {
+  currentView = view;
+  highlightNav();
+  const renderers = {
+    executive: renderExecutive,
+    dashboard: renderDashboard,
+    projects:  renderProjects,
+    tasks:     renderTasks,
+    schedule:  renderSchedule,
+    reports:   renderReports,
+    teammates: renderTeammates,
+    messages:  renderMessages,
+    sync:      renderSync,
+    settings:  renderSettings,
+    notifications: renderNotifications,
+  };
+  try {
+    renderers[view]?.();
+  } catch (err) {
+    console.error('[render error]', view, err);
+    document.getElementById('main-content').innerHTML = `
+      <div class="paper p-6 max-w-2xl" style="border: 1px solid #F0D2BA;">
+        <div class="flex items-center gap-2 mb-2">
+          <i data-lucide="alert-circle" class="w-4 h-4" style="color: var(--rust);"></i>
+          <h3 class="serif font-semibold text-[15px]" style="color: var(--rust);">畫面渲染錯誤</h3>
+        </div>
+        <p class="text-[12px] mb-3" style="color: var(--text-2);">View: <code class="mono">${view}</code></p>
+        <pre class="mono text-[11px] p-3 rounded overflow-auto" style="background: var(--bg-subtle); color: var(--text-2);">${(err.stack || err.message || String(err)).replace(/</g, '&lt;')}</pre>
+      </div>
+    `;
+  }
+  lucide.createIcons();
+}
+
+function setTitle(t, sub='') {
+  document.getElementById('page-title').textContent = t;
+  document.getElementById('page-subtitle').textContent = sub ? `· ${sub}` : '';
+}
+
+/* ============================================================
+   跨系統來源（Project Pulse）視覺輔助
+   ============================================================ */
+const SOURCE_META = {
+  pmsys:    { label: 'PMSYS',    short: '本系統', color: 'ink',     icon: 'pen-tool',  hint: '在 PMSYS 主場進行' },
+  rtm:      { label: 'TEi-RTM',  short: 'RTM',  color: 'caramel', icon: 'cog',       hint: '來自 RTM · 我負責 PMO 統整' },
+  projflow: { label: 'ProjFlow', short: 'PF',   color: 'plum',    icon: 'building-2',hint: '來自 ProjFlow 通用案 · 我擔任 PM' },
+};
+function sourceBadge(source) {
+  const m = SOURCE_META[source] || SOURCE_META.pmsys;
+  return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-semibold tracking-wide uppercase"
+                style="background: var(--${m.color === 'ink' ? 'ink-soft' : m.color === 'caramel' ? 'caramel-soft' : 'plum'}); color: var(--${m.color === 'plum' ? 'paper' : m.color}); ${m.color === 'plum' ? 'background: var(--plum); color: white;' : ''}"
+                title="${m.hint}">
+    <i data-lucide="${m.icon}" class="w-2.5 h-2.5"></i>${m.short}
+  </span>`;
+}
+
+/* 工作檯 4 格 KPI（緊湊型 — 比 KPI block 更小，不重複 executive 視角） */
+const KPI_COLOR_BG = {
+  rust:    'var(--rust)',
+  caramel: 'var(--caramel-soft)',
+  plum:    'var(--plum)',
+  ink:     'var(--ink-soft)',
+};
+const KPI_COLOR_FG = {
+  rust:    '#ffffff',
+  caramel: 'var(--caramel-hover)',
+  plum:    '#ffffff',
+  ink:     'var(--ink)',
+};
+
+function kpiTile(label, value, sub, color, icon) {
+  const bg = KPI_COLOR_BG[color] || KPI_COLOR_BG.ink;
+  const fg = KPI_COLOR_FG[color] || KPI_COLOR_FG.ink;
+  const valueColor = (value > 0 && color === 'rust') ? 'var(--rust)' : 'var(--text)';
+  return `
+    <div class="paper px-4 py-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0" style="background: ${bg}; color: ${fg};">
+        <i data-lucide="${icon}" class="w-4 h-4"></i>
+      </div>
+      <div class="min-w-0">
+        <div class="text-[10px] tracking-[.12em] uppercase font-semibold" style="color: var(--text-3);">${label}</div>
+        <div class="flex items-baseline gap-1.5">
+          <span class="mono text-[20px] font-semibold leading-none" style="color: ${valueColor};">${value}</span>
+          <span class="text-[11px]" style="color: var(--text-3);">${sub}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function dashKpiStrip(myProjects, myTasks, todayEvents) {
+  const overdueT = myTasks.filter(t => t.status === 'overdue').length;
+  const blockedT = myTasks.filter(t => t.status === 'blocked').length;
+  const todayT   = myTasks.filter(t => t.status !== 'done' && t.due === d(0)).length;
+  const atRiskP  = myProjects.filter(p => p.status === 'at-risk').length;
+  const weekEvents = visibleSchedule().filter(s => {
+    const days = (new Date(s.date) - today) / 86400000;
+    return days >= 0 && days < 7;
+  }).length;
+
+  return `
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      ${kpiTile('延遲任務',  overdueT,   '件', 'rust',    'clock-alert')}
+      ${kpiTile('卡住任務',  blockedT,   '件', 'plum',    'octagon-alert')}
+      ${kpiTile('今日截止',  todayT,     '件', 'caramel', 'clock')}
+      ${kpiTile('風險專案',  atRiskP,    '個', 'caramel', 'alert-triangle')}
+      ${kpiTile('本週行程',  weekEvents, '場', 'ink',     'calendar-days')}
+    </div>
+  `;
+}
+
+/* 任務狀態總覽 — 5 格可點擊大型 tile，跳轉到任務看板對應分頁 */
+function dashStatusBoard(myTasks) {
+  const total = myTasks.length;
+  return `
+    <div class="paper p-5">
+      <div class="flex items-end justify-between mb-4">
+        <div>
+          <h3 class="serif font-semibold text-[15px] mb-0.5">任務狀態總覽</h3>
+          <p class="text-[12px]" style="color: var(--text-3);">與 ProjFlow 同步 5 種狀態 · 共 ${total} 件 · 點任一狀態跳轉任務看板</p>
+        </div>
+        <button onclick="showView('tasks')" class="text-[12px] font-medium flex items-center gap-1" style="color: var(--ink);">
+          進入任務看板 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+        </button>
+      </div>
+      <div class="grid grid-cols-5 gap-3">
+        ${TASK_STATUS_ORDER.map(s => {
+          const m = statusMeta(s);
+          const list = myTasks.filter(t => t.status === s);
+          const pct = total > 0 ? Math.round(list.length / total * 100) : 0;
+          return `
+            <button onclick="showView('tasks')"
+                    class="text-left p-3.5 rounded-lg transition hover:scale-[1.02] hover:shadow-md"
+                    style="background: ${m.bg}; border: 1px solid rgba(0,0,0,.04);">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="${m.icon}" class="w-3.5 h-3.5" style="color: ${m.fg};"></i>
+                  <span class="text-[11.5px] font-semibold" style="color: ${m.fg};">${m.label}</span>
+                </div>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="mono text-[26px] font-semibold leading-none" style="color: ${m.fg};">${list.length}</span>
+                <span class="text-[10.5px] font-medium" style="color: ${m.fg}; opacity:.7;">/ ${total}</span>
+              </div>
+              <div class="mt-2 h-1 rounded-full overflow-hidden" style="background: rgba(0,0,0,.05);">
+                <div class="h-full rounded-full" style="width: ${pct}%; background: ${m.dot};"></div>
+              </div>
+              <div class="text-[10px] mt-1 mono" style="color: ${m.fg}; opacity:.7;">${pct}%</div>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* 專案脈搏一行（緊湊單行，明顯有別於 projectCard） */
+function projectPulseRow(p) {
+  const pTasks = TASKS.filter(t => t.project === p.id);
+  const overdue = pTasks.filter(t => t.status === 'overdue').length;
+  const statusColor = p.status === 'at-risk' ? 'var(--caramel)' : 'var(--moss)';
+  const barColor = p.status === 'at-risk' ? 'var(--caramel)' : 'var(--ink)';
+  return `
+    <div onclick="showView('projects')" class="flex items-center gap-3 py-2.5 px-2 -mx-2 rounded-md cursor-pointer hover:bg-stone-50 border-b last:border-0" style="border-color: var(--border-soft);">
+      <span class="w-2 h-2 rounded-full flex-shrink-0" style="background: ${statusColor};"></span>
+      <span class="mono text-[10.5px] font-semibold w-14 flex-shrink-0" style="color: var(--text-3);">${p.code}</span>
+      ${sourceBadge(p.source)}
+      <span class="flex-1 truncate text-[12.5px] font-medium">${p.name}</span>
+      ${overdue > 0 ? `<span class="text-[10.5px] font-semibold" style="color: var(--rust);">${overdue} 逾期</span>` : ''}
+      <div class="w-28 h-1.5 rounded-full overflow-hidden flex-shrink-0" style="background: var(--bg-subtle);">
+        <div class="h-full rounded-full" style="width: ${p.progress}%; background: ${barColor};"></div>
+      </div>
+      <span class="mono text-[11.5px] font-semibold w-10 text-right flex-shrink-0">${p.progress}%</span>
+    </div>
+  `;
+}
+
+/* Pulse 跨系統訊號（工作檯頂部，僅 PM/PMO 看得到） */
+function renderPulseStrip(myProjects) {
+  // 統計三個來源各有幾個
+  const counts = { pmsys: 0, rtm: 0, projflow: 0 };
+  myProjects.forEach(p => { counts[p.source] = (counts[p.source] || 0) + 1; });
+
+  // 跨系統最近活動 — 同步雙向，inbound=true 是別系統推過來、false 是 PMSYS 推出去
+  // 正式版查 project_pulse_history，按時間倒序
+  const pulseEvents = [
+    { source: 'projflow', code: 'P-2603',  text: '業務 A 在 ProjFlow 更新客戶聯絡資訊 → PMSYS 已同步',  when: '1 小時前', inbound: true  },
+    { source: 'rtm',      code: 'RTM-026', text: '人資 A 在 RTM 推送 SOP-12 試模通過 · 良率 87%',         when: '2 小時前', inbound: true  },
+    { source: 'projflow', code: 'P-2606',  text: '業務 A 在 ProjFlow 改了交期 6/15 → 6/20 · 已同步',     when: '3 小時前', inbound: true  },
+    { source: 'pmsys',    code: 'P-2604',  text: '您剛更新進度 38% → 42% · 已回流 ProjFlow',             when: '15 分鐘前', inbound: false },
+  ];
+
+  return `
+    <div class="paper p-5" style="background: linear-gradient(to right, #FDF8EC 0%, #F9F2DE 100%); border-color: #ECDCB0;">
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--caramel); color: white;">
+          <i data-lucide="radio-tower" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <h3 class="serif text-[14px] font-semibold">Project Pulse · 跨系統訊號</h3>
+              <span class="text-[9.5px] tracking-[.14em] uppercase font-semibold px-1.5 py-0.5 rounded" style="background: var(--caramel-soft); color: var(--caramel-hover);">PMO 統整權</span>
+            </div>
+            <div class="flex items-center gap-3 text-[11px]" style="color: var(--text-3);">
+              <span>本系統 <strong class="mono" style="color: var(--ink);">${counts.pmsys || 0}</strong></span>
+              <span>RTM <strong class="mono" style="color: var(--caramel-hover);">${counts.rtm || 0}</strong></span>
+              <span>ProjFlow <strong class="mono" style="color: var(--plum);">${counts.projflow || 0}</strong></span>
+            </div>
+          </div>
+          <p class="text-[11.5px] mb-3" style="color: var(--text-3);">你在 PMSYS / RTM / ProjFlow 任一處更新的重要欄位都會即時雙向同步</p>
+
+          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
+            ${pulseEvents.map(e => {
+              const m = SOURCE_META[e.source];
+              return `
+                <div class="p-2.5 rounded-md flex items-start gap-2.5" style="background: rgba(255,255,255,.75); border: 1px solid rgba(0,0,0,.04);">
+                  <div class="flex flex-col items-center gap-0.5 flex-shrink-0">
+                    ${sourceBadge(e.source)}
+                    <span class="text-[9px]" style="color: var(--text-3);">${e.inbound ? '← 進' : '→ 出'}</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="mono text-[10px] font-semibold" style="color: var(--text-3);">${e.code}</div>
+                    <div class="text-[12px] leading-snug mt-0.5">${e.text}</div>
+                    <div class="text-[10px] mt-1" style="color: var(--text-3);">${e.when}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 總經理視角（全公司總覽）
+   ============================================================ */
+
+function renderExecutive() {
+  setTitle('全公司總覽', '總經理視角');
+
+  const allPMs = USERS.filter(u => u.role === 'pm' || (u.role === 'staff' && u.dept === 'pmo'));
+  const allProjects = PROJECTS;
+  const allTasks = TASKS;
+  const allReports = REPORTS;
+  const atRisk = allProjects.filter(p => p.status === 'at-risk').length;
+  const overdueTasks = allTasks.filter(t => t.status === 'overdue').length;
+  const blockedTasks = allTasks.filter(t => t.status === 'blocked').length;
+  const avgProgress = Math.round(allProjects.reduce((s,p) => s + p.progress, 0) / allProjects.length);
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-6 max-w-[1480px]">
+
+      <!-- Hero -->
+      <div class="paper p-6 flex items-center justify-between" style="background: linear-gradient(135deg, var(--paper) 0%, #F1E6EB 100%);">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="crown" class="w-4 h-4" style="color: var(--plum);"></i>
+            <span class="tag tag-plum">總經理視角</span>
+            <span class="text-[11px]" style="color: var(--text-3);">${formatDate(today)} · 星期${getWeekday(today)}</span>
+          </div>
+          <h2 class="serif text-2xl font-semibold mb-1">早安，${displayName(currentUser)}</h2>
+          <p class="text-[13px]" style="color: var(--text-2);">
+            全公司 <strong>${allPMs.length}</strong> 位專案人員、<strong>${allProjects.length}</strong> 個進行中專案、平均進度 <strong class="mono">${avgProgress}%</strong>
+            ${atRisk > 0 ? `，<span style="color: var(--rust); font-weight: 600;">${atRisk} 個風險專案需關注</span>` : ''}
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-ghost"><i data-lucide="download" class="w-3.5 h-3.5"></i>匯出總覽 PDF</button>
+          <button class="btn-ink"><i data-lucide="external-link" class="w-3.5 h-3.5"></i>進入 ProjFlow</button>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        ${kpiBlock('專案人員',  allPMs.length,        '位',  'users',           'ink')}
+        ${kpiBlock('進行中專案', allProjects.length,  '個',  'folders',         'ink')}
+        ${kpiBlock('全部任務',  allTasks.length,      '件',  'check-square',    'caramel')}
+        ${kpiBlock('風險專案',  atRisk,               '個',  'alert-triangle',  'rust', atRisk > 0)}
+        ${kpiBlock('卡住任務',  blockedTasks,         '件',  'octagon-alert',   'plum', blockedTasks > 0)}
+        ${kpiBlock('延遲任務',  overdueTasks,         '件',  'clock-alert',     'rust', overdueTasks > 0)}
+      </div>
+
+      <!-- PM 矩陣 -->
+      <div>
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <h3 class="serif text-[16px] font-semibold">各專案人員現況</h3>
+            <p class="text-[12px]" style="color: var(--text-3);">點擊卡片右下「閱讀」進入該 PM 的報告</p>
+          </div>
+          <span class="text-[11px] flex items-center gap-1.5" style="color: var(--text-3);">
+            <span class="sync-dot"></span>資料即時來自 ProjFlow profiles
+          </span>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${allPMs.map(pm => pmCardForExec(pm)).join('')}
+        </div>
+      </div>
+
+      <!-- 全公司專案表 -->
+      <div class="paper p-6">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <h3 class="serif text-[16px] font-semibold">全公司專案總表</h3>
+            <p class="text-[12px]" style="color: var(--text-3);">點擊「詳細專案報告」直接閱讀該專案在 PMSYS 撰寫的完整 A4 報告</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-[13px]">
+            <thead>
+              <tr style="background: var(--bg-subtle);">
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">代號</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">專案名稱</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">PM</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">客戶</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">期程</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">進度</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">狀態</th>
+                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-right" style="color: var(--text-3);">詳細報告</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${allProjects.map(p => {
+                const pm = USERS.find(u => u.id === p.pm);
+                const projectReport = allReports.find(r => r.project === p.id);
+                return `
+                  <tr class="border-b hover:bg-stone-50" style="border-color: var(--border-soft);">
+                    <td class="px-3 py-3"><span class="mono text-[11px] font-semibold" style="color: var(--text-2);">${p.code}</span></td>
+                    <td class="px-3 py-3">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium">${p.name}</span>
+                        ${sourceBadge(p.source)}
+                      </div>
+                    </td>
+                    <td class="px-3 py-3">
+                      <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold" style="background: var(--ink);">${pm?.avatar}</div>
+                        <span>${pm?.name}</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-3" style="color: var(--text-2);">${p.client}</td>
+                    <td class="px-3 py-3 mono text-[11px]" style="color: var(--text-3);">${p.start}<br>→ ${p.end}</td>
+                    <td class="px-3 py-3 w-32">
+                      <div class="flex items-center gap-2">
+                        <div class="flex-1 h-1.5 rounded-full" style="background: var(--bg-subtle);">
+                          <div class="h-full rounded-full" style="width: ${p.progress}%; background: ${p.status === 'at-risk' ? 'var(--caramel)' : 'var(--ink)'};"></div>
+                        </div>
+                        <span class="mono text-[11px] font-semibold w-8 text-right">${p.progress}%</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-3">
+                      <span class="tag ${p.status === 'at-risk' ? 'tag-rust' : 'tag-moss'}">${p.status === 'at-risk' ? '風險' : '如期'}</span>
+                    </td>
+                    <td class="px-3 py-3 text-right">
+                      ${projectReport ? `
+                        <button onclick="openReport('${projectReport.id}')" class="text-[11px] font-medium px-2.5 py-1 rounded inline-flex items-center gap-1" style="background: var(--ink); color: white;">
+                          <i data-lucide="file-text" class="w-3 h-3"></i>詳細專案報告
+                        </button>
+                      ` : '<span class="text-[11px]" style="color: var(--text-3);">尚無</span>'}
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 詳細專案報告快速入口 -->
+      <div class="paper p-6">
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <h3 class="serif text-[16px] font-semibold">最近的詳細專案報告</h3>
+            <p class="text-[12px]" style="color: var(--text-3);">同樣內容也會在 ProjFlow 的「詳細專案報告」按鈕背後出現</p>
+          </div>
+          <button class="btn-ghost" onclick="showView('reports')">查看全部 →</button>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${allReports.slice(0, 6).map(r => {
+            const project = allProjects.find(p => p.id === r.project);
+            const author = USERS.find(u => u.id === r.author);
+            return `
+              <div class="paper paper-lift p-4 cursor-pointer" onclick="openReport('${r.id}')">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="mono text-[10.5px] font-semibold" style="color: var(--text-3);">${project?.code}</span>
+                  <span class="tag ${r.status === 'draft' ? 'tag-caramel' : 'tag-moss'}">${r.status === 'draft' ? '草稿' : '已分享'}</span>
+                </div>
+                <div class="serif text-[13.5px] font-semibold leading-snug mb-3">${r.title}</div>
+                <div class="flex items-center gap-2 pt-2 border-t" style="border-color: var(--border-soft);">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-medium" style="background: var(--ink);">${author?.avatar}</div>
+                  <span class="text-[11px]">${author?.name}</span>
+                  <span class="mono text-[10.5px] ml-auto" style="color: var(--text-3);">${r.pages} 頁 · ${r.updated}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+function kpiBlock(label, value, unit, icon, color, alert = false) {
+  const bg = alert ? `var(--${color})` : 'var(--paper)';
+  const fg = alert ? '#fff' : 'var(--text)';
+  const labelColor = alert ? 'rgba(255,255,255,.8)' : 'var(--text-3)';
+  const iconBg = alert ? 'rgba(255,255,255,.2)' :
+                 color === 'ink' ? 'var(--ink-soft)' :
+                 color === 'caramel' ? 'var(--caramel-soft)' : 'var(--bg-subtle)';
+  const iconColor = alert ? '#fff' :
+                    color === 'ink' ? 'var(--ink)' :
+                    color === 'caramel' ? 'var(--caramel-hover)' : 'var(--rust)';
+  return `
+    <div class="paper p-5" style="background: ${bg};">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-[10px] tracking-[.12em] uppercase font-semibold" style="color: ${labelColor};">${label}</div>
+        <div class="w-7 h-7 rounded-md flex items-center justify-center" style="background: ${iconBg};">
+          <i data-lucide="${icon}" class="w-3.5 h-3.5" style="color: ${iconColor};"></i>
+        </div>
+      </div>
+      <div class="flex items-baseline gap-1">
+        <span class="mono text-3xl font-semibold" style="color: ${fg};">${value}</span>
+        <span class="text-[11px]" style="color: ${labelColor};">${unit}</span>
+      </div>
+    </div>
+  `;
+}
+
+function pmCardForExec(pm) {
+  const pmProjects = PROJECTS.filter(p => p.pm === pm.id);
+  const pmTaskIds = pmProjects.map(p => p.id);
+  const pmTasks = TASKS.filter(t => pmTaskIds.includes(t.project));
+  const overdue = pmTasks.filter(t => t.status === 'overdue').length;
+  const atRisk = pmProjects.filter(p => p.status === 'at-risk').length;
+  const lastReport = REPORTS.filter(r => r.author === pm.id)
+                            .sort((a,b) => new Date(b.updated) - new Date(a.updated))[0];
+  const avgProgress = pmProjects.length > 0
+    ? Math.round(pmProjects.reduce((s,p) => s + p.progress, 0) / pmProjects.length)
+    : 0;
+
+  return `
+    <div class="paper paper-lift p-5">
+      <div class="flex items-start gap-3 mb-4">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold" style="background: var(--ink);">${pm.avatar}</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[14px] font-semibold">${pm.name}</div>
+          <div class="text-[11px]" style="color: var(--text-3);">${pm.title}</div>
+          <div class="text-[10px] mono mt-0.5 truncate" style="color: var(--text-3);">${pm.email}</div>
+        </div>
+        ${pmProjects.length === 0 ? '<span class="tag tag-grey">無專案</span>' :
+          atRisk > 0 ? `<span class="tag tag-rust">${atRisk} 風險</span>` :
+          '<span class="tag tag-moss">健康</span>'}
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 text-center py-3 border-y" style="border-color: var(--border-soft);">
+        <div><div class="mono text-[16px] font-semibold">${pmProjects.length}</div><div class="text-[10px]" style="color: var(--text-3);">專案</div></div>
+        <div><div class="mono text-[16px] font-semibold">${pmTasks.length}</div><div class="text-[10px]" style="color: var(--text-3);">任務</div></div>
+        <div><div class="mono text-[16px] font-semibold" style="color: ${overdue > 0 ? 'var(--rust)' : 'var(--text)'};">${overdue}</div><div class="text-[10px]" style="color: var(--text-3);">逾期</div></div>
+        <div><div class="mono text-[16px] font-semibold">${avgProgress}<span class="text-[10px]">%</span></div><div class="text-[10px]" style="color: var(--text-3);">平均</div></div>
+      </div>
+
+      ${pmProjects.length > 0 ? `
+        <div class="mt-3">
+          <div class="text-[9.5px] uppercase tracking-wide font-semibold mb-2" style="color: var(--text-3);">統籌專案</div>
+          <div class="space-y-1.5">
+            ${pmProjects.slice(0, 3).map(p => `
+              <div class="flex items-center gap-2 text-[12px]">
+                <span class="mono text-[10px] font-semibold w-12" style="color: var(--text-3);">${p.code}</span>
+                <span class="flex-1 truncate">${p.name}</span>
+                <span class="mono text-[10.5px] font-semibold">${p.progress}%</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${lastReport ? `
+        <div class="mt-3 pt-3 border-t flex items-center gap-2" style="border-color: var(--border-soft);">
+          <i data-lucide="file-text" class="w-3 h-3" style="color: var(--text-3);"></i>
+          <span class="text-[11px] flex-1 truncate" style="color: var(--text-2);">${lastReport.title}</span>
+          <button onclick="event.stopPropagation(); openReport('${lastReport.id}')" class="text-[10.5px] font-semibold whitespace-nowrap" style="color: var(--ink);">閱讀 →</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 工作檯
+   ============================================================ */
+
+function renderDashboard() {
+  const titleByRole = {
+    manager: '部門總覽',
+    pm: '工作檯',
+    staff: '工作檯',
+  };
+  setTitle(titleByRole[currentUser.role] || '工作檯', `早安，${displayName(currentUser)}`);
+
+  const myProjects = visibleProjects();
+  const myTasks    = visibleTasks();
+  const myReports  = visibleReports();
+  const overdue    = myTasks.filter(t => t.status === 'overdue').length;
+  const dueSoon    = myTasks.filter(t => t.status !== 'done' && (new Date(t.due) - today) / 86400000 <= 3 && (new Date(t.due) - today) / 86400000 >= 0).length;
+  const todayEvents= visibleSchedule().filter(s => s.date === d(0));
+
+  // 今天/明天要動的事（含延遲、卡住的需要關注）
+  const focusTasks = myTasks.filter(t => {
+    if (t.status === 'done') return false;
+    if (t.status === 'overdue' || t.status === 'blocked') return true;
+    const days = (new Date(t.due) - today) / 86400000;
+    return days >= 0 && days <= 1;
+  });
+  const focusHtml = focusTasks.length === 0
+    ? `<div class="text-center py-6 text-[12.5px]" style="color: var(--text-3);">沒有今天或明天要做的事 — 可以推進中長期任務</div>`
+    : focusTasks.map(t => taskRow(t)).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-6 max-w-[1280px]">
+
+      <!-- 開場橫條 -->
+      <div class="paper p-6 flex items-center justify-between" style="background: linear-gradient(135deg, var(--paper) 0%, var(--bg-warm) 100%);">
+        <div>
+          <div class="text-[11px] tracking-[.16em] font-semibold mb-1" style="color: var(--text-3);">${formatDate(today)} · 星期${getWeekday(today)}</div>
+          <h2 class="serif text-2xl font-semibold mb-1">今天有 <span style="color: var(--ink);">${todayEvents.length}</span> 場行程、<span style="color: var(--caramel);">${dueSoon}</span> 件任務即將到期</h2>
+          <p class="text-[13px]" style="color: var(--text-2);">${overdue > 0 ? `<span style="color: var(--rust);">⚠ 有 ${overdue} 件任務已逾期，建議先處理</span>` : '所有任務都在掌握中。'}</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-ghost" onclick="showView('schedule')"><i data-lucide="calendar" class="w-3.5 h-3.5"></i>看行程</button>
+          <button class="btn-ink" onclick="openNewReport()"><i data-lucide="square-pen" class="w-3.5 h-3.5"></i>撰寫新報告</button>
+        </div>
+      </div>
+
+      <!-- Pulse · 跨系統訊號 -->
+      ${currentUser.role !== 'admin' ? renderPulseStrip(myProjects) : ''}
+
+      <!-- 5 格 KPI（含 卡住 + 延遲）-->
+      ${dashKpiStrip(myProjects, myTasks, todayEvents)}
+
+      <!-- 任務狀態總覽（5 格可點擊跳轉看板）-->
+      ${dashStatusBoard(myTasks)}
+
+      <div class="grid grid-cols-12 gap-5">
+
+        <!-- 左：今天/本週焦點任務 -->
+        <div class="col-span-12 lg:col-span-8 space-y-5">
+
+          <!-- 今天要動的事 -->
+          <div class="paper p-6">
+            <div class="flex items-end justify-between mb-4">
+              <div>
+                <h3 class="serif font-semibold text-[15px] mb-0.5">今天要動的事</h3>
+                <p class="text-[12px]" style="color: var(--text-3);">逾期 + 今/明日截止</p>
+              </div>
+              <button class="text-[12px] font-medium flex items-center gap-1" style="color: var(--ink);" onclick="showView('tasks')">
+                看全部任務 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+            <div class="space-y-1.5">
+              ${focusHtml}
+            </div>
+          </div>
+
+          <!-- 專案脈搏（一行一個專案，與「我的專案」頁差異明顯）-->
+          <div class="paper p-6">
+            <div class="flex items-end justify-between mb-4">
+              <div>
+                <h3 class="serif font-semibold text-[15px] mb-0.5">${currentUser.role === 'manager' ? '部門專案脈搏' : '我的專案脈搏'}</h3>
+                <p class="text-[12px]" style="color: var(--text-3);">${myProjects.length} 個進行中 · 健康度速覽</p>
+              </div>
+              <button class="text-[12px] font-medium flex items-center gap-1" style="color: var(--ink);" onclick="showView('projects')">
+                看甘特圖 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+            <div>
+              ${myProjects.map(p => projectPulseRow(p)).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：今日行程 + 報告草稿 -->
+        <div class="col-span-12 lg:col-span-4 space-y-5">
+
+          <div class="paper p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="serif font-semibold text-[15px]">今日行程</h3>
+              <span class="text-[11px]" style="color: var(--text-3);">${todayEvents.length} 場</span>
+            </div>
+            ${todayEvents.length === 0 ? `
+              <div class="text-center py-6 text-[12px]" style="color: var(--text-3);">今天沒有安排會議</div>
+            ` : todayEvents.map(e => `
+              <div class="flex gap-3 py-2.5 border-b last:border-0" style="border-color: var(--border-soft);">
+                <div class="mono text-[11px] pt-0.5" style="color: var(--text-3);">${e.start}</div>
+                <div class="flex-1">
+                  <div class="text-[13px] font-medium leading-tight">${e.title}</div>
+                  ${e.project ? `<div class="text-[10.5px] mt-1 inline-block tag tag-${colorOfProject(e.project)}">${PROJECTS.find(p => p.id === e.project)?.name}</div>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="paper p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="serif font-semibold text-[15px]">最近報告</h3>
+              <button onclick="showView('reports')" class="text-[11px] font-medium" style="color: var(--ink);">查看全部</button>
+            </div>
+            ${myReports.slice(0, 3).map(r => `
+              <div onclick="openReport('${r.id}')" class="py-3 border-b last:border-0 cursor-pointer hover:bg-stone-50 -mx-2 px-2 rounded" style="border-color: var(--border-soft);">
+                <div class="text-[13px] font-medium leading-snug">${r.title}</div>
+                <div class="flex items-center gap-2 mt-1.5 text-[11px]" style="color: var(--text-3);">
+                  <span>${r.pages} 頁</span>
+                  <span>·</span>
+                  <span>${r.updated}</span>
+                  <span class="ml-auto tag ${r.status === 'draft' ? 'tag-caramel' : 'tag-moss'}">${r.status === 'draft' ? '草稿' : '已分享'}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function projectCard(p) {
+  const pm = USERS.find(u => u.id === p.pm);
+  const pTasks = TASKS.filter(t => t.project === p.id);
+  const overdue = pTasks.filter(t => t.status === 'overdue').length;
+  return `
+    <div class="flex items-center gap-4 py-3 border-b last:border-0" style="border-color: var(--border-soft);">
+      <div class="flex flex-col items-center justify-center w-12 h-12 rounded-md flex-shrink-0" style="background: ${p.status === 'at-risk' ? 'var(--caramel-soft)' : 'var(--ink-soft)'}; color: ${p.status === 'at-risk' ? 'var(--caramel-hover)' : 'var(--ink)'};">
+        <div class="mono text-[10px] font-semibold">${p.code.split('-')[1]}</div>
+        <div class="text-[9px] opacity-70">${p.code.split('-')[0]}</div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span class="text-[13.5px] font-semibold">${p.name}</span>
+          ${sourceBadge(p.source)}
+          ${p.status === 'at-risk' ? '<span class="tag tag-rust"><i data-lucide="alert-triangle" class="w-2.5 h-2.5"></i>風險</span>' : ''}
+          ${overdue > 0 ? `<span class="tag tag-rust">${overdue} 逾期</span>` : ''}
+        </div>
+        ${p.lastEdit ? `
+          <div class="flex items-center gap-1.5 mb-1 text-[10.5px]" style="color: ${p.lastEdit.source !== 'pmsys' ? 'var(--caramel-hover)' : 'var(--text-3)'};">
+            <i data-lucide="${p.lastEdit.source === 'pmsys' ? 'pen-tool' : 'arrow-down-left'}" class="w-2.5 h-2.5"></i>
+            <span>上次同步 <strong>${SOURCE_META[p.lastEdit.source].label}</strong> · ${p.lastEdit.by} 改了「${p.lastEdit.field}」· ${p.lastEdit.when}</span>
+          </div>
+        ` : ''}
+        <div class="flex items-center gap-3 text-[11px]" style="color: var(--text-3);">
+          <span>客戶：${p.client}</span>
+          <span class="mono">${p.start} → ${p.end}</span>
+          <span>${p.members.length} 位隊友</span>
+        </div>
+      </div>
+      <div class="w-44">
+        <div class="flex items-center justify-between text-[11px] mb-1">
+          <span style="color: var(--text-3);">進度</span>
+          <span class="mono font-semibold">${p.progress}%</span>
+        </div>
+        <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="h-full rounded-full" style="width: ${p.progress}%; background: ${p.status === 'at-risk' ? 'var(--caramel)' : 'var(--ink)'};"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function taskRow(t) {
+  const project = PROJECTS.find(p => p.id === t.project);
+  const user = USERS.find(u => u.id === t.assignee);
+  const sm = statusMeta(t.status);
+  const daysUntil = Math.ceil((new Date(t.due) - today) / 86400000);
+  const dueText = t.status === 'overdue' ? `逾期 ${-daysUntil} 天` :
+                  t.status === 'blocked' ? '已卡住' :
+                  t.status === 'done'    ? '已完成' :
+                  daysUntil === 0 ? '今天到期' :
+                  daysUntil > 0 ? `${daysUntil} 天後` : `${-daysUntil} 天前`;
+  const dueColor = t.status === 'overdue' ? 'var(--rust)' :
+                   t.status === 'blocked' ? '#7A4C66' :
+                   daysUntil <= 2 ? 'var(--caramel-hover)' : 'var(--text-3)';
+
+  return `
+    <div onclick="openTaskModal('${t.id}')" class="flex items-center gap-3 py-2 px-2 -mx-2 rounded-md cursor-pointer hover:bg-stone-50">
+      <input type="checkbox" onclick="event.stopPropagation()">
+      <span class="priority-bar priority-${t.priority}"></span>
+      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold flex-shrink-0" style="background: ${sm.bg}; color: ${sm.fg};" title="${sm.label}">
+        <i data-lucide="${sm.icon}" class="w-2.5 h-2.5"></i>
+      </span>
+      <div class="flex-1 min-w-0">
+        <div class="text-[13px] font-medium leading-tight">${t.title}</div>
+        <div class="text-[11px] mt-0.5" style="color: var(--text-3);">${project?.name} · ${user?.name}</div>
+      </div>
+      <span class="text-[11px] mono font-medium" style="color: ${dueColor};">${dueText}</span>
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 專案 / 甘特圖
+   ============================================================ */
+
+function renderProjects() {
+  const titleByRole = { admin:'全部專案', manager:'部門專案', pm:'我的專案', staff:'我的專案' };
+  setTitle(titleByRole[currentUser.role] || '專案', '甘特圖視圖');
+
+  const projects = visibleProjects();
+
+  // 甘特時間範圍依視圖切換
+  // quarter = 6 個月 × 14 欄（每欄 2 週）
+  // month   = 2 個月 × 8  欄（每欄 1 週）
+  // week    = 2 週   × 14 欄（每欄 1 日）
+  let rangeStart, totalDays, cols, colLabel;
+  if (ganttView === 'quarter') {
+    rangeStart = new Date('2026-03-01');
+    totalDays = 196;        // ~6.5 個月
+    cols = 14;
+    colLabel = (i) => { const d = new Date(rangeStart); d.setDate(d.getDate() + i * 14); return `${d.getMonth()+1}/${d.getDate()}`; };
+  } else if (ganttView === 'month') {
+    rangeStart = new Date('2026-04-01');
+    totalDays = 56;         // ~2 個月
+    cols = 8;
+    colLabel = (i) => { const d = new Date(rangeStart); d.setDate(d.getDate() + i * 7); return `${d.getMonth()+1}/${d.getDate()}`; };
+  } else { // week
+    rangeStart = new Date('2026-04-15');
+    totalDays = 14;         // ~2 週
+    cols = 14;
+    colLabel = (i) => { const d = new Date(rangeStart); d.setDate(d.getDate() + i); return `${d.getMonth()+1}/${d.getDate()}`; };
+  }
+  const todayPct = ((today - rangeStart) / 86400000 / totalDays) * 100;
+  const headers = Array.from({length: cols}, (_, i) => colLabel(i));
+  const gridColStyle = `grid-template-columns: repeat(${cols}, minmax(0, 1fr));`;
+
+  const viewBtns = [
+    { id: 'quarter', label: '季度視圖', icon: 'calendar-range' },
+    { id: 'month',   label: '月視圖',   icon: 'calendar-days' },
+    { id: 'week',    label: '週視圖',   icon: 'calendar' },
+  ];
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[1280px]">
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          ${viewBtns.map(b => `
+            <button onclick="ganttView='${b.id}'; renderProjects();" class="${ganttView === b.id ? 'btn-ink' : 'btn-ghost'}">
+              <i data-lucide="${b.icon}" class="w-3.5 h-3.5"></i>${b.label}
+            </button>
+          `).join('')}
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-ghost" onclick="openTeamPicker()"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i>邀請隊友</button>
+          <button class="btn-ink"><i data-lucide="plus" class="w-3.5 h-3.5"></i>新增專案</button>
+        </div>
+      </div>
+
+      <div class="paper overflow-hidden">
+        <div class="gantt-row border-b" style="background: var(--bg-subtle); border-color: var(--border);">
+          <div class="px-5 py-3 text-[11px] font-semibold tracking-wide" style="color: var(--text-2);">專案</div>
+          <div class="grid px-2 mono text-[10.5px]" style="color: var(--text-3); ${gridColStyle}">
+            ${headers.map(w => `<div class="text-center py-3">${w}</div>`).join('')}
+          </div>
+        </div>
+        ${projects.map((p, idx) => {
+          const s = (new Date(p.start) - rangeStart) / 86400000;
+          const e = (new Date(p.end) - rangeStart) / 86400000;
+          // 計算位置（限制在 0–100% 範圍內，超出範圍的不顯示 bar）
+          const rawLeft = (s / totalDays) * 100;
+          const rawRight = (e / totalDays) * 100;
+          const leftPct = Math.max(0, rawLeft);
+          const widthPct = Math.min(100, rawRight) - leftPct;
+          const inRange = rawRight > 0 && rawLeft < 100;
+          const barColor = p.status === 'at-risk' ? 'var(--caramel)' : 'var(--ink)';
+          const barDark  = p.status === 'at-risk' ? 'var(--caramel-hover)' : 'var(--ink-hover)';
+          const showToday = todayPct >= 0 && todayPct <= 100;
+          return `
+            <div class="gantt-row border-b hover:bg-stone-50" style="border-color: var(--border-soft);">
+              <div class="px-5 py-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="mono text-[10px] font-semibold px-1.5 py-0.5 rounded" style="background: var(--bg-subtle); color: var(--text-2);">${p.code}</span>
+                  <span class="text-[13px] font-semibold">${p.name}</span>
+                  ${sourceBadge(p.source)}
+                </div>
+                <div class="text-[11px] mt-1" style="color: var(--text-3);">${p.client} · ${p.members.length} 位隊友${p.extRef ? ` · <span style="color: var(--caramel-hover);">同步自 ${p.extRef}</span>` : ''}</div>
+              </div>
+              <div class="px-2">
+                <div class="gantt-track">
+                  ${showToday ? `<div class="gantt-today" style="left: ${todayPct}%;"></div>` : ''}
+                  ${inRange ? `
+                    <div class="gantt-bar" style="left: ${leftPct}%; width: ${widthPct}%; background: ${barColor};">
+                      ${ganttView === 'week' ? p.code : p.name}
+                    </div>
+                    <div class="gantt-bar" style="left: ${leftPct}%; width: ${widthPct * p.progress / 100}%; background: ${barDark}; opacity: .85;">
+                      ${p.progress}%
+                    </div>
+                  ` : `
+                    <div class="absolute inset-0 flex items-center justify-center text-[10px]" style="color: var(--text-3);">
+                      ${rawLeft >= 100 ? '→ 期程在右側' : '← 期程在左側'}
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- 專案卡片 -->
+      <div class="grid md:grid-cols-2 gap-5">
+        ${projects.map(p => {
+          const pTasks = TASKS.filter(t => t.project === p.id);
+          const overdue = pTasks.filter(t => t.status === 'overdue').length;
+          const members = p.members.map(id => USERS.find(u => u.id === id)).filter(Boolean);
+          return `
+            <div class="paper paper-lift p-5 cursor-pointer">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="mono text-[10.5px] font-semibold" style="color: var(--text-3);">${p.code}</span>
+                    ${sourceBadge(p.source)}
+                    ${p.status === 'at-risk' ? '<span class="tag tag-rust">風險</span>' : '<span class="tag tag-moss">如期</span>'}
+                  </div>
+                  <h3 class="serif text-[15px] font-semibold">${p.name}</h3>
+                  <div class="text-[11.5px] mt-0.5" style="color: var(--text-3);">客戶：${p.client}${p.extRef ? ` · <span style="color: var(--caramel-hover);">同步自 ${p.extRef}</span>` : ''}</div>
+                </div>
+                <div class="text-right">
+                  <div class="mono text-2xl font-semibold" style="color: ${p.status === 'at-risk' ? 'var(--caramel)' : 'var(--ink)'};">${p.progress}<span class="text-sm">%</span></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center py-3 border-y" style="border-color: var(--border-soft);">
+                <div><div class="mono font-semibold text-[15px]">${pTasks.length}</div><div class="text-[10px]" style="color: var(--text-3);">任務</div></div>
+                <div><div class="mono font-semibold text-[15px]" style="color: ${overdue > 0 ? 'var(--rust)' : 'var(--text)'};">${overdue}</div><div class="text-[10px]" style="color: var(--text-3);">逾期</div></div>
+                <div><div class="mono font-semibold text-[15px]">${p.members.length}</div><div class="text-[10px]" style="color: var(--text-3);">隊友</div></div>
+              </div>
+              <div class="flex items-center justify-between mt-3">
+                <div class="flex -space-x-1.5">
+                  ${members.slice(0, 5).map(m => `
+                    <div class="w-7 h-7 rounded-full border-2 flex items-center justify-center text-white font-medium text-[11px]"
+                         style="border-color: var(--paper); background: var(--ink);" title="${m.name}">${m.avatar}</div>
+                  `).join('')}
+                </div>
+                <button class="text-[11px] font-medium" style="color: var(--ink);">查看詳情 →</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 任務看板
+   ============================================================ */
+
+let taskBoardFilter = null; // null = all, or one of TASK_STATUS_ORDER
+
+function renderTasks() {
+  const titleByRole = { admin:'全部任務', manager:'部門任務', pm:'任務看板', staff:'任務看板' };
+  setTitle(titleByRole[currentUser.role] || '任務', '看板與清單兩種模式 · 與 ProjFlow 同步');
+
+  const tasks = visibleTasks();
+  const colDefs = TASK_STATUS_ORDER.map(id => ({ id, ...statusMeta(id) }));
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[1480px]">
+      <div class="flex items-center justify-between">
+        <div class="flex gap-2">
+          <button class="btn-ink"><i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>看板</button>
+          <button class="btn-ghost"><i data-lucide="list" class="w-3.5 h-3.5"></i>清單</button>
+          <span class="text-[11px] flex items-center gap-1.5 ml-2" style="color: var(--text-3);">
+            <span class="sync-dot"></span>狀態變更即時雙向同步 ProjFlow
+          </span>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-ghost"><i data-lucide="filter" class="w-3.5 h-3.5"></i>篩選</button>
+          <button class="btn-ink"><i data-lucide="plus" class="w-3.5 h-3.5"></i>新增任務</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-3">
+        ${colDefs.map(c => {
+          const list = tasks.filter(t => t.status === c.id);
+          return `
+            <div class="paper p-4 min-h-[520px]" style="border-top: 3px solid ${c.dot};">
+              <div class="flex items-center justify-between mb-3 pb-2 border-b" style="border-color: var(--border-soft);">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="${c.icon}" class="w-3.5 h-3.5" style="color: ${c.fg};"></i>
+                  <span class="text-[12px] font-semibold" style="color: ${c.fg};">${c.label}</span>
+                  <span class="mono text-[11px] px-1.5 py-0.5 rounded" style="background: ${c.bg}; color: ${c.fg};">${list.length}</span>
+                </div>
+                <button class="p-1 rounded hover:bg-stone-100"><i data-lucide="plus" class="w-3 h-3" style="color: var(--text-3);"></i></button>
+              </div>
+              <div class="space-y-2">
+                ${list.map(t => kanbanCard(t)).join('') || `<div class="text-center py-8 text-[11px]" style="color: var(--text-3);">無</div>`}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function kanbanCard(t) {
+  const project = PROJECTS.find(p => p.id === t.project);
+  const user = USERS.find(u => u.id === t.assignee);
+  const daysUntil = Math.ceil((new Date(t.due) - today) / 86400000);
+  const dueText = t.status === 'overdue' ? `逾期 ${-daysUntil}d`
+                : t.status === 'done'    ? '已完成'
+                : daysUntil === 0 ? '今天' : daysUntil > 0 ? `${daysUntil}d` : `${-daysUntil}d 前`;
+  const dueColor = t.status === 'overdue' ? 'var(--rust)' : 'var(--text-3)';
+  const isBlocked = t.status === 'blocked';
+  return `
+    <div onclick="openTaskModal('${t.id}')" class="p-3 rounded-md border cursor-pointer paper-lift" style="border-color: ${isBlocked ? '#E0CCD3' : 'var(--border)'}; background: ${isBlocked ? '#FAF3F6' : 'var(--paper)'};">
+      <div class="flex items-start gap-2 mb-2">
+        <span class="priority-bar priority-${t.priority} mt-0.5"></span>
+        <div class="text-[12.5px] font-medium leading-tight">${t.title}</div>
+      </div>
+      <div class="text-[10.5px] mb-2" style="color: var(--text-3);">${project?.name}</div>
+      ${isBlocked && t.blockReason ? `
+        <div class="text-[10.5px] mb-2 px-2 py-1.5 rounded flex items-start gap-1.5" style="background: rgba(122,76,102,.08); color: #7A4C66; border-left: 2px solid #7A4C66;">
+          <i data-lucide="octagon-alert" class="w-3 h-3 mt-0.5 flex-shrink-0"></i>
+          <span class="leading-snug">${t.blockReason}</span>
+        </div>
+      ` : ''}
+      <div class="flex items-center justify-between">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-medium" style="background: var(--ink);" title="${user?.name}">${user?.avatar}</div>
+        <span class="text-[10.5px] mono" style="color: ${dueColor};">${dueText}</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 行程表（年 / 月 / 週 / 日 / 時）
+   ============================================================ */
+
+function renderSchedule() {
+  const titleByRole = { admin:'全部行程', manager:'部門行程', pm:'行程表', staff:'行程表' };
+  setTitle(titleByRole[currentUser.role] || '行程表', '年 / 月 / 週 / 日 / 時 五級檢視');
+
+  const levels = [
+    { id:'year',  label:'年' },
+    { id:'month', label:'月' },
+    { id:'week',  label:'週' },
+    { id:'day',   label:'日' },
+    { id:'hour',  label:'時' },
+  ];
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[1480px]">
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex paper p-1" style="border-radius: 9px;">
+            ${levels.map(l => `
+              <button onclick="scheduleLevel='${l.id}'; renderSchedule();"
+                      class="px-4 py-1.5 text-[12.5px] font-medium rounded-md transition"
+                      style="background: ${scheduleLevel === l.id ? 'var(--ink)' : 'transparent'}; color: ${scheduleLevel === l.id ? 'white' : 'var(--text-2)'};">
+                ${l.label}
+              </button>
+            `).join('')}
+          </div>
+          <div class="flex items-center gap-1">
+            <button class="p-2 rounded-md hover:bg-stone-100"><i data-lucide="chevron-left" class="w-4 h-4" style="color: var(--text-2);"></i></button>
+            <span class="serif text-[14px] font-semibold px-2">${formatRangeTitle()}</span>
+            <button class="p-2 rounded-md hover:bg-stone-100"><i data-lucide="chevron-right" class="w-4 h-4" style="color: var(--text-2);"></i></button>
+            <button class="btn-ghost ml-2">今天</button>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-ghost"><i data-lucide="users" class="w-3.5 h-3.5"></i>顯示隊友行程</button>
+          <button class="btn-ink"><i data-lucide="plus" class="w-3.5 h-3.5"></i>新增行程</button>
+        </div>
+      </div>
+
+      <div class="paper overflow-hidden">
+        ${renderScheduleBody()}
+      </div>
+
+      <p class="text-[11px] text-center" style="color: var(--text-3);">
+        行程與 ProjFlow Schedule 模組共用同一份資料；在此新增/編輯會即時同步
+      </p>
+    </div>
+  `;
+}
+
+function formatRangeTitle() {
+  const y = today.getFullYear();
+  const m = today.getMonth() + 1;
+  const dt = today.getDate();
+  if (scheduleLevel === 'year')  return `${y} 年`;
+  if (scheduleLevel === 'month') return `${y} 年 ${m} 月`;
+  if (scheduleLevel === 'week')  return `${y} 年 ${m} 月 · 第 ${Math.ceil(dt/7)} 週`;
+  if (scheduleLevel === 'day')   return `${y} 年 ${m} 月 ${dt} 日`;
+  if (scheduleLevel === 'hour')  return `${m}/${dt} ${today.getHours().toString().padStart(2,'0')}:00 起`;
+}
+
+function renderScheduleBody() {
+  if (scheduleLevel === 'year')  return renderScheduleYear();
+  if (scheduleLevel === 'month') return renderScheduleMonth();
+  if (scheduleLevel === 'week')  return renderScheduleWeek();
+  if (scheduleLevel === 'day')   return renderScheduleDay();
+  if (scheduleLevel === 'hour')  return renderScheduleHour();
+}
+
+function renderScheduleYear() {
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  return `
+    <div class="grid grid-cols-4 gap-px" style="background: var(--border-soft);">
+      ${months.map((m, idx) => {
+        const isCurrent = idx === today.getMonth();
+        const monthEvents = visibleSchedule().filter(s => new Date(s.date).getMonth() === idx);
+        return `
+          <div class="p-4" style="background: ${isCurrent ? 'var(--ink-soft)' : 'var(--paper)'};">
+            <div class="flex items-center justify-between mb-3">
+              <span class="serif font-semibold text-[14px]" style="color: ${isCurrent ? 'var(--ink)' : 'var(--text)'};">${m}</span>
+              <span class="mono text-[10px]" style="color: var(--text-3);">${monthEvents.length} 場</span>
+            </div>
+            <div class="space-y-1">
+              ${PROJECTS.filter(p => {
+                const ps = new Date(p.start), pe = new Date(p.end);
+                return ps.getMonth() <= idx && pe.getMonth() >= idx;
+              }).slice(0, 3).map(p => `
+                <div class="text-[10.5px] truncate px-2 py-1 rounded" style="background: var(--bg-subtle); color: var(--text-2);">${p.name}</div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderScheduleMonth() {
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const weekdays = ['日','一','二','三','四','五','六'];
+
+  let cells = '';
+  for (let i = 0; i < firstDay; i++) cells += `<div class="schedule-cell" style="background: var(--bg-subtle);"></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${y}-${(m+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`;
+    const isToday = day === today.getDate();
+    const events = visibleSchedule().filter(s => s.date === dateStr);
+    cells += `
+      <div class="schedule-cell p-1.5">
+        <div class="text-[11px] mono font-semibold mb-1" style="color: ${isToday ? 'var(--ink)' : 'var(--text-2)'};">
+          ${isToday ? `<span class="px-1.5 py-0.5 rounded text-white" style="background: var(--ink);">${day}</span>` : day}
+        </div>
+        ${events.slice(0,2).map(e => `
+          <div class="schedule-event" style="position: static; margin-bottom: 2px; background: var(--${e.color === 'ink' ? 'ink-soft' : e.color === 'caramel' ? 'caramel-soft' : 'bg-subtle'}); border-color: var(--${e.color});">
+            ${e.title.length > 8 ? e.title.slice(0,8) + '…' : e.title}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="grid grid-7" style="background: var(--bg-subtle);">
+      ${weekdays.map((w,i) => `
+        <div class="px-2 py-2 text-center text-[11px] font-semibold" style="background: var(--paper); color: ${i === 0 || i === 6 ? 'var(--rust)' : 'var(--text-2)'};">${w}</div>
+      `).join('')}
+    </div>
+    <div class="grid grid-7" style="background: var(--paper);">
+      ${cells}
+    </div>
+  `;
+}
+
+function renderScheduleWeek() {
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+  const weekdays = ['日','一','二','三','四','五','六'];
+  const hours = Array.from({length: 12}, (_, i) => i + 8); // 8:00 ~ 19:00
+
+  return `
+    <div class="grid" style="grid-template-columns: 60px repeat(7, 1fr); background: var(--bg-subtle);">
+      <div></div>
+      ${days.map((d, i) => {
+        const isToday = d.toISOString().slice(0,10) === today.toISOString().slice(0,10);
+        return `
+          <div class="text-center py-2.5" style="background: var(--paper);">
+            <div class="text-[10px] font-semibold" style="color: ${i === 0 || i === 6 ? 'var(--rust)' : 'var(--text-3)'};">週${weekdays[i]}</div>
+            <div class="mono text-[15px] font-semibold mt-0.5" style="color: ${isToday ? 'var(--ink)' : 'var(--text)'};">
+              ${isToday ? `<span class="inline-flex w-6 h-6 rounded-full items-center justify-center text-white text-[12px]" style="background: var(--ink);">${d.getDate()}</span>` : d.getDate()}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div class="grid" style="grid-template-columns: 60px repeat(7, 1fr);">
+      ${hours.map(h => `
+        <div class="text-right pr-2 pt-1 mono text-[10px] border-t" style="color: var(--text-3); border-color: var(--border-soft); height: 56px;">${h.toString().padStart(2,'0')}:00</div>
+        ${days.map(d => {
+          const dateStr = d.toISOString().slice(0,10);
+          const events = visibleSchedule().filter(s => s.date === dateStr && parseInt(s.start) === h);
+          return `
+            <div class="border-t border-l relative" style="border-color: var(--border-soft); height: 56px;">
+              ${events.map(e => {
+                const startMin = parseInt(e.start.split(':')[0]) * 60 + parseInt(e.start.split(':')[1]);
+                const endMin   = parseInt(e.end.split(':')[0]) * 60 + parseInt(e.end.split(':')[1]);
+                const topPx    = (startMin - h * 60) / 60 * 56;
+                const heightPx = (endMin - startMin) / 60 * 56 - 2;
+                const bg = e.color === 'ink' ? 'var(--ink-soft)' : e.color === 'caramel' ? 'var(--caramel-soft)' : e.color === 'moss' ? '#E8F0E9' : '#F1E6EB';
+                const fg = e.color === 'ink' ? 'var(--ink)' : e.color === 'caramel' ? 'var(--caramel-hover)' : e.color === 'moss' ? 'var(--moss)' : 'var(--plum)';
+                return `
+                  <div class="schedule-event" style="top: ${topPx}px; height: ${heightPx}px; background: ${bg}; color: ${fg}; border-color: ${fg};">
+                    <div class="font-semibold leading-tight">${e.title}</div>
+                    <div class="mono text-[10px] opacity-80">${e.start}–${e.end}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }).join('')}
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderScheduleDay() {
+  const dateStr = today.toISOString().slice(0,10);
+  const events = visibleSchedule().filter(s => s.date === dateStr);
+  const hours = Array.from({length: 14}, (_, i) => i + 7); // 7:00 ~ 20:00
+
+  return `
+    <div class="grid" style="grid-template-columns: 80px 1fr;">
+      ${hours.map(h => {
+        const evs = events.filter(e => parseInt(e.start) === h);
+        return `
+          <div class="text-right pr-3 pt-2 mono text-[11px] border-t" style="color: var(--text-3); border-color: var(--border-soft); height: 72px;">${h.toString().padStart(2,'0')}:00</div>
+          <div class="border-t border-l p-2 relative" style="border-color: var(--border-soft); height: 72px;">
+            ${evs.map(e => `
+              <div class="schedule-event" style="position: static; height: auto; background: var(--${e.color === 'ink' ? 'ink-soft' : e.color === 'caramel' ? 'caramel-soft' : 'bg-subtle'}); border-color: var(--${e.color}); color: var(--${e.color === 'ink' ? 'ink' : e.color === 'caramel' ? 'caramel-hover' : 'plum'});">
+                <div class="font-semibold text-[13px] leading-tight">${e.title}</div>
+                <div class="mono text-[10.5px] mt-0.5 opacity-80">${e.start}–${e.end}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderScheduleHour() {
+  const hour = today.getHours();
+  const slots = [];
+  for (let m = 0; m < 60; m += 15) slots.push(m);
+  return `
+    <div class="p-6">
+      <div class="serif text-lg font-semibold mb-1">當前時段：${hour}:00 – ${hour+1}:00</div>
+      <div class="text-[12px] mb-4" style="color: var(--text-3);">每 15 分鐘為一格，可拖拉建立短會議或專注時段</div>
+      <div class="grid grid-cols-4 gap-2">
+        ${slots.map(m => `
+          <div class="paper p-4 hover:bg-stone-50 cursor-pointer">
+            <div class="mono text-[14px] font-semibold mb-1">${hour}:${m.toString().padStart(2,'0')}</div>
+            <div class="text-[11px]" style="color: var(--text-3);">${m === 0 ? '專注：撰寫 P-2604 週報' : m === 30 ? '空' : '空'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: A4 報告
+   ============================================================ */
+
+function renderReports() {
+  const titleByRole = { admin:'詳細專案報告', manager:'部門報告', pm:'A4 報告', staff:'A4 報告' };
+  setTitle(titleByRole[currentUser.role] || 'A4 報告', currentUser.role === 'admin' ? '全公司所有 PM 撰寫的完整報告' : '撰寫、彙整、輸出 PDF');
+
+  const reports = visibleReports();
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[1280px]">
+      <div class="flex items-center justify-between">
+        <div class="flex gap-2">
+          <button class="btn-ink">全部報告（${reports.length}）</button>
+          <button class="btn-ghost">草稿</button>
+          <button class="btn-ghost">已分享</button>
+        </div>
+        ${currentUser.role !== 'admin' ? `<button class="btn-caramel" onclick="openNewReport()"><i data-lucide="plus" class="w-3.5 h-3.5"></i>新增 A4 報告</button>` : ''}
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-5">
+        ${reports.map(r => {
+          const project = PROJECTS.find(p => p.id === r.project);
+          return `
+            <div class="paper paper-lift cursor-pointer overflow-hidden" onclick="openReport('${r.id}')">
+              <!-- 預覽縮圖 -->
+              <div class="aspect-[210/297] relative p-4" style="background: linear-gradient(180deg, #F9F7F1 0%, #F4F1E8 100%); border-bottom: 1px solid var(--border);">
+                <div class="absolute inset-4 paper p-4 shadow-sm">
+                  <div class="text-[7px] font-bold pb-1 mb-2 border-b" style="color: var(--ink); border-color: var(--ink);">${r.title}</div>
+                  <div class="space-y-1">
+                    <div class="h-0.5 rounded" style="background: var(--border-strong); width: 80%;"></div>
+                    <div class="h-0.5 rounded" style="background: var(--border-strong); width: 95%;"></div>
+                    <div class="h-0.5 rounded" style="background: var(--border-strong); width: 70%;"></div>
+                    <div class="h-0.5 rounded" style="background: var(--border-strong); width: 88%;"></div>
+                  </div>
+                  <div class="h-12 mt-3 rounded" style="background: var(--bg-subtle); border: 1px dashed var(--border-strong);"></div>
+                  <div class="space-y-1 mt-3">
+                    <div class="h-0.5 rounded" style="background: var(--border-strong); width: 92%;"></div>
+                    <div class="h-0.5 rounded" style="background: var(--border-strong); width: 78%;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="mono text-[10px] font-semibold" style="color: var(--text-3);">${project?.code}</span>
+                  <span class="tag ${r.status === 'draft' ? 'tag-caramel' : 'tag-moss'}">${r.status === 'draft' ? '草稿' : '已分享'}</span>
+                </div>
+                <div class="serif text-[14px] font-semibold leading-snug mb-2">${r.title}</div>
+                <div class="flex items-center justify-between text-[11px]" style="color: var(--text-3);">
+                  <span>${r.pages} 頁 · 更新 ${r.updated}</span>
+                  <span class="mono">${r.status === 'shared' ? '★ ProjFlow 已同步' : '本機草稿'}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+
+        ${currentUser.role !== 'admin' ? `
+        <!-- 新增卡片 -->
+        <div onclick="openNewReport()" class="border-2 border-dashed rounded-[10px] aspect-[210/297] flex flex-col items-center justify-center cursor-pointer transition hover:bg-stone-50" style="border-color: var(--border-strong);">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background: var(--ink-soft);">
+            <i data-lucide="plus" class="w-6 h-6" style="color: var(--ink);"></i>
+          </div>
+          <div class="text-[13px] font-semibold" style="color: var(--ink);">新增 A4 報告</div>
+          <div class="text-[11px] mt-1" style="color: var(--text-3);">從零開始 / 範本</div>
+        </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function openReport(id) {
+  activeReportId = id;
+  const r = REPORTS.find(x => x.id === id);
+  const project = PROJECTS.find(p => p.id === r.project);
+  setTitle('A4 報告編輯器', r.title);
+  currentView = 'report-editor';
+  highlightNav();
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-4">
+
+      <!-- 編輯器工具列 -->
+      <div class="flex items-center justify-between gap-3">
+        <button class="btn-ghost" onclick="showView('reports')"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>返回報告列表</button>
+
+        <div class="a4-toolbar">
+          <button title="標題"><i data-lucide="heading-1" class="w-3.5 h-3.5"></i></button>
+          <button title="次標題"><i data-lucide="heading-2" class="w-3.5 h-3.5"></i></button>
+          <div class="divider"></div>
+          <button title="粗體"><i data-lucide="bold" class="w-3.5 h-3.5"></i></button>
+          <button title="斜體"><i data-lucide="italic" class="w-3.5 h-3.5"></i></button>
+          <button title="清單"><i data-lucide="list" class="w-3.5 h-3.5"></i></button>
+          <div class="divider"></div>
+          <button title="插入甘特圖" onclick="alert('插入甘特圖 — 可選擇本專案、區段、欄位')"><i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>甘特</button>
+          <button title="上傳圖片"><i data-lucide="image-plus" class="w-3.5 h-3.5"></i>圖片</button>
+          <button title="編輯圖片"><i data-lucide="crop" class="w-3.5 h-3.5"></i>編輯</button>
+          <button title="表格"><i data-lucide="table" class="w-3.5 h-3.5"></i></button>
+          <div class="divider"></div>
+          <button title="任務連結"><i data-lucide="link" class="w-3.5 h-3.5"></i>連結任務</button>
+        </div>
+
+        <div class="flex gap-2">
+          <button class="btn-ghost"><i data-lucide="eye" class="w-3.5 h-3.5"></i>預覽</button>
+          <button class="btn-ghost"><i data-lucide="download" class="w-3.5 h-3.5"></i>匯出 PDF</button>
+          <button class="btn-ink"><i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>同步到 ProjFlow</button>
+        </div>
+      </div>
+
+      <!-- A4 紙張 -->
+      <div class="py-8" style="background: var(--bg-subtle);">
+        <div class="a4-paper">
+          <h1 class="report-title" contenteditable="true">${r.title}</h1>
+          <div class="meta">
+            <span><strong>專案：</strong>${project?.name} <span class="mono">${project?.code}</span></span>
+            <span><strong>負責：</strong>${USERS.find(u => u.id === r.author)?.name}</span>
+            <span><strong>客戶：</strong>${project?.client}</span>
+            <span><strong>期程：</strong><span class="mono">${project?.start} → ${project?.end}</span></span>
+            <span><strong>產出日：</strong><span class="mono">${r.updated}</span></span>
+          </div>
+
+          <h2 class="section">一、專案概況</h2>
+          <p contenteditable="true">本期專案聚焦於${project?.client}的${project?.name}，自啟動至本期報告日已執行 ${project?.progress}% 之里程碑。團隊由開發、設計與 PMO 共 ${project?.members.length} 位成員組成，依雙週迭代節奏推進，目前整體進度<strong>${project?.status === 'at-risk' ? '略落後排程' : '符合預期'}</strong>。</p>
+
+          <h2 class="section">二、本期進度</h2>
+          <p contenteditable="true">關鍵成果包含：(1) 後端 API 規格定稿並通過內部 review；(2) 首頁與購物車流程第二輪 UI 出稿，目前進入互動測試；(3) 完成第三方金流沙盒環境串接。詳細任務追蹤如下圖所示。</p>
+
+          <div class="figure">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 mx-auto mb-2"></i>
+            [ 內嵌甘特圖區塊 ]<br>
+            <span class="text-[10px]">點擊上方工具列「甘特」可插入；資料即時連動專案任務</span>
+          </div>
+
+          <h2 class="section">三、風險與議題</h2>
+          <p contenteditable="true">本期辨識之主要風險為「金流沙盒帳號開通延宕」，已於 ${d(-3)} 升級至客戶端窗口協助處理，預計 ${d(2)} 前可恢復進度。次要風險為設計人力分配，因 App 專案並行，建議週後評估外援。</p>
+
+          <div class="figure">
+            <i data-lucide="image" class="w-6 h-6 mx-auto mb-2"></i>
+            [ 圖片佔位 — 拖入或點選上方「圖片」按鈕 ]
+          </div>
+
+          <h2 class="section">四、下期計畫</h2>
+          <p contenteditable="true">下期將著重於 (1) 完成付款流程驗收測試、(2) 啟動會員系統整合、(3) 召開期中對齊會議與客戶確認上線時程。預計於 ${d(14)} 進行階段性 demo。</p>
+        </div>
+      </div>
+
+      <p class="text-center text-[11px]" style="color: var(--text-3);">
+        儲存於 PMSYS；同步後王總與其他高階主管可在 ProjFlow 的<span class="projflow-link mx-1"><i data-lucide="external-link" class="w-2.5 h-2.5"></i>詳細專案報告</span>按鍵閱讀
+      </p>
+    </div>
+  `;
+}
+
+function openNewReport() {
+  alert('新增 A4 報告 — 將提供範本：\n\n• 空白\n• 期中報告（標準格式）\n• 期末報告\n• 風險評估\n• 客戶提案\n• 自訂範本');
+}
+
+/* ============================================================
+   View: 隊友與部門
+   ============================================================ */
+
+function renderTeammates() {
+  const titleByRole = { admin:'全公司同仁', manager:'部門隊友', pm:'隊友與部門', staff:'隊友與部門' };
+  setTitle(titleByRole[currentUser.role] || '隊友', currentUser.role === 'admin' ? '所有專案人員與部門結構' : '從 ProjFlow 挑選成員加入專案');
+
+  const byDept = {};
+  USERS.forEach(u => {
+    if (!byDept[u.dept]) byDept[u.dept] = [];
+    byDept[u.dept].push(u);
+  });
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[1280px]">
+
+      <!-- 同步說明 -->
+      <div class="paper p-4 flex items-center gap-4" style="background: linear-gradient(135deg, var(--ink-soft) 0%, var(--paper) 100%);">
+        <div class="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0" style="background: var(--ink);">
+          <i data-lucide="users" class="w-5 h-5 text-white"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-[13px] font-semibold">部門資料即時來自 ProjFlow</div>
+          <div class="text-[11.5px]" style="color: var(--text-2);">org_units 與 profiles 完全同步；新人加入 ProjFlow 後會自動出現在此清單</div>
+        </div>
+        <button class="btn-ink"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>立即同步</button>
+      </div>
+
+      <!-- 我目前的隊友 -->
+      <div class="paper p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="serif font-semibold text-[15px]">${currentUser.role === 'admin' ? '全公司被指派為隊友的成員' : '我目前的隊友'}</h3>
+            <p class="text-[12px]" style="color: var(--text-3);">${currentUser.role === 'admin' ? '出現在任何專案 members 列表中的成員' : '已加入我所統籌專案的成員'}</p>
+          </div>
+          ${currentUser.role !== 'admin' ? `<button class="btn-caramel" onclick="openTeamPicker()"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i>挑選新隊友</button>` : ''}
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${[...new Set(visibleProjects().flatMap(p => p.members))].filter(id => id !== currentUser.id).map(id => {
+            const u = USERS.find(x => x.id === id);
+            const projects = visibleProjects().filter(p => p.members.includes(id));
+            return `
+              <div class="flex items-center gap-3 p-3 rounded-md border" style="border-color: var(--border);">
+                <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold" style="background: var(--ink);">${u.avatar}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold">${u.name}</div>
+                  <div class="text-[11px]" style="color: var(--text-3);">${u.title} · ${DEPTS[u.dept]?.name}</div>
+                  <div class="flex gap-1 mt-1">
+                    ${projects.map(p => `<span class="tag tag-grey text-[9.5px]">${p.code}</span>`).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- 各部門全覽（來自 ProjFlow） -->
+      <div class="paper p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="serif font-semibold text-[15px]">ProjFlow 部門全覽</h3>
+            <p class="text-[12px]" style="color: var(--text-3);">點擊人員可加入專案</p>
+          </div>
+          <span class="text-[11px]" style="color: var(--text-3);"><span class="sync-dot mr-1.5"></span>最後同步 2 分鐘前</span>
+        </div>
+        <div class="space-y-4">
+          ${Object.entries(byDept).map(([deptId, users]) => `
+            <div>
+              <div class="flex items-center gap-2 mb-2.5 pb-1.5 border-b" style="border-color: var(--border-soft);">
+                <i data-lucide="building" class="w-3.5 h-3.5" style="color: var(--text-3);"></i>
+                <span class="serif text-[13px] font-semibold">${DEPTS[deptId]?.name}</span>
+                <span class="mono text-[10px]" style="color: var(--text-3);">${users.length} 人</span>
+                ${deptId === 'spe' || deptId === 'pmo' ? '<span class="tag tag-ink">PMO 體系</span>' : ''}
+              </div>
+              <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
+                ${users.map(u => `
+                  <div class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 cursor-pointer">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-medium flex-shrink-0" style="background: ${u.role === 'admin' ? 'var(--plum)' : u.role === 'manager' ? 'var(--caramel)' : 'var(--ink)'};">${u.avatar}</div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[12.5px] font-medium truncate">${u.name}</div>
+                      <div class="text-[10px] truncate" style="color: var(--text-3);">${u.title}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// 隊友選擇器狀態
+let teamPickerDept = 'all';
+let teamPickerSearch = '';
+let teamPickerSelected = new Set();
+
+function openTeamPicker() {
+  teamPickerDept = 'all';
+  teamPickerSearch = '';
+  teamPickerSelected = new Set();
+  renderTeamPicker();
+  document.getElementById('modal-root').classList.remove('hidden');
+}
+
+function renderTeamPicker() {
+  // 候選池：從 ProjFlow 抓所有可被指派的同仁（排除自己與 admin）
+  const pool = USERS.filter(u => u.role !== 'admin' && u.id !== currentUser.id);
+
+  // 依部門分組
+  const byDept = {};
+  pool.forEach(u => {
+    if (!byDept[u.dept]) byDept[u.dept] = [];
+    byDept[u.dept].push(u);
+  });
+
+  // 部門樹（ProjFlow org_units 結構）
+  const tree = [
+    { id: 'all', label: '全部', count: pool.length, level: 0 },
+    { id: 'exec', label: DEPTS.exec.name, count: (byDept.exec || []).length, level: 0 },
+    { id: 'pmo',  label: DEPTS.pmo.name,  count: (byDept.pmo || []).length + (byDept.spe || []).length, level: 1 },
+    { id: 'spe',  label: DEPTS.spe.name,  count: (byDept.spe || []).length, level: 2 },
+    { id: 'pur',  label: DEPTS.pur.name,  count: (byDept.pur || []).length, level: 1 },
+    { id: 'hr',   label: DEPTS.hr.name,   count: (byDept.hr  || []).length, level: 1 },
+    { id: 'fin',  label: DEPTS.fin.name,  count: (byDept.fin || []).length, level: 1 },
+    { id: 'adm',  label: DEPTS.adm.name,  count: (byDept.adm || []).length, level: 1 },
+    { id: 'dev',  label: DEPTS.dev.name,  count: (byDept.dev || []).length, level: 0 },
+    { id: 'sales',label: DEPTS.sales.name,count: (byDept.sales||[]).length, level: 0 },
+  ];
+
+  // 過濾出的清單
+  let list = pool;
+  if (teamPickerDept !== 'all') list = list.filter(u => u.dept === teamPickerDept);
+  if (teamPickerSearch) {
+    const q = teamPickerSearch.toLowerCase();
+    list = list.filter(u =>
+      u.name.includes(teamPickerSearch) ||
+      u.title.includes(teamPickerSearch) ||
+      DEPTS[u.dept]?.name.includes(teamPickerSearch)
+    );
+  }
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="flex" style="max-width: 880px; width: 100%; max-height: 80vh;">
+      <!-- 左：部門樹 -->
+      <div class="w-56 border-r flex flex-col" style="border-color: var(--border); background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b" style="border-color: var(--border);">
+          <div class="text-[10px] font-semibold tracking-[.14em] uppercase mb-1" style="color: var(--text-3);">ProjFlow Org Units</div>
+          <div class="flex items-center gap-1.5 text-[11px]" style="color: var(--moss);">
+            <span class="sync-dot"></span>
+            <span class="font-medium">即時連線中</span>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto py-2">
+          ${tree.map(node => {
+            const active = teamPickerDept === node.id;
+            const indent = node.level * 14;
+            return `
+              <button onclick="teamPickerDept='${node.id}'; renderTeamPicker();"
+                class="w-full flex items-center justify-between px-3 py-1.5 text-[12.5px] transition hover:bg-white"
+                style="padding-left: ${12 + indent}px; background: ${active ? 'var(--paper)' : 'transparent'}; color: ${active ? 'var(--ink)' : 'var(--text-2)'}; font-weight: ${active ? '600' : '400'}; ${active ? 'border-left: 2px solid var(--ink);' : 'border-left: 2px solid transparent;'}">
+                <span class="truncate">${node.label}</span>
+                <span class="mono text-[10px]" style="color: var(--text-3);">${node.count}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+        <div class="px-3 py-2.5 border-t text-[10px] leading-relaxed" style="border-color: var(--border); color: var(--text-3);">
+          <i data-lucide="info" class="w-3 h-3 inline" style="color: var(--text-3);"></i>
+          連 ProjFlow 後此清單會帶入真實員工
+        </div>
+      </div>
+
+      <!-- 右：清單與選擇 -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between" style="border-color: var(--border);">
+          <div>
+            <h2 class="serif text-[16px] font-semibold">邀請隊友加入專案</h2>
+            <p class="text-[11px] mt-0.5" style="color: var(--text-3);">${teamPickerDept === 'all' ? '全公司清單' : DEPTS[teamPickerDept]?.name} · 共 ${list.length} 位可邀請</p>
+          </div>
+          <button onclick="closeModal()" class="p-1.5 rounded-md hover:bg-stone-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <div class="px-5 pt-4 pb-3 space-y-2.5 border-b" style="border-color: var(--border-soft);">
+          <select class="w-full py-2 px-3 text-[12.5px]">
+            <option>邀請至：P-2604 電商平台 V2 改版策略</option>
+            <option>P-2603 客戶後台系統導入</option>
+            <option>P-2605 行動 App 首版發布</option>
+            <option>P-2606 Q2 大客戶導入專案</option>
+          </select>
+          <div class="relative">
+            <input type="search" id="team-search" placeholder="搜尋姓名 / 職稱 / 部門…"
+                   value="${teamPickerSearch}"
+                   oninput="teamPickerSearch=this.value; renderTeamPicker(); setTimeout(()=>document.getElementById('team-search').focus(),0);"
+                   class="w-full py-2 pl-9 pr-3 text-[12.5px]">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5" style="color: var(--text-3);"></i>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2 py-2" style="max-height: 360px;">
+          ${list.length === 0 ? `
+            <div class="text-center py-10 text-[12px]" style="color: var(--text-3);">
+              <i data-lucide="users" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+              <div>此部門無可邀請成員</div>
+            </div>
+          ` : list.map(u => {
+            const checked = teamPickerSelected.has(u.id);
+            const deptColor = DEPTS[u.dept]?.color || 'ink';
+            return `
+              <label class="flex items-center gap-3 p-2.5 rounded-md hover:bg-stone-50 cursor-pointer ${checked ? 'bg-stone-50' : ''}">
+                <input type="checkbox" ${checked ? 'checked' : ''}
+                       onchange="if(this.checked) teamPickerSelected.add('${u.id}'); else teamPickerSelected.delete('${u.id}'); renderTeamPicker();">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-[11.5px] font-semibold" style="background: var(--${deptColor});">${u.avatar}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-medium truncate">${u.name}</div>
+                  <div class="text-[11px] truncate" style="color: var(--text-3);">${u.title}</div>
+                </div>
+                <span class="tag tag-${deptColor === 'ink' ? 'moss' : deptColor === 'caramel' ? 'caramel' : deptColor === 'plum' ? 'plum' : 'moss'}" style="font-size: 9.5px;">${DEPTS[u.dept]?.code || ''}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="px-5 py-3 border-t flex items-center justify-between" style="border-color: var(--border);">
+          <div class="text-[12px]" style="color: var(--text-2);">
+            已選 <strong class="mono">${teamPickerSelected.size}</strong> 位
+          </div>
+          <div class="flex gap-2">
+            <button onclick="closeModal()" class="btn-ghost">取消</button>
+            <button onclick="confirmTeamInvite()" class="btn-ink" ${teamPickerSelected.size === 0 ? 'disabled style="opacity:.4; cursor:not-allowed;"' : ''}>
+              <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>邀請 ${teamPickerSelected.size > 0 ? teamPickerSelected.size : ''} 位
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function confirmTeamInvite() {
+  if (teamPickerSelected.size === 0) return;
+  const names = [...teamPickerSelected].map(id => USERS.find(u => u.id === id)?.name).join('、');
+  closeModal();
+  alert(`已邀請 ${teamPickerSelected.size} 位隊友：${names}\n\n（原型示意：實際版會寫入 ProjFlow project_members 並推 Line 通知給對方）`);
+}
+
+function closeModal() {
+  document.getElementById('modal-root').classList.add('hidden');
+}
+
+/* ============================================================
+   View: ProjFlow 同步
+   ============================================================ */
+
+function renderSync() {
+  setTitle('ProjFlow 同步', '雙向即時連動狀態');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[960px]">
+
+      <div class="paper p-6 flex items-center gap-5">
+        <div class="w-14 h-14 rounded-lg flex items-center justify-center" style="background: var(--ink); color: white;">
+          <i data-lucide="refresh-cw" class="w-7 h-7"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="serif text-[18px] font-semibold mb-1">已連線 ProjFlow</h3>
+          <p class="text-[13px]" style="color: var(--text-2);">所有專案、任務、報告、行程資料即時雙向同步</p>
+        </div>
+        <div class="text-right">
+          <div class="flex items-center gap-2 text-[12px] mb-1" style="color: var(--moss);">
+            <span class="sync-dot"></span>
+            <span class="font-semibold">運作中</span>
+          </div>
+          <div class="text-[11px]" style="color: var(--text-3);">延遲 <span class="mono">< 200ms</span></div>
+        </div>
+      </div>
+
+      <!-- 同步軸 -->
+      <div class="paper p-6">
+        <h3 class="serif font-semibold text-[15px] mb-1">同步軸</h3>
+        <p class="text-[12px] mb-5" style="color: var(--text-3);">下列資料表共用 ProjFlow 的 Supabase；其餘 ProjFlow 模組（HR / 採購 / 業務）不納入 PMSYS</p>
+
+        <div class="space-y-3">
+          ${[
+            { table: 'projects',   label: '專案',     dir: 'two-way',   note: 'PMSYS 新增/編輯 → ProjFlow 即時顯示' },
+            { table: 'tasks',      label: '任務',     dir: 'two-way',   note: '狀態變更、指派、留言皆同步' },
+            { table: 'reports',    label: 'A4 報告',  dir: 'two-way',   note: '「詳細專案報告」按鈕從 ProjFlow 連回此處' },
+            { table: 'schedules',  label: '行程表',   dir: 'two-way',   note: '與 ProjFlow Schedule 模組共用' },
+            { table: 'org_units',  label: '部門結構', dir: 'read-only', note: '只讀，不可從 PMSYS 動部門 — 見記憶規則' },
+            { table: 'profiles',   label: '人員資料', dir: 'read-only', note: '只讀，新人新部門統一在 ProjFlow 維護' },
+            { table: 'files',      label: '檔案/圖片', dir: 'two-way',  note: 'A4 報告內嵌圖共用 storage bucket' },
+          ].map(s => `
+            <div class="flex items-center gap-4 py-3 border-b last:border-0" style="border-color: var(--border-soft);">
+              <div class="mono text-[11px] font-semibold w-24" style="color: var(--text-3);">${s.table}</div>
+              <div class="flex-1">
+                <div class="text-[13px] font-semibold">${s.label}</div>
+                <div class="text-[11px]" style="color: var(--text-3);">${s.note}</div>
+              </div>
+              <span class="tag ${s.dir === 'two-way' ? 'tag-ink' : 'tag-grey'}">
+                <i data-lucide="${s.dir === 'two-way' ? 'arrow-left-right' : 'lock'}" class="w-2.5 h-2.5"></i>
+                ${s.dir === 'two-way' ? '雙向' : '唯讀'}
+              </span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- 寫入原則 -->
+      <div class="paper p-6">
+        <h3 class="serif font-semibold text-[15px] mb-3">寫入原則</h3>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[11px] font-bold" style="background: var(--ink);">1</div>
+            <div>
+              <div class="text-[13px] font-semibold">在 PMSYS 寫了 → 不需要再去 ProjFlow 重填</div>
+              <div class="text-[11.5px] mt-0.5" style="color: var(--text-2);">所有專案資料以 PMSYS 為主要寫入點；ProjFlow 自動顯示同樣的內容</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[11px] font-bold" style="background: var(--ink);">2</div>
+            <div>
+              <div class="text-[13px] font-semibold">在 ProjFlow 寫了 → PMSYS 自動顯示</div>
+              <div class="text-[11.5px] mt-0.5" style="color: var(--text-2);">只需在 PMSYS 補充細節欄位（A4 報告本文、嵌入圖、行程細節等）</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[11px] font-bold" style="background: var(--ink);">3</div>
+            <div>
+              <div class="text-[13px] font-semibold">高階主管在 ProjFlow 點「詳細專案報告」</div>
+              <div class="text-[11.5px] mt-0.5" style="color: var(--text-2);">即可閱讀 PMSYS 端寫的完整 A4 報告；ProjFlow 介面不需擴增</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 設定 / 通知
+   ============================================================ */
+
+function renderSettings() {
+  setTitle('設定', '個人偏好');
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[760px]">
+      <div class="paper p-6">
+        <h3 class="serif font-semibold text-[15px] mb-4">個人資料</h3>
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-semibold" style="background: var(--ink);">${currentUser.avatar}</div>
+          <div>
+            <div class="text-[15px] font-semibold">${displayName(currentUser)}</div>
+            <div class="text-[12px]" style="color: var(--text-3);">${currentUser.title}</div>
+            <div class="text-[11px] mt-1" style="color: var(--text-3);">資料來源：ProjFlow profiles 表（唯讀）</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="paper p-6">
+        <h3 class="serif font-semibold text-[15px] mb-4">A4 報告偏好</h3>
+        <div class="space-y-2">
+          <label class="flex items-center gap-2 text-[13px]"><input type="checkbox" checked>插入甘特圖時自動連動專案最新進度</label>
+          <label class="flex items-center gap-2 text-[13px]"><input type="checkbox" checked>儲存時同步到 ProjFlow（建議開啟）</label>
+          <label class="flex items-center gap-2 text-[13px]"><input type="checkbox">匯出 PDF 時加上浮水印</label>
+        </div>
+      </div>
+
+      <div class="paper p-6">
+        <h3 class="serif font-semibold text-[15px] mb-4">行程表預設</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-[11px] font-semibold" style="color: var(--text-3);">預設檢視層級</label>
+            <select class="w-full mt-1 py-2 px-3">
+              <option>週</option><option>日</option><option>月</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold" style="color: var(--text-3);">工作時段</label>
+            <div class="flex gap-2 mt-1">
+              <input type="text" value="09:00" class="w-24 py-2 px-3 mono">
+              <span class="self-center" style="color: var(--text-3);">→</span>
+              <input type="text" value="18:00" class="w-24 py-2 px-3 mono">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   View: 訊息中心（含通知 + 對話，與 ProjFlow 雙向同步）
+   ============================================================ */
+let messageFilter = 'all'; // 'all' | 'unread' | 'message' | 'mention' | 'notification'
+let activeMessageId = null;
+
+function unreadMessageCount() {
+  return MESSAGES.filter(m => m.unread).length;
+}
+
+function renderMessages() {
+  setTitle('訊息中心', '與 ProjFlow 即時雙向同步');
+
+  // 過濾
+  let list = MESSAGES.slice();
+  if (messageFilter === 'unread') list = list.filter(m => m.unread);
+  else if (['message','mention','notification'].includes(messageFilter)) list = list.filter(m => m.type === messageFilter);
+
+  const unreadAll = unreadMessageCount();
+  const fromSource = (s) => MESSAGES.filter(m => m.source === s).length;
+
+  const filterBtn = (id, label, count) => `
+    <button onclick="messageFilter='${id}'; renderMessages();"
+            class="px-3 py-1.5 rounded-md text-[12px] font-medium transition"
+            style="background: ${messageFilter === id ? 'var(--ink)' : 'transparent'}; color: ${messageFilter === id ? 'white' : 'var(--text-2)'}; ${messageFilter === id ? '' : 'border: 1px solid var(--border);'}">
+      ${label}${count !== undefined ? `<span class="ml-1.5 mono text-[10.5px] opacity-80">${count}</span>` : ''}
+    </button>
+  `;
+
+  // 預設選第一筆
+  if (!activeMessageId || !list.find(m => m.id === activeMessageId)) {
+    activeMessageId = list[0]?.id || null;
+  }
+  const active = MESSAGES.find(m => m.id === activeMessageId);
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-4 max-w-[1280px]">
+
+      <!-- 同步狀態 banner -->
+      <div class="paper p-4 flex items-center gap-4" style="background: linear-gradient(to right, var(--ink-soft) 0%, var(--paper) 60%); border-color: #D8E3DE;">
+        <div class="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0" style="background: var(--ink); color: white;">
+          <i data-lucide="messages-square" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <h3 class="serif font-semibold text-[14px]">訊息與通知</h3>
+            <span class="text-[11px] flex items-center gap-1.5" style="color: var(--moss);">
+              <span class="sync-dot"></span>ProjFlow 即時同步中
+            </span>
+          </div>
+          <p class="text-[11.5px] mt-0.5" style="color: var(--text-3);">
+            已讀狀態、回覆、@提及在 PMSYS / ProjFlow / RTM 三邊一致 ·
+            ProjFlow <strong class="mono">${fromSource('projflow')}</strong> ·
+            RTM <strong class="mono">${fromSource('rtm')}</strong> ·
+            本系統 <strong class="mono">${fromSource('pmsys')}</strong>
+          </p>
+        </div>
+        <button onclick="markAllRead()" class="btn-ghost">
+          <i data-lucide="check-check" class="w-3.5 h-3.5"></i>全部標為已讀
+        </button>
+      </div>
+
+      <!-- 過濾 -->
+      <div class="flex items-center gap-2 flex-wrap">
+        ${filterBtn('all',          '全部',  MESSAGES.length)}
+        ${filterBtn('unread',       '未讀',  unreadAll)}
+        ${filterBtn('message',      '對話',  MESSAGES.filter(m => m.type === 'message').length)}
+        ${filterBtn('mention',      '提及我', MESSAGES.filter(m => m.type === 'mention').length)}
+        ${filterBtn('notification', '系統',  MESSAGES.filter(m => m.type === 'notification').length)}
+      </div>
+
+      <!-- 主體：左清單 + 右詳細 -->
+      <div class="grid grid-cols-12 gap-4" style="min-height: 520px;">
+
+        <!-- 清單 -->
+        <div class="col-span-12 lg:col-span-5 paper overflow-hidden flex flex-col">
+          ${list.length === 0 ? `
+            <div class="text-center py-16 text-[12px]" style="color: var(--text-3);">
+              <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+              <div>此分類下沒有訊息</div>
+            </div>
+          ` : list.map(m => messageListRow(m)).join('')}
+        </div>
+
+        <!-- 詳細 -->
+        <div class="col-span-12 lg:col-span-7 paper p-0 flex flex-col">
+          ${active ? messageDetail(active) : `
+            <div class="flex-1 flex items-center justify-center text-[12px]" style="color: var(--text-3);">
+              <div class="text-center">
+                <i data-lucide="mouse-pointer-click" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                <div>從左側選擇一則訊息</div>
+              </div>
+            </div>
+          `}
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function messageListRow(m) {
+  const user = m.from ? USERS.find(u => u.id === m.from) : null;
+  const project = m.project ? PROJECTS.find(p => p.id === m.project) : null;
+  const active = m.id === activeMessageId;
+  const typeIcon = { message: 'mail', mention: 'at-sign', notification: 'bell' }[m.type] || 'mail';
+  return `
+    <div onclick="openMessage('${m.id}')"
+         class="px-4 py-3 border-b cursor-pointer hover:bg-stone-50 flex gap-3 transition"
+         style="border-color: var(--border-soft); background: ${active ? 'var(--ink-soft)' : 'transparent'}; ${active ? 'border-left: 3px solid var(--ink);' : 'border-left: 3px solid transparent;'}">
+      <div class="flex flex-col items-center gap-1 flex-shrink-0 pt-0.5">
+        ${user ? `
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10.5px] font-semibold" style="background: var(--${DEPTS[user.dept]?.color || 'ink'});">${user.avatar}</div>
+        ` : `
+          <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background: var(--bg-subtle); color: var(--text-3);"><i data-lucide="${typeIcon}" class="w-4 h-4"></i></div>
+        `}
+        ${m.unread ? '<span class="w-1.5 h-1.5 rounded-full" style="background: var(--caramel);"></span>' : ''}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-0.5">
+          <span class="text-[12.5px] font-semibold truncate ${m.unread ? '' : ''}" style="color: var(--text);">${user?.name || '系統訊息'}</span>
+          ${sourceBadge(m.source)}
+        </div>
+        <div class="text-[12px] leading-snug ${m.unread ? 'font-semibold' : ''}" style="color: var(--text);">${m.subject}</div>
+        <div class="text-[11px] mt-1 truncate" style="color: var(--text-3);">${m.preview}</div>
+        <div class="flex items-center gap-2 mt-1.5 text-[10.5px]" style="color: var(--text-3);">
+          ${project ? `<span class="mono">${project.code}</span><span>·</span>` : ''}
+          <span>${m.time}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function messageDetail(m) {
+  const user = m.from ? USERS.find(u => u.id === m.from) : null;
+  const project = m.project ? PROJECTS.find(p => p.id === m.project) : null;
+  const externalUrl = m.source === 'projflow' ? 'https://pm-system-mauve.vercel.app'
+                    : m.source === 'rtm'      ? 'https://rtm-rtm-app-app.vercel.app'
+                    : null;
+
+  return `
+    <div class="px-5 py-4 border-b flex items-start justify-between" style="border-color: var(--border);">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          ${sourceBadge(m.source)}
+          ${project ? `<span class="mono text-[10.5px] font-semibold px-1.5 py-0.5 rounded" style="background: var(--bg-subtle); color: var(--text-2);">${project.code}</span>` : ''}
+          ${m.synced ? `<span class="text-[10.5px] flex items-center gap-1" style="color: var(--moss);"><i data-lucide="check-check" class="w-3 h-3"></i>已同步</span>` : ''}
+        </div>
+        <h2 class="serif text-[16px] font-semibold leading-snug">${m.subject}</h2>
+        <div class="flex items-center gap-2 mt-2 text-[11.5px]" style="color: var(--text-3);">
+          ${user ? `
+            <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-semibold" style="background: var(--${DEPTS[user.dept]?.color || 'ink'});">${user.avatar}</div>
+            <span><strong>${user.name}</strong>（${user.title}）</span>
+          ` : `<span>系統訊息</span>`}
+          <span>·</span>
+          <span>${m.time}</span>
+        </div>
+      </div>
+      <div class="flex gap-1 flex-shrink-0">
+        ${externalUrl ? `
+          <a href="${externalUrl}" target="_blank" rel="noopener"
+             class="btn-ghost text-[11px]" style="padding: 6px 10px;" title="在 ${SOURCE_META[m.source].label} 開啟原始對話">
+            <i data-lucide="external-link" class="w-3 h-3"></i>${SOURCE_META[m.source].label}
+          </a>
+        ` : ''}
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-5 py-4">
+      <p class="text-[13px] leading-relaxed" style="color: var(--text);">${m.preview}</p>
+      ${project ? `
+        <div class="mt-4 p-3 rounded-md flex items-center gap-3" style="background: var(--bg-subtle);">
+          <i data-lucide="folder" class="w-4 h-4" style="color: var(--text-3);"></i>
+          <div class="flex-1">
+            <div class="text-[12px] font-medium">${project.name}</div>
+            <div class="text-[10.5px]" style="color: var(--text-3);">客戶：${project.client} · 進度 ${project.progress}%</div>
+          </div>
+          <button onclick="closeAndShowProject('${project.id}')" class="text-[11px] font-semibold" style="color: var(--ink);">看專案 →</button>
+        </div>
+      ` : ''}
+    </div>
+
+    ${m.type !== 'notification' ? `
+      <div class="px-5 py-3 border-t" style="border-color: var(--border);">
+        <textarea placeholder="回覆 ${user?.name || ''}…（送出後同步到 ${SOURCE_META[m.source].label}）"
+                  class="w-full py-2 px-3 text-[12.5px]" rows="2"></textarea>
+        <div class="flex items-center justify-between mt-2">
+          <div class="text-[10.5px] flex items-center gap-1" style="color: var(--text-3);">
+            <i data-lucide="info" class="w-3 h-3"></i>
+            回覆會即時推到 ${SOURCE_META[m.source].label}，對方也會收到
+          </div>
+          <button class="btn-ink"><i data-lucide="send" class="w-3 h-3"></i>送出回覆</button>
+        </div>
+      </div>
+    ` : ''}
+  `;
+}
+
+function openMessage(id) {
+  const m = MESSAGES.find(x => x.id === id);
+  if (!m) return;
+  m.unread = false;
+  activeMessageId = id;
+  renderMessages();
+  updateBellBadge();
+  renderSidebar();
+  highlightNav();
+}
+
+function markAllRead() {
+  MESSAGES.forEach(m => m.unread = false);
+  renderMessages();
+  updateBellBadge();
+  renderSidebar();
+  highlightNav();
+}
+
+function closeAndShowProject(pid) {
+  showView('projects');
+}
+
+function renderNotifications() {
+  // 通知頁已併入訊息中心 — 自動轉跳
+  showView('messages');
+}
+
+function notifIcon(type) {
+  return { sync:'refresh-cw', deadline:'alert-circle', mention:'at-sign', team:'user-plus' }[type] || 'bell';
+}
+
+/* ============================================================
+   任務 Modal
+   ============================================================ */
+
+function openTaskModal(taskId) {
+  const t = TASKS.find(x => x.id === taskId);
+  if (!t) return;
+  const user = USERS.find(u => u.id === t.assignee);
+  const project = PROJECTS.find(p => p.id === t.project);
+  const sm = statusMeta(t.status);
+  document.getElementById('modal-content').innerHTML = `
+    <div class="p-6">
+      <div class="flex items-start justify-between mb-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <span class="mono text-[10.5px] font-semibold" style="color: var(--text-3);">${project?.code}</span>
+            <span class="tag tag-${t.priority === 'high' ? 'rust' : t.priority === 'medium' ? 'caramel' : 'grey'}">${{high:'高優先',medium:'中等',low:'一般'}[t.priority]}</span>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold" style="background: ${sm.bg}; color: ${sm.fg};">
+              <i data-lucide="${sm.icon}" class="w-3 h-3"></i>${sm.label}
+            </span>
+          </div>
+          <h2 class="serif text-[18px] font-semibold">${t.title}</h2>
+          <div class="text-[12px] mt-1" style="color: var(--text-3);">隸屬：${project?.name}</div>
+        </div>
+        <button onclick="closeModal()" class="p-2 rounded-md hover:bg-stone-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      ${t.status === 'blocked' && t.blockReason ? `
+        <div class="mb-4 p-3 rounded-md flex items-start gap-2.5" style="background: rgba(122,76,102,.08); border-left: 3px solid #7A4C66;">
+          <i data-lucide="octagon-alert" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: #7A4C66;"></i>
+          <div class="flex-1">
+            <div class="text-[11px] font-semibold mb-1" style="color: #7A4C66;">卡住原因</div>
+            <div class="text-[12.5px] leading-snug" style="color: var(--text);">${t.blockReason}</div>
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="grid grid-cols-2 gap-4 py-4 border-y" style="border-color: var(--border);">
+        <div><div class="text-[10.5px] font-semibold mb-1" style="color: var(--text-3);">負責人</div><div class="text-[13px] font-medium">${user?.name}<span class="text-[11px] ml-1" style="color: var(--text-3);">${user?.title}</span></div></div>
+        <div><div class="text-[10.5px] font-semibold mb-1" style="color: var(--text-3);">截止日</div><div class="mono text-[13px] font-medium">${t.due}</div></div>
+        <div>
+          <div class="text-[10.5px] font-semibold mb-1" style="color: var(--text-3);">變更狀態（即時同步 ProjFlow）</div>
+          <div class="flex flex-wrap gap-1.5">
+            ${TASK_STATUS_ORDER.map(s => {
+              const m = statusMeta(s);
+              const active = s === t.status;
+              return `<button onclick="changeTaskStatus('${t.id}','${s}')"
+                              class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-semibold transition"
+                              style="background: ${active ? m.fg : m.bg}; color: ${active ? 'white' : m.fg}; ${active ? '' : 'opacity:.85;'}">
+                        <i data-lucide="${m.icon}" class="w-2.5 h-2.5"></i>${m.label}
+                      </button>`;
+            }).join('')}
+          </div>
+        </div>
+        <div><div class="text-[10.5px] font-semibold mb-1" style="color: var(--text-3);">同步狀態</div><div class="text-[13px] flex items-center gap-1.5" style="color: var(--moss);"><span class="sync-dot"></span>已同步 ProjFlow</div></div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-[10.5px] font-semibold mb-2" style="color: var(--text-3);">留言</div>
+        <div class="text-[12px] text-center py-4 rounded-md" style="background: var(--bg-subtle); color: var(--text-3);">
+          尚無留言
+        </div>
+        <textarea class="mt-2 w-full py-2 px-3" rows="2" placeholder="留言或更新狀態…"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-4 pt-4 border-t" style="border-color: var(--border);">
+        <button onclick="closeModal()" class="btn-ghost">關閉</button>
+        <button onclick="closeModal()" class="btn-ink">送出留言</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-root').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function changeTaskStatus(taskId, newStatus) {
+  const t = TASKS.find(x => x.id === taskId);
+  if (!t) return;
+  if (t.status === newStatus) return;
+  // 切到「卡住」要填原因
+  if (newStatus === 'blocked' && !t.blockReason) {
+    const reason = prompt('請填寫「卡住」原因（會同步寫回 ProjFlow tasks.block_reason）：', '');
+    if (!reason) return;
+    t.blockReason = reason.trim();
+  }
+  // 切離「卡住」就清掉原因
+  if (newStatus !== 'blocked') {
+    delete t.blockReason;
+  }
+  t.status = newStatus;
+  // 重整當下 view（更新狀態總覽計數），再重開 modal
+  showView(currentView);
+  openTaskModal(taskId);
+}
+
+/* ============================================================
+   工具
+   ============================================================ */
+
+function formatDate(date) {
+  return `${date.getFullYear()} / ${(date.getMonth()+1).toString().padStart(2,'0')} / ${date.getDate().toString().padStart(2,'0')}`;
+}
+function getWeekday(date) {
+  return ['日','一','二','三','四','五','六'][date.getDay()];
+}
+function colorOfProject(pid) {
+  return 'ink';
+}
+
+// 點擊背景關閉 modal
+document.getElementById('modal-root').addEventListener('click', e => {
+  if (e.target.id === 'modal-root') closeModal();
+});
+
+/* ============================================================
+   跨系統契約 — ProjFlow 必須鏡像實作以下規格，避免資料同步混亂
+   ------------------------------------------------------------
+   1. profiles 表新增 en_name 欄；UI 稱呼一律 en_name 優先、無則 name
+   2. PMSYS 與 ProjFlow 登入閘允許清單須一致：role ∈ ['pm','pmo','admin']
+   3. 閒置 60 分鐘自動登出，55 分鐘出 5 分鐘預告；雙系統 session 同步失效
+   4. 首次登入強制走教學引導；已學過旗標跨系統共用（SSO URL 帶 tutorialDone）
+   5. SSO URL 契約：
+      PMSYS → ProjFlow: ?from=pmsys&u=&email=&name=&enName=&tutorialDone=
+      ProjFlow → PMSYS: ?from=projflow&u=&email=&tutorialDone=
+   6. 正式版改用 Supabase JWT；URL 明碼參數僅原型階段使用
+   ============================================================ */
+
+/* ============================================================
+   閒置 60 分鐘自動登出（55 分鐘預告）
+   ============================================================ */
+const IDLE_LOGOUT_MS = 60 * 60 * 1000;
+const IDLE_WARN_MS   = 55 * 60 * 1000;
+const idleManager = (() => {
+  let warnT = null, logoutT = null, mounted = false, warnEl = null;
+  const events = ['mousemove','keydown','click','scroll','touchstart','wheel'];
+  function showWarn() {
+    if (warnEl) return;
+    warnEl = document.createElement('div');
+    warnEl.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:90;background:#a04a2a;color:#fffaf2;padding:10px 18px;border-radius:8px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,.2);';
+    warnEl.textContent = '已閒置 55 分鐘，5 分鐘後將自動登出。動一下滑鼠或鍵盤即可繼續。';
+    document.body.appendChild(warnEl);
+  }
+  function hideWarn() { if (warnEl) { warnEl.remove(); warnEl = null; } }
+  function reset() {
+    if (warnT) clearTimeout(warnT);
+    if (logoutT) clearTimeout(logoutT);
+    warnT   = setTimeout(showWarn, IDLE_WARN_MS);
+    logoutT = setTimeout(() => logout('idle'), IDLE_LOGOUT_MS);
+  }
+  function onActivity() { if (!mounted) return; hideWarn(); reset(); }
+  function start() {
+    if (mounted) return;
+    mounted = true;
+    events.forEach(ev => window.addEventListener(ev, onActivity, { passive: true }));
+    reset();
+  }
+  function stop() {
+    if (!mounted) return;
+    mounted = false;
+    events.forEach(ev => window.removeEventListener(ev, onActivity));
+    if (warnT) clearTimeout(warnT);
+    if (logoutT) clearTimeout(logoutT);
+    hideWarn();
+  }
+  return { start, stop };
+})();
+
+/* ============================================================
+   首次教學引導（依 user.id 用 localStorage 記住「已學過」）
+   ============================================================ */
+const TUTORIAL_STEPS = [
+  { title: u => `歡迎使用 PMSYS，${displayName(u)}`,
+    body: '這是專案經理專用工作檯。第一次登入需要快速走一遍主要功能（約 1 分鐘）。完成後系統會記住，下次不會再跳。' },
+  { title: () => '工作檯：你的每日中心',
+    body: '左側「工作檯」是預設首頁，集中顯示今日任務、本週行事曆、跨系統未讀訊息。' },
+  { title: () => '專案 / 任務 — 跨三系統聚合',
+    body: '每筆資料都有來源標記：<strong>PMSYS</strong>（你手寫）、<strong>RTM</strong>（製造端）、<strong>ProjFlow</strong>（公司主系統）。三個來源在這裡聚合，不必到各系統各看一次。' },
+  { title: () => '行事曆與會議',
+    body: '「行程」可切週 / 月視圖。客戶會議與內部會議自動標色，便於一眼分辨。' },
+  { title: () => 'A4 報告',
+    body: '「報告」頁可生成 A4 版面的期中 / 結案報告。報告會記錄 lastEdit，PMO 可知道誰改了什麼。' },
+  { title: () => '翻書頁 → ProjFlow',
+    body: '需要走完整 ProjFlow 功能時，點右上「同步更新到 ProjFlow」或畫面內的翻頁鈕，會以 180° 翻書頁過去。這邊登入過，那邊不會再要求登入（SSO）。' },
+];
+function tutorialKey(uid) { return `pmsys.tutorial.done.${uid}`; }
+function hasSeenTutorial(uid) { try { return localStorage.getItem(tutorialKey(uid)) === '1'; } catch { return false; } }
+function markTutorialSeen(uid) { try { localStorage.setItem(tutorialKey(uid), '1'); } catch {} }
+
+let _tutStep = 0;
+function startTutorial() {
+  _tutStep = 0;
+  renderTutorial();
+  document.getElementById('tutorial-overlay').classList.add('show');
+}
+function closeTutorial() { document.getElementById('tutorial-overlay').classList.remove('show'); }
+function renderTutorial() {
+  const step = TUTORIAL_STEPS[_tutStep];
+  const total = TUTORIAL_STEPS.length;
+  document.getElementById('tutorial-step-label').textContent = `第 ${_tutStep + 1} / ${total} 步`;
+  document.getElementById('tutorial-title').textContent = typeof step.title === 'function' ? step.title(currentUser) : step.title;
+  document.getElementById('tutorial-body').innerHTML = step.body;
+  document.getElementById('tutorial-dots').innerHTML =
+    TUTORIAL_STEPS.map((_, i) => `<span class="${i === _tutStep ? 'active' : ''}"></span>`).join('');
+  document.getElementById('tutorial-prev').disabled = _tutStep === 0;
+  document.getElementById('tutorial-next').textContent = _tutStep === total - 1 ? '完成' : '下一步';
+}
+function tutorialPrev() { if (_tutStep > 0) { _tutStep--; renderTutorial(); } }
+function tutorialNext() {
+  if (_tutStep < TUTORIAL_STEPS.length - 1) { _tutStep++; renderTutorial(); return; }
+  if (currentUser) markTutorialSeen(currentUser.id);
+  closeTutorial();
+}
+
+/* ============================================================
+   ProjFlow 同步：常駐按鈕 + 浮窗提醒 + 清單 modal
+   ------------------------------------------------------------
+   原型階段 PMSYS 無法直接推資料給 ProjFlow（兩個獨立部署）。
+   改用「使用者主動同步」：常駐按鈕讓他隨時手動跳過去；30 分鐘提醒一次。
+   ============================================================ */
+const PF_SYNC_REMINDER_MS = 30 * 60 * 1000;
+const projflowSync = (() => {
+  let reminderT = null, mounted = false, snoozedUntil = 0;
+  function scheduleReminder(ms) {
+    if (reminderT) clearTimeout(reminderT);
+    reminderT = setTimeout(() => maybeShowReminder(), ms);
+  }
+  function maybeShowReminder(text) {
+    if (!mounted) return;
+    if (Date.now() < snoozedUntil) { scheduleReminder(PF_SYNC_REMINDER_MS); return; }
+    const toast = document.getElementById('pf-sync-toast');
+    if (text) toast.querySelector('.pf-t-body').textContent = text;
+    toast.classList.add('show');
+  }
+  function hideReminder() { document.getElementById('pf-sync-toast').classList.remove('show'); }
+  function snooze() { snoozedUntil = Date.now() + PF_SYNC_REMINDER_MS; hideReminder(); scheduleReminder(PF_SYNC_REMINDER_MS); }
+  function mount() {
+    if (mounted) return;
+    mounted = true;
+    document.getElementById('pf-sync-btn').classList.add('show');
+    setTimeout(() => maybeShowReminder('登入後檢查：是否有 PMSYS 設定變更待同步到 ProjFlow？'), 4000);
+    scheduleReminder(PF_SYNC_REMINDER_MS);
+  }
+  function unmount() {
+    if (!mounted) return;
+    mounted = false;
+    document.getElementById('pf-sync-btn').classList.remove('show');
+    hideReminder();
+    if (reminderT) clearTimeout(reminderT);
+  }
+  function openModal() {
+    hideReminder();
+    const pmsysUrl = location.origin + location.pathname;
+    const isFileProto = location.protocol === 'file:';
+    const rolesText = PMSYS_ALLOWED_ROLES.map(r => `'${r}'`).join(', ');
+    const fileWarn = isFileProto
+      ? `<div style="background:#fde8d7;border:1px solid #e6b88a;color:#7a3a1a;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.55;margin-bottom:12px;">
+           <strong>⚠ 架構警告</strong>：PMSYS 目前跑在 <code>file://</code>（本機檔案）。瀏覽器安全機制會<strong>阻擋 https 網站（ProjFlow）跳轉到 file:// 路徑</strong>——所以「ProjFlow → PMSYS」回跳<u>無法運作</u>。請把 PMSYS 部署到公開 URL（Vercel / GitHub Pages 等）後，再做雙向 SSO 交握。
+         </div>` : '';
+    document.getElementById('pf-sync-list').innerHTML = `
+      ${fileWarn}
+      <div style="background:#f1eadd;padding:10px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;">
+        <div style="font-weight:700;color:#5a3a1a;margin-bottom:4px;">ProjFlow 端跳回 PMSYS 必須用這個完整 URL：</div>
+        <code style="word-break:break-all;">${pmsysUrl}</code>
+        <div style="color:#7a3a1a;margin-top:6px;">⚠ 不可用相對路徑 <code>/pmsys?...</code>——會落在 ProjFlow 自己的網域，造成 404。</div>
+      </div>
+      <ul>
+        <li><strong>英文名稱呼欄</strong>：ProjFlow profiles 表新增 <code>en_name</code> 欄；UI 稱呼使用者時 <code>en_name</code> 優先、無則 fallback 中文 <code>name</code>。</li>
+        <li><strong>PM 角色允許清單</strong>：登入閘只放行 <code>role ∈ {${rolesText}}</code>，須與 PMSYS 完全一致（避免資料同步混亂）。</li>
+        <li><strong>閒置自動登出</strong>：60 分鐘無操作自動登出，55 分鐘出 5 分鐘預告。</li>
+        <li><strong>首次教學引導</strong>：ProjFlow 也需走一次首次引導；若 SSO 帶 <code>?tutorialDone=1</code>，視為已學過、跳過。</li>
+        <li><strong>SSO URL 契約</strong>：
+          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
+          <br>ProjFlow → PMSYS：<code>${pmsysUrl}?from=projflow&u=&lt;id&gt;&email=&lt;email&gt;&tutorialDone=&lt;0|1&gt;</code>
+        </li>
+        <li><strong>正式版</strong>：上線後改用 Supabase JWT，URL 明碼參數僅原型階段使用。</li>
+      </ul>
+    `;
+    document.getElementById('pf-sync-modal').classList.add('show');
+  }
+  function closeModal() { document.getElementById('pf-sync-modal').classList.remove('show'); }
+  function openProjFlow() { closeModal(); flipToProjFlow(); }
+  return { mount, unmount, openModal, closeModal, openProjFlow, snooze, maybeShowReminder };
+})();
+
+// SSO 交握（反向）：從 ProjFlow 翻頁回來時，若已帶身份就直接進工作檯，不再走 OTP
+// ProjFlow 端跳轉網址需帶：?from=projflow&u=<id>（或 &email=<email>）；帶 tutorialDone=1 表示已學過引導
+function ssoLoginFromUrl() {
+  const qp = new URLSearchParams(location.search);
+  if (qp.get('from') !== 'projflow') return false;
+  const byId = qp.get('u');
+  const byEmail = (qp.get('email') || '').toLowerCase();
+  const u = USERS.find(x => x.id === byId)
+         || USERS.find(x => x.email && x.email.toLowerCase() === byEmail);
+  if (!u) return false;
+  if (qp.get('tutorialDone') === '1') markTutorialSeen(u.id); // 跨系統共用「已學過」旗標
+  history.replaceState(null, '', location.pathname);
+  login(u.id);
+  return true;
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+  initLogin();
+  // 已在 ProjFlow 登入並翻頁回來 → 帶身份直接進，不重複登入（SSO：擇一登入即可）
+  if (ssoLoginFromUrl()) return;
+  // 原型階段：直接以王耀裕進入工作檯，不走 OTP
+  // （登出後仍可走 Email + OTP 完整流程；正式上線時移除這行）
+  login('u100');
+});
+
+// 原型階段快速切換視角（王耀裕 ↔ 總經理）
+function quickSwitch() {
+  const nextId = currentUser?.id === 'u100' ? 'u1' : 'u100';
+  login(nextId);
+}
+
+/* 翻書頁跳轉到 ProjFlow（同窗、不另開分頁，真正的 180° 翻頁動畫） */
+function flipToProjFlow() {
+  if (document.getElementById('flip-running')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'flip-running';
+  overlay.className = 'flip-overlay';
+  overlay.innerHTML = `
+    <div class="flip-overlay-shadow"></div>
+    <div class="flip-overlay-page">
+      <!-- 正面：翻起時看到的「離開 PMSYS」 -->
+      <div class="flip-overlay-front">
+        <div class="flip-overlay-leaving">
+          <div class="lv-chip">
+            <div class="lv-tei">TEi</div>
+            <div class="lv-name">PMSYS</div>
+          </div>
+          <div class="lv-sub">正在翻頁前往 ProjFlow…</div>
+        </div>
+      </div>
+      <!-- 反面：翻過後落地的 ProjFlow -->
+      <div class="flip-overlay-back">
+        <div>
+          <div class="flip-overlay-brand">
+            <div class="brand-mark"><span class="brand-dot"></span>ProjFlow</div>
+            <div class="brand-sub">公司主系統</div>
+          </div>
+          <div class="flip-overlay-runner-wrap">
+            <span class="flip-overlay-runner">🏃</span>
+            <div>
+              <div class="flip-overlay-runner-text">正在連接 ProjFlow</div>
+              <div class="flip-overlay-runner-track"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // ✨ 動畫 2500ms,2200ms 才觸發 navigation(動畫已翻到 88%,主要視覺都看完了)
+  // 預留 300ms 給 Vercel 啟動,動畫結束的瞬間 ProjFlow 多半剛好可以接手
+  // 若 Vercel 載入快於 300ms,過渡仍流暢;若慢於 300ms,看到的是已翻好的「ProjFlow 落地頁 + 載入點」
+  setTimeout(() => {
+    const base = 'https://pm-system-mauve.vercel.app';
+    // SSO 交握（正向）：帶完整身份 + 教學狀態過去，ProjFlow 認得就免再登入、不必再學一次教學
+    const u = currentUser || USERS.find(x => x.id === 'u100');
+    const qs = new URLSearchParams({
+      from: 'pmsys',
+      u: u?.id || '',
+      email: u?.email || '',
+      name: u?.name || '',
+      enName: u?.enName || '',
+      tutorialDone: (u && hasSeenTutorial(u.id)) ? '1' : '0'
+    });
+    window.location.href = `${base}?${qs.toString()}`;
+  }, 2200);
+}
+</script>
+
+</body>
+</html>
