@@ -1310,6 +1310,28 @@
   }
   .assist-empty strong{color:var(--text-sub);font-weight:600;}
 
+  /* 業助任務 ‧ 截止日 + 附件 */
+  .due-tag{
+    display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+    border-radius:6px;font-size:11px;font-weight:600;font-family:var(--font-mono);
+  }
+  .due-tag.normal { color:#475569;background:#F1F5F9; }
+  .due-tag.soon   { color:#92400E;background:#FEF3C7; }
+  .due-tag.overdue{ color:#991B1B;background:#FEE2E2; }
+  .due-tag .ico{width:11px;height:11px;}
+
+  .attach-row{
+    margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);
+    display:flex;flex-wrap:wrap;gap:6px;
+  }
+  .attach-link{
+    display:inline-flex;align-items:center;gap:4px;padding:3px 8px;
+    background:var(--surface-soft);border:1px solid var(--border);border-radius:6px;
+    font-size:11px;color:var(--text-sub);text-decoration:none;cursor:pointer;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .attach-link:hover{background:var(--surface);color:var(--accent-dark);border-color:var(--accent-border);}
+
   /* 業務頁面的「派出協助」按鈕 + 進度面板 */
   .invite-card{
     background:linear-gradient(135deg,#FDF2F8 0%,#FCE7F3 100%);
@@ -2847,7 +2869,11 @@
     <label>任務標題</label>
     <input type="text" id="iaTitle" placeholder="例:整理 5/26 客戶拜訪紀錄" maxlength="60" />
     <label>任務說明</label>
-    <textarea id="iaDesc" placeholder="可貼上參考資料、檔案連結或具體指示" maxlength="500"></textarea>
+    <textarea id="iaDesc" placeholder="可貼上參考資料或具體指示" maxlength="500"></textarea>
+    <label>截止日(選填)</label>
+    <input type="date" id="iaDueAt" />
+    <label>附件連結(選填 ‧ 每行一個,格式:名稱 | URL 或直接貼 URL)</label>
+    <textarea id="iaAttach" placeholder="例:&#10;客戶拜訪報表 | https://drive.google.com/...&#10;https://onedrive.live.com/..." maxlength="800" style="font-family:var(--font-mono);font-size:12px;"></textarea>
     <div class="mm-actions">
       <button class="btn-cancel" id="iaCancel">取消</button>
       <button class="btn-submit" id="iaSubmit">送出任務</button>
@@ -3472,8 +3498,10 @@
   // ===========================================================
 
   // ----- 資料層(等使用者實際輸入;上線後接 ProjFlow tables) -----
-  // assistantTasks: {id, requestedBy, assignedTo, title, desc, status, createdAt}
+  // assistantTasks: {id, requestedBy, assignedTo, title, desc, status, createdAt, dueAt, attachments}
   //   status: 'pending' | 'doing' | 'done'
+  //   dueAt: 'YYYY-MM-DD' | null
+  //   attachments: [{ name, url }]
   const assistantTasks = [];
   // shippingItems: {id, type, mode, requestedBy, title, party, port, status, createdAt}
   //   type: 'inbound' | 'outbound' | 'sample'
@@ -3496,6 +3524,53 @@
     const d = new Date();
     const pad = n=>String(n).padStart(2,'0');
     return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  // 解析附件:每行一條,支援 "名稱 | URL" 或單純 URL
+  function parseAttachments(raw){
+    if(!raw) return [];
+    return raw.split('\n').map(line=>{
+      const s = line.trim();
+      if(!s) return null;
+      if(s.includes('|')){
+        const [name, ...rest] = s.split('|');
+        return { name: name.trim() || '附件', url: rest.join('|').trim() };
+      }
+      // 從 URL 推斷名稱
+      let nm = s;
+      try{ nm = new URL(s).hostname.replace(/^www\./,''); }catch(e){}
+      return { name: nm, url: s };
+    }).filter(Boolean);
+  }
+
+  // 計算截止日狀態:overdue / soon (今/明天) / normal
+  function dueState(dueAt){
+    if(!dueAt) return null;
+    const due = new Date(dueAt + 'T23:59:59');
+    const now = new Date();
+    const diffMs = due - now;
+    const oneDay = 24*60*60*1000;
+    if(diffMs < 0) return 'overdue';
+    if(diffMs < oneDay * 2) return 'soon';
+    return 'normal';
+  }
+  function dueTagHtml(dueAt){
+    const st = dueState(dueAt);
+    if(!st) return '';
+    const labelMap = { overdue:'已逾期', soon:'即將到期', normal:'截止' };
+    return `<span class="due-tag ${st}">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      ${labelMap[st]} ${dueAt}
+    </span>`;
+  }
+  function attachmentsHtml(atts){
+    if(!atts || !atts.length) return '';
+    return `<div class="attach-row">
+      ${atts.map(a=>`<a class="attach-link" href="${a.url}" target="_blank" rel="noopener" title="${a.url}">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        ${a.name}
+      </a>`).join('')}
+    </div>`;
   }
 
   // ----- 全公司總覽 (GM 專屬) -----
@@ -3691,9 +3766,10 @@
           </div>
           <span class="assist-status ${t.status}">${({pending:'待處理',doing:'處理中',done:'已完成'})[t.status]}</span>
         </div>
-        <div class="ac-title">${t.title}</div>
+        <div class="ac-title">${t.title}${t.dueAt?' ':''}${dueTagHtml(t.dueAt)}</div>
         <div class="ac-desc">${t.desc || '(無說明)'}</div>
-        <div class="ac-foot">
+        ${attachmentsHtml(t.attachments)}
+        <div class="ac-foot" style="margin-top:10px;">
           <span>建立 ${t.createdAt}</span>
           ${isAssistant ? `<button class="filter-pill" data-task="${t.id}" data-next="${t.status==='pending'?'doing':t.status==='doing'?'done':'pending'}">
             ${t.status==='pending'?'開始處理':t.status==='doing'?'標記完成':'重新開啟'}
@@ -3721,10 +3797,15 @@
     if(!mine.length){ list.innerHTML = `<div class="empty">尚未派出任何協助任務</div>`; return; }
     list.innerHTML = mine.map(t=>{
       const a = personas[t.assignedTo];
+      const dt = dueTagHtml(t.dueAt);
+      const attN = (t.attachments||[]).length;
       return `<div class="row">
         <div>
-          <div style="font-weight:600;font-size:13px;">${t.title}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${t.desc.slice(0,60)}${t.desc.length>60?'…':''}</div>
+          <div style="font-weight:600;font-size:13px;">${t.title} ${dt}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+            ${t.desc.slice(0,60)}${t.desc.length>60?'…':''}
+            ${attN ? `<span style="margin-left:6px;color:var(--text-sub);">📎 ${attN} 個附件</span>` : ''}
+          </div>
         </div>
         <div class="who">${a.emoji} ${a.name}</div>
         <span class="assist-status ${t.status}">${({pending:'待處理',doing:'處理中',done:'已完成'})[t.status]}</span>
@@ -3911,7 +3992,10 @@
   // ----- Modal: 邀請業助 -----
   const iaBackdrop = $("inviteAssistBackdrop");
   function openInviteAssist(){ iaBackdrop.dataset.open = "true"; }
-  function closeInviteAssist(){ iaBackdrop.dataset.open = "false"; $("iaTitle").value=""; $("iaDesc").value=""; }
+  function closeInviteAssist(){
+    iaBackdrop.dataset.open = "false";
+    ["iaTitle","iaDesc","iaDueAt","iaAttach"].forEach(id=>$(id).value="");
+  }
   $("inviteAssistBtn").addEventListener("click", openInviteAssist);
   $("iaCancel").addEventListener("click", closeInviteAssist);
   $("iaSubmit").addEventListener("click", ()=>{
@@ -3925,11 +4009,14 @@
       desc: $("iaDesc").value.trim(),
       status: "pending",
       createdAt: nowStr(),
+      dueAt: $("iaDueAt").value || null,
+      attachments: parseAttachments($("iaAttach").value),
     });
     closeInviteAssist();
     renderMyAssistOnPersonal(currentUserKey);
     renderAssist(currentUserKey);
     renderOverview();
+    renderTeamFull();
   });
   iaBackdrop.addEventListener("click",(e)=>{ if(e.target===iaBackdrop) closeInviteAssist(); });
 
