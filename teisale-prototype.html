@@ -1154,6 +1154,23 @@
   .msg.me .av{display:none;}
   .msg.me .time{text-align:right;}
 
+  /* 系統訊息(任務派發、船務事件、EDI 推送) */
+  .msg.system{
+    align-self:center;max-width:80%;flex-direction:column;align-items:center;gap:4px;
+  }
+  .msg.system .sys-bubble{
+    background:linear-gradient(90deg,#EFF6FF 0%,#DBEAFE 100%);
+    border:1px solid #BFDBFE;border-radius:10px;
+    padding:8px 14px;font-size:12px;color:#1E40AF;line-height:1.5;
+    text-align:center;font-weight:500;
+  }
+  .msg.system .sys-bubble .sys-tag{
+    display:inline-block;font-size:9px;padding:1px 6px;border-radius:4px;
+    background:#3B82F6;color:#fff;font-family:var(--font-mono);font-weight:700;
+    letter-spacing:0.06em;margin-right:6px;vertical-align:middle;
+  }
+  .msg.system .time{font-size:9px;color:var(--text-muted);}
+
   .chat-input{
     border-top:1px solid var(--border);padding:12px 14px;flex-shrink:0;
     display:flex;gap:8px;align-items:flex-end;
@@ -4106,17 +4123,28 @@
   $("iaSubmit").addEventListener("click", ()=>{
     const title = $("iaTitle").value.trim();
     if(!title){ alert("請填寫任務標題"); return; }
+    const assignee = $("iaAssignee").value;
+    const dueAt = $("iaDueAt").value || null;
+    const attachments = parseAttachments($("iaAttach").value);
     assistantTasks.push({
       id: nextId(),
       requestedBy: currentUserKey,
-      assignedTo: $("iaAssignee").value,
+      assignedTo: assignee,
       title,
       desc: $("iaDesc").value.trim(),
       status: "pending",
       createdAt: nowStr(),
-      dueAt: $("iaDueAt").value || null,
-      attachments: parseAttachments($("iaAttach").value),
+      dueAt,
+      attachments,
     });
+    // 系統訊息:推送到「業助協作群」讓所有相關成員看見
+    const me = personas[currentUserKey];
+    const a = personas[assignee];
+    pushSystemMessage("g_assist", "TASK",
+      `${me.emoji} <strong>${me.name}</strong> 派發任務「${escapeHtml(title)}」給 ${a.emoji} <strong>${a.name}</strong>`
+      + (dueAt ? ` ‧ 截止 ${dueAt}` : '')
+      + (attachments.length ? ` ‧ 含 ${attachments.length} 個附件` : '')
+    );
     closeInviteAssist();
     renderMyAssistOnPersonal(currentUserKey);
     renderAssist(currentUserKey);
@@ -4135,14 +4163,16 @@
   $("nsSubmit").addEventListener("click", ()=>{
     const title = $("nsTitle").value.trim();
     if(!title){ alert("請填寫標題"); return; }
+    const type = $("nsType").value;
+    const mode = $("nsMode").value;
+    const party = $("nsParty").value.trim();
+    const port = $("nsPort").value.trim();
     shippingItems.push({
       id: nextId(),
-      type: $("nsType").value,
-      mode: $("nsMode").value,
+      type, mode,
       requestedBy: currentUserKey,
       title,
-      party: $("nsParty").value.trim(),
-      port: $("nsPort").value.trim(),
+      party, port,
       status: "requested",
       createdAt: nowStr(),
       // 報關 / EDI(由船務後續填寫)
@@ -4150,10 +4180,21 @@
       customsDocUrl: "", customsNotes: "",
       ediStatus: null, ediSyncedAt: null,
     });
+    // 系統訊息:推送到船務協作群,marco 會看到
+    const me = personas[currentUserKey];
+    const typeLabel = ({inbound:'進貨',outbound:'出貨',sample:'樣本'})[type];
+    const modeLabel = mode==='sea'?'海運':'空運';
+    pushSystemMessage("g_ship", "SHIP",
+      `${me.emoji} <strong>${me.name}</strong> 發起${typeLabel}單「${escapeHtml(title)}」(${modeLabel})`
+      + (party ? ` ‧ 對口 ${escapeHtml(party)}` : '')
+      + (port ? ` ‧ 港口/機場 ${escapeHtml(port)}` : '')
+      + ` ‧ 待船務 🐳 接手`
+    );
     closeNewShip();
     renderMyShipOnPersonal(currentUserKey);
     renderShipping(currentUserKey);
     renderOverview();
+    renderTeamFull();
   });
   nsBackdrop.addEventListener("click",(e)=>{ if(e.target===nsBackdrop) closeNewShip(); });
 
@@ -4223,6 +4264,10 @@
     it.ediSyncedAt = nowStr();
     refreshEdiUi(it);
     renderShipping(currentUserKey);
+    const me = personas[currentUserKey];
+    pushSystemMessage("g_ship", "EDI",
+      `${me.emoji} <strong>${me.name}</strong> 已送出 EDI ‧ 報單 <code style="font-family:var(--font-mono);">${escapeHtml(it.customsNo)}</code> ‧ 船務單「${escapeHtml(it.title)}」`
+    );
   });
   $("ceEdiCheckBtn").addEventListener("click",()=>{
     const it = shippingItems.find(x=>x.id===ceCurrentItemId);
@@ -4241,6 +4286,9 @@
     if(!it.eta) it.eta = new Date(Date.now()+5*24*3600*1000).toISOString().slice(0,10);
     refreshEdiUi(it);
     renderShipping(currentUserKey);
+    pushSystemMessage("g_ship", "EDI",
+      `🛃 海關回傳 <strong style="color:#065F46;">已清關</strong> ‧ 船務單「${escapeHtml(it.title)}」‧ ETA ${it.eta}`
+    );
   });
   $("ceEdiSimulateRejected").addEventListener("click",()=>{
     const it = shippingItems.find(x=>x.id===ceCurrentItemId);
@@ -4250,6 +4298,9 @@
     it.ediSyncedAt = nowStr();
     refreshEdiUi(it);
     renderShipping(currentUserKey);
+    pushSystemMessage("g_ship", "EDI",
+      `🛃 海關回傳 <strong style="color:#991B1B;">已退單</strong> ‧ 船務單「${escapeHtml(it.title)}」‧ 請船務 🐳 確認後重送`
+    );
   });
 
   // ----- Modal: 新增聯絡人 -----
@@ -4309,11 +4360,49 @@
   const conversations = [
     {
       id:"g_bxd", type:"group", name:"BXD 業務團隊", emoji:"💼",
+      // GM + 業務指揮鏈;業助/船務不在此群(業務內部討論)
       members:["kai","june","sunny","stanley","kate","keira"],
       unread:0,
       messages:[],
     },
+    {
+      id:"g_assist", type:"group", name:"業助協作群", emoji:"🐰",
+      // 業務鏈 + 業助;GM 旁觀
+      members:["kai","june","sunny","stanley","kate","keira","lily","mia"],
+      unread:0,
+      messages:[],
+    },
+    {
+      id:"g_ship", type:"group", name:"船務協作群", emoji:"🐳",
+      // 業務鏈 + 業助 + 船務;GM 旁觀
+      members:["kai","june","sunny","stanley","kate","keira","lily","mia","marco"],
+      unread:0,
+      messages:[],
+    },
   ];
+
+  // 系統訊息推送:任務派發 / 船務事件 / EDI 通知會自動進相應群組
+  function pushSystemMessage(convId, sysTag, text){
+    const c = conversations.find(x=>x.id===convId);
+    if(!c) return;
+    c.messages.push({
+      by: "_system",
+      sysTag: sysTag,   // "TASK" | "SHIP" | "EDI"
+      text: text,
+      at: nowStr(),
+      sys: true,
+    });
+    // 對所有非觸發者的群成員 +1 未讀
+    if (currentConvId !== convId) {
+      c.unread = (c.unread || 0) + 1;
+    }
+    // 若使用者開著 chat 而且就在這個對話,直接渲染
+    if (currentConvId === convId) {
+      renderMessages();
+    }
+    renderConvList();
+    updateChatBadge();
+  }
 
   let currentConvId = "g_bxd";
   let currentUserKey = "june"; // 預設業務經理；applyPersona 會同步更新
@@ -4331,9 +4420,13 @@
   const msgInput    = $("msgInput");
   const msgSendBtn  = $("msgSendBtn");
 
-  // 取得對方資料（過濾掉自己，DM 不顯示自己跟自己）
+  // 取得對方資料(過濾掉自己,DM 不顯示自己跟自己;群組需為成員才可見)
   function visibleConvs(){
-    return conversations.filter(c => !(c.type==="dm" && c.with===currentUserKey));
+    return conversations.filter(c => {
+      if (c.type==="dm") return c.with !== currentUserKey;
+      // 群組:必須是成員
+      return (c.members||[]).includes(currentUserKey);
+    });
   }
 
   function lastMsg(c){
@@ -4417,6 +4510,22 @@
 
     messagesBox.innerHTML = '<div class="day-divider">今天</div>';
     c.messages.forEach(m=>{
+      // 系統訊息(任務派發、船務事件、EDI 推送)
+      // m.text 由 pushSystemMessage 的呼叫端組合,已對使用者輸入做 escapeHtml,
+      // 允許保留 emoji 與 <strong> 等簡單格式
+      if (m.sys) {
+        const sysWrap = document.createElement("div");
+        sysWrap.className = "msg system";
+        const tagMap = { TASK:"📋 任務", SHIP:"🚢 船務", EDI:"🛃 EDI" };
+        sysWrap.innerHTML = `
+          <div class="sys-bubble">
+            <span class="sys-tag">${tagMap[m.sysTag] || "系統"}</span>${m.text}
+          </div>
+          <div class="time">${m.at}</div>
+        `;
+        messagesBox.appendChild(sysWrap);
+        return;
+      }
       const isMe = m.by === currentUserKey;
       const author = personas[m.by];
       const wrap = document.createElement("div");
@@ -4483,9 +4592,19 @@
   applyPersona = function(key){
     origApplyPersona(key);
     currentUserKey = key;
-    // 預設停 BXD 群組；若當前對話是與自己的 DM 則切回群組
+    // 切換身分時:若當前對話不可見(非該角色的群組成員、或自己對自己 DM),
+    // 自動切到該角色首個可見群組
     const cur = conversations.find(c=>c.id===currentConvId);
-    if(!cur || (cur.type==="dm" && cur.with===key)) currentConvId = "g_bxd";
+    const stillVisible = cur && (
+      cur.type==="dm" ? cur.with !== key
+                      : (cur.members||[]).includes(key)
+    );
+    if(!stillVisible) {
+      const firstVisible = conversations.find(c =>
+        c.type==="group" && (c.members||[]).includes(key)
+      );
+      currentConvId = firstVisible ? firstVisible.id : "g_bxd";
+    }
     renderConvList();
     selectConv(currentConvId);
     updateChatBadge();
