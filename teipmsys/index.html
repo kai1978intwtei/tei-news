@@ -574,34 +574,6 @@
 #tutorial-card .t-btn.ghost   { background:transparent; color:#6b6b66; border-color:#d8cdb6; }
 #tutorial-card .t-btn:disabled { opacity:.4; cursor:not-allowed; }
 
-/* ===== ProjFlow 同步按鈕（右上常駐） ===== */
-#pf-sync-btn { display:none; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:#5a3a1a; color:#fffaf2; font-size:12px; font-weight:600; box-shadow:0 3px 10px rgba(90,58,26,.18); cursor:pointer; border:none; white-space:nowrap; }
-#pf-sync-btn.show { display:inline-flex; }
-#pf-sync-btn:hover { background:#704626; }
-#pf-sync-btn .pulse { width:8px; height:8px; border-radius:50%; background:#ffb84a; box-shadow:0 0 0 0 rgba(255,184,74,.7); animation: pfpulse 1.6s infinite; }
-@keyframes pfpulse { 0%{ box-shadow:0 0 0 0 rgba(255,184,74,.7);} 70%{ box-shadow:0 0 0 12px rgba(255,184,74,0);} 100%{ box-shadow:0 0 0 0 rgba(255,184,74,0);} }
-
-/* ===== ProjFlow 同步小提醒（右下浮窗） ===== */
-#pf-sync-toast { position:fixed; bottom:18px; right:18px; z-index:54; max-width:300px; background:#fffaf2; border:1px solid #e6dfd1; border-left:3px solid #c47a3a; border-radius:10px; padding:12px 14px; box-shadow:0 8px 24px rgba(0,0,0,.12); display:none; font-size:13px; color:#2c2c28; }
-#pf-sync-toast.show { display:block; }
-#pf-sync-toast .pf-t-title { font-weight:700; margin-bottom:4px; color:#5a3a1a; }
-#pf-sync-toast .pf-t-body  { font-size:12px; color:#5b574d; line-height:1.5; margin-bottom:10px; }
-#pf-sync-toast .pf-t-actions { display:flex; gap:8px; }
-#pf-sync-toast button { font-size:11.5px; padding:5px 10px; border-radius:6px; border:1px solid #d8cdb6; background:transparent; cursor:pointer; color:#5a3a1a; font-weight:600; }
-#pf-sync-toast button.primary { background:#5a3a1a; color:#fffaf2; border-color:#5a3a1a; }
-
-/* ===== 同步清單 modal ===== */
-#pf-sync-modal { position:fixed; inset:0; z-index:70; display:none; align-items:center; justify-content:center; background:rgba(31,31,28,.45); backdrop-filter:blur(4px); padding:24px; }
-#pf-sync-modal.show { display:flex; }
-#pf-sync-modal .pf-card { background:#fffaf2; border-radius:14px; max-width:640px; width:100%; max-height:88vh; overflow-y:auto; padding:24px 26px; border:1px solid #e6dfd1; }
-#pf-sync-modal h3 { font-family: ui-serif, Georgia, serif; font-size:20px; font-weight:700; color:#1f1f1c; margin:0 0 6px; }
-#pf-sync-modal .pf-sub { font-size:12.5px; color:#7a6a52; margin-bottom:14px; }
-#pf-sync-modal ul { font-size:13px; line-height:1.65; color:#2c2c28; padding-left:18px; margin:0 0 16px; }
-#pf-sync-modal ul li { margin-bottom:6px; }
-#pf-sync-modal code { background:#f1eadd; padding:1px 5px; border-radius:4px; font-size:12px; color:#5a3a1a; }
-#pf-sync-modal .pf-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; }
-#pf-sync-modal .pf-actions button { padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid #d8cdb6; background:transparent; color:#5a3a1a; }
-#pf-sync-modal .pf-actions button.primary { background:#1f1f1c; color:#fffaf2; border-color:#1f1f1c; }
 </style>
 </head>
 <body>
@@ -758,11 +730,6 @@
             <span id="bell-badge" class="absolute -top-0.5 -right-0.5 mono text-[9px] font-bold px-1 rounded-full hidden"
                   style="background: var(--caramel); color: white; min-width: 16px; height: 16px; line-height: 16px; text-align: center;"></span>
           </button>
-          <!-- 同步更新到 ProjFlow（注入頂部工具列，與翻頁鈕並列）-->
-          <button id="pf-sync-btn" onclick="projflowSync.openModal()" title="查看 PMSYS 變更需在 ProjFlow 對齊的清單">
-            <span class="pulse"></span>
-            <span>同步更新到 ProjFlow</span>
-          </button>
           <!-- 一秒翻頁跳轉 ProjFlow（同窗、不另開分頁） -->
           <button onclick="flipToProjFlow()"
                   class="btn-gold" title="翻頁跳轉到您的 ProjFlow 帳號">
@@ -802,28 +769,6 @@
         <button class="t-btn ghost" id="tutorial-prev" onclick="tutorialPrev()">上一步</button>
         <button class="t-btn primary" id="tutorial-next" onclick="tutorialNext()">下一步</button>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============== ProjFlow 同步：提醒浮窗 + 清單 modal（按鈕注入在頂部工具列） ============== -->
-<div id="pf-sync-toast" role="status" aria-live="polite">
-  <div class="pf-t-title">提醒：更新資訊</div>
-  <div class="pf-t-body">PMSYS 這邊有設定變更，記得到 ProjFlow 對齊一次，避免資料同步混亂。</div>
-  <div class="pf-t-actions">
-    <button class="primary" onclick="projflowSync.openModal()">查看同步清單</button>
-    <button onclick="projflowSync.snooze()">稍後再提醒</button>
-  </div>
-</div>
-
-<div id="pf-sync-modal" role="dialog" aria-modal="true">
-  <div class="pf-card">
-    <h3>同步更新到 ProjFlow</h3>
-    <div class="pf-sub">ProjFlow 是獨立部署的另一個系統；以下變更**需要由你在 ProjFlow 後台對應更新**，PMSYS 無法自動推播。</div>
-    <div id="pf-sync-list"></div>
-    <div class="pf-actions">
-      <button onclick="projflowSync.closeModal()">關閉</button>
-      <button class="primary" onclick="projflowSync.openProjFlow()">在 ProjFlow 中開啟並帶提示</button>
     </div>
   </div>
 </div>
@@ -1096,8 +1041,6 @@ function login(userId) {
   updateBellBadge();
   // 閒置 60 分鐘自動登出
   idleManager.start();
-  // ProjFlow 同步按鈕與提醒
-  projflowSync.mount();
   // 首次登入強制走教學引導
   if (!hasSeenTutorial(currentUser.id)) startTutorial({ forced: true });
 }
@@ -1116,7 +1059,6 @@ function updateBellBadge() {
 
 function logout(reason) {
   idleManager.stop();
-  projflowSync.unmount();
   closeTutorial();
   currentUser = null;
   pendingUser = null;
@@ -3672,85 +3614,6 @@ function tutorialNext() {
   closeTutorial();
 }
 
-/* ============================================================
-   ProjFlow 同步：常駐按鈕 + 浮窗提醒 + 清單 modal
-   ------------------------------------------------------------
-   原型階段 PMSYS 無法直接推資料給 ProjFlow（兩個獨立部署）。
-   改用「使用者主動同步」：常駐按鈕讓他隨時手動跳過去；30 分鐘提醒一次。
-   ============================================================ */
-const PF_SYNC_REMINDER_MS = 30 * 60 * 1000;
-const projflowSync = (() => {
-  let reminderT = null, mounted = false, snoozedUntil = 0;
-  function scheduleReminder(ms) {
-    if (reminderT) clearTimeout(reminderT);
-    reminderT = setTimeout(() => maybeShowReminder(), ms);
-  }
-  function maybeShowReminder(text) {
-    if (!mounted) return;
-    if (Date.now() < snoozedUntil) { scheduleReminder(PF_SYNC_REMINDER_MS); return; }
-    const toast = document.getElementById('pf-sync-toast');
-    if (text) toast.querySelector('.pf-t-body').textContent = text;
-    toast.classList.add('show');
-  }
-  function hideReminder() { document.getElementById('pf-sync-toast').classList.remove('show'); }
-  function snooze() { snoozedUntil = Date.now() + PF_SYNC_REMINDER_MS; hideReminder(); scheduleReminder(PF_SYNC_REMINDER_MS); }
-  function mount() {
-    // 只有 admin（總經理）看得到——這是給接 ProjFlow 的工程師對齊規格用的工具，
-    // 不是給 PM 日常用的。PM 視角全程隱藏，避免技術規格干擾工作流程。
-    if (currentUser?.role !== 'admin') { unmount(); return; }
-    if (mounted) return;
-    mounted = true;
-    document.getElementById('pf-sync-btn').classList.add('show');
-    setTimeout(() => maybeShowReminder('登入後檢查：是否有 PMSYS 設定變更待同步到 ProjFlow？'), 4000);
-    scheduleReminder(PF_SYNC_REMINDER_MS);
-  }
-  function unmount() {
-    if (!mounted) return;
-    mounted = false;
-    document.getElementById('pf-sync-btn').classList.remove('show');
-    hideReminder();
-    if (reminderT) clearTimeout(reminderT);
-  }
-  function openModal() {
-    hideReminder();
-    const pmsysUrl = location.origin + location.pathname;
-    const isFileProto = location.protocol === 'file:';
-    const rolesText = PMSYS_ALLOWED_ROLES.map(r => `'${r}'`).join(', ');
-    const fileWarn = isFileProto
-      ? `<div style="background:#fde8d7;border:1px solid #e6b88a;color:#7a3a1a;padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.55;margin-bottom:12px;">
-           <strong>⚠ 架構警告</strong>：PMSYS 目前跑在 <code>file://</code>（本機檔案）。瀏覽器安全機制會<strong>阻擋 https 網站（ProjFlow）跳轉到 file:// 路徑</strong>——所以「ProjFlow → PMSYS」回跳<u>無法運作</u>。請把 PMSYS 部署到公開 URL（Vercel / GitHub Pages 等）後，再做雙向 SSO 交握。
-         </div>` : '';
-    document.getElementById('pf-sync-list').innerHTML = `
-      ${fileWarn}
-      <div style="background:#f1eadd;padding:10px 12px;border-radius:8px;font-size:12.5px;margin-bottom:14px;">
-        <div style="font-weight:700;color:#5a3a1a;margin-bottom:4px;">ProjFlow 端跳回 PMSYS 必須用這個完整 URL：</div>
-        <code style="word-break:break-all;">${pmsysUrl}</code>
-        <div style="color:#7a3a1a;margin-top:6px;">⚠ 不可用相對路徑 <code>/pmsys?...</code>——會落在 ProjFlow 自己的網域，造成 404。</div>
-      </div>
-      <ul>
-        <li><strong>英文名稱呼欄</strong>：ProjFlow profiles 表新增 <code>en_name</code> 欄；UI 稱呼使用者時 <code>en_name</code> 優先、無則 fallback 中文 <code>name</code>。</li>
-        <li><strong>PM 角色允許清單</strong>：登入閘只放行 <code>role ∈ {${rolesText}}</code>，須與 PMSYS 完全一致（避免資料同步混亂）。</li>
-        <li><strong>閒置自動登出</strong>：60 分鐘無操作自動登出，55 分鐘出 5 分鐘預告。</li>
-        <li><strong>首次教學引導</strong>：ProjFlow 也需走一次首次引導；若 SSO 帶 <code>?tutorialDone=1</code>，視為已學過、跳過。</li>
-        <li><strong>訊息中心 · 聊天名單</strong>：兩種分組必須與 PMSYS 一致——<br>
-          · <strong>按部</strong>：DEPTS 中 <code>parent</code> 為空的頂層部（dev / sales / exec ...），列出該部及其所有後代課的成員<br>
-          · <strong>按課</strong>：DEPTS 中有 <code>parent</code> 的課/中心（spe / pmo / pur / hr / fin / adm ...）<br>
-          · 排除目前使用者本人與 <code>role==='admin'</code>。名單來源以 ProjFlow profiles 表為唯一真實來源。</li>
-        <li><strong>SSO URL 契約</strong>：
-          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/dashboard?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
-          <br>ProjFlow → PMSYS：<code>${pmsysUrl}?from=projflow&u=&lt;id&gt;&email=&lt;email&gt;&tutorialDone=&lt;0|1&gt;</code>
-        </li>
-        <li><strong>聊天 deep-link（訊息對映關鍵）</strong>：在 SSO URL 上額外加 <code>&chat=&lt;對象 user id&gt;</code>，ProjFlow 收到後須直接開啟與該對象的對話視窗，這樣 PMSYS 聊天名單裡的對象才能對上 ProjFlow 同一條訊息串。<br>
-          每則訊息應有 <code>crossId</code>（跨系統穩定 ID），三系統用同一個 ID 才能確保已讀狀態、回覆、@提及在 PMSYS / ProjFlow / RTM 三邊一致。</li>
-        <li><strong>正式版</strong>：上線後改用 Supabase JWT，URL 明碼參數僅原型階段使用。</li>
-      </ul>
-    `;
-    document.getElementById('pf-sync-modal').classList.add('show');
-  }
-  function closeModal() { document.getElementById('pf-sync-modal').classList.remove('show'); }
-  function openProjFlow() { closeModal(); flipToProjFlow(); }
-  return { mount, unmount, openModal, closeModal, openProjFlow, snooze, maybeShowReminder };
-})();
 
 // SSO 交握（反向）：從 ProjFlow 翻頁回來時，若已帶身份就直接進工作檯，不再走 OTP
 // ProjFlow 端跳轉網址需帶：?from=projflow&u=<id>（或 &email=<email>）；帶 tutorialDone=1 表示已學過引導
