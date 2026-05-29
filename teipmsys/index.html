@@ -994,7 +994,8 @@ function displayName(u) {
 }
 
 /* PMSYS 角色允許清單 — 須與 ProjFlow profiles.role 允許清單嚴格一致，避免資料同步混亂 */
-const PMSYS_ALLOWED_ROLES = ['pm', 'pmo'];
+/* admin 為總經理全權限角色，可在 PMSYS / ProjFlow / RTM 之間來去自由 */
+const PMSYS_ALLOWED_ROLES = ['pm', 'pmo', 'admin'];
 function isAuthorizedForPMSYS(u) { return !!u && PMSYS_ALLOWED_ROLES.includes(u.role); }
 
 /* ============================================================
