@@ -3612,6 +3612,9 @@ const projflowSync = (() => {
   function hideReminder() { document.getElementById('pf-sync-toast').classList.remove('show'); }
   function snooze() { snoozedUntil = Date.now() + PF_SYNC_REMINDER_MS; hideReminder(); scheduleReminder(PF_SYNC_REMINDER_MS); }
   function mount() {
+    // 只有 admin（總經理）看得到——這是給接 ProjFlow 的工程師對齊規格用的工具，
+    // 不是給 PM 日常用的。PM 視角全程隱藏，避免技術規格干擾工作流程。
+    if (currentUser?.role !== 'admin') { unmount(); return; }
     if (mounted) return;
     mounted = true;
     document.getElementById('pf-sync-btn').classList.add('show');
