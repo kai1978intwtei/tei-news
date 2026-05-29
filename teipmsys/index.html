@@ -3087,6 +3087,7 @@ function renderChatRoster() {
 function openChatWith(userId) {
   const u = USERS.find(x => x.id === userId);
   if (!u) return;
+  // 1) PMSYS 已有此人的訊息 → 直接打開
   const existing = MESSAGES.find(m => m.from === userId);
   if (existing) {
     activeMessageId = existing.id;
@@ -3094,7 +3095,20 @@ function openChatWith(userId) {
     renderMessages();
     return;
   }
-  alert(`與 ${displayName(u)}（${u.title || ''}）的對話\n\n原型階段：尚未匯入此對象的對話紀錄。\n正式版接 ProjFlow Supabase 後，所有跨系統訊息會即時同步。`);
+  // 2) 尚無紀錄 → 詢問是否到 ProjFlow 開啟同一對話（帶身份 + chat=userId 過去）
+  const ok = confirm(`與 ${displayName(u)}（${u.title || ''}）尚無 PMSYS 對話紀錄。\n\n是否到 ProjFlow 開啟對話？\n（同窗導向、帶你的身份過去，ProjFlow 收到 ?chat=${u.id} 應開啟與該對象的聊天）`);
+  if (!ok) return;
+  const me = currentUser;
+  const qs = new URLSearchParams({
+    from: 'pmsys',
+    u: me.id,
+    email: me.email || '',
+    name: me.name || '',
+    enName: me.enName || '',
+    tutorialDone: hasSeenTutorial(me.id) ? '1' : '0',
+    chat: u.id
+  });
+  window.location.href = `https://pm-system-mauve.vercel.app/schedule?${qs.toString()}`;
 }
 
 function renderMessages() {
@@ -3596,9 +3610,11 @@ const projflowSync = (() => {
           · <strong>按課</strong>：DEPTS 中有 <code>parent</code> 的課/中心（spe / pmo / pur / hr / fin / adm ...）<br>
           · 排除目前使用者本人與 <code>role==='admin'</code>。名單來源以 ProjFlow profiles 表為唯一真實來源。</li>
         <li><strong>SSO URL 契約</strong>：
-          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/schedule/?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
+          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/schedule?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
           <br>ProjFlow → PMSYS：<code>${pmsysUrl}?from=projflow&u=&lt;id&gt;&email=&lt;email&gt;&tutorialDone=&lt;0|1&gt;</code>
         </li>
+        <li><strong>聊天 deep-link（訊息對映關鍵）</strong>：在 SSO URL 上額外加 <code>&chat=&lt;對象 user id&gt;</code>，ProjFlow 收到後須直接開啟與該對象的對話視窗，這樣 PMSYS 聊天名單裡的對象才能對上 ProjFlow 同一條訊息串。<br>
+          每則訊息應有 <code>crossId</code>（跨系統穩定 ID），三系統用同一個 ID 才能確保已讀狀態、回覆、@提及在 PMSYS / ProjFlow / RTM 三邊一致。</li>
         <li><strong>正式版</strong>：上線後改用 Supabase JWT，URL 明碼參數僅原型階段使用。</li>
       </ul>
     `;
