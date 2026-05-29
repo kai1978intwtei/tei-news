@@ -133,33 +133,34 @@
     50%      { opacity: .5; transform: scale(.85); }
   }
   /* RTM 用銅紅色系，與金色 ProjFlow 鈕並列、識別清楚 */
+  /* RTM 用淺綠色系，與金色 ProjFlow 鈕並列、識別清楚 */
   .btn-copper {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 8px;
     font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
-    color: #FFF4E6;
-    background: linear-gradient(135deg, #C47A3A 0%, #A85A3A 55%, #7A3A1A 100%);
-    border: 1px solid #6B2F14;
+    color: #1F3D14;
+    background: linear-gradient(135deg, #BFE5A8 0%, #8FCE6E 55%, #6BAF4C 100%);
+    border: 1px solid #4F8836;
     box-shadow:
-      0 1px 2px rgba(60,25,5,.3),
-      inset 0 1px 0 rgba(255,255,255,.22),
-      inset 0 -1px 0 rgba(60,25,5,.25);
+      0 1px 2px rgba(40,80,25,.25),
+      inset 0 1px 0 rgba(255,255,255,.5),
+      inset 0 -1px 0 rgba(40,80,25,.18);
     transition: transform .12s, box-shadow .15s, background .15s;
     white-space: nowrap;
   }
   .btn-copper:hover {
-    background: linear-gradient(135deg, #D88A48 0%, #BE6A44 55%, #8A4624 100%);
+    background: linear-gradient(135deg, #CFEEBA 0%, #A1DA82 55%, #7CBE5C 100%);
     box-shadow:
-      0 3px 10px rgba(120,50,20,.4),
-      inset 0 1px 0 rgba(255,255,255,.3),
-      inset 0 -1px 0 rgba(60,25,5,.25);
+      0 3px 10px rgba(80,140,50,.35),
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 -1px 0 rgba(40,80,25,.2);
     transform: translateY(-1px);
   }
   .btn-copper:active { transform: translateY(0); }
   .btn-copper .copper-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: #FFD4A6;
-    box-shadow: 0 0 6px rgba(255,212,166,.9);
+    background: #F4FFE6;
+    box-shadow: 0 0 6px rgba(244,255,230,.95);
     animation: gold-pulse 2s ease-in-out infinite;
   }
 
