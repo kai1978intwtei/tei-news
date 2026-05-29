@@ -7,6 +7,8 @@
 <!-- 預熱 ProjFlow 網域：使用者一進 PMSYS 就先做 DNS / TLS 握手，按翻書頁時不用再等 -->
 <link rel="dns-prefetch" href="https://pm-system-mauve.vercel.app">
 <link rel="preconnect" href="https://pm-system-mauve.vercel.app" crossorigin>
+<link rel="dns-prefetch" href="https://rtm-rtm-app-app.vercel.app">
+<link rel="preconnect" href="https://rtm-rtm-app-app.vercel.app" crossorigin>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232F5D50'/%3E%3Ctext x='32' y='24' font-family='Georgia,serif' font-size='11' font-weight='700' fill='%23ffffff' fill-opacity='0.72' text-anchor='middle' letter-spacing='1.2'%3ETEi%3C/text%3E%3Ctext x='32' y='49' font-family='Georgia,serif' font-size='20' font-weight='700' fill='white' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -129,6 +131,36 @@
   @keyframes gold-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50%      { opacity: .5; transform: scale(.85); }
+  }
+  /* RTM 用銅紅色系，與金色 ProjFlow 鈕並列、識別清楚 */
+  .btn-copper {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
+    color: #FFF4E6;
+    background: linear-gradient(135deg, #C47A3A 0%, #A85A3A 55%, #7A3A1A 100%);
+    border: 1px solid #6B2F14;
+    box-shadow:
+      0 1px 2px rgba(60,25,5,.3),
+      inset 0 1px 0 rgba(255,255,255,.22),
+      inset 0 -1px 0 rgba(60,25,5,.25);
+    transition: transform .12s, box-shadow .15s, background .15s;
+    white-space: nowrap;
+  }
+  .btn-copper:hover {
+    background: linear-gradient(135deg, #D88A48 0%, #BE6A44 55%, #8A4624 100%);
+    box-shadow:
+      0 3px 10px rgba(120,50,20,.4),
+      inset 0 1px 0 rgba(255,255,255,.3),
+      inset 0 -1px 0 rgba(60,25,5,.25);
+    transform: translateY(-1px);
+  }
+  .btn-copper:active { transform: translateY(0); }
+  .btn-copper .copper-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #FFD4A6;
+    box-shadow: 0 0 6px rgba(255,212,166,.9);
+    animation: gold-pulse 2s ease-in-out infinite;
   }
 
   /* ============= 真正的翻書頁動畫（從右往左翻，PMSYS→ProjFlow） ============= */
@@ -735,6 +767,13 @@
                   class="btn-gold" title="翻頁跳轉到您的 ProjFlow 帳號">
             <span class="gold-dot"></span>
             <span>翻頁去 ProjFlow</span>
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+          </button>
+          <!-- 翻頁去 RTM 製造管理系統 -->
+          <button onclick="flipToRTM()"
+                  class="btn-copper" title="翻頁跳轉到 TEi-RTM 製造管理系統">
+            <span class="copper-dot"></span>
+            <span>翻頁去 RTM</span>
             <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
           </button>
         </div>
@@ -3700,6 +3739,56 @@ function flipToProjFlow() {
   setTimeout(() => {
     const base = 'https://pm-system-mauve.vercel.app/schedule';
     // SSO 交握（正向）：帶完整身份 + 教學狀態過去，ProjFlow 認得就免再登入、不必再學一次教學
+    const u = currentUser || USERS.find(x => x.id === 'u100');
+    const qs = new URLSearchParams({
+      from: 'pmsys',
+      u: u?.id || '',
+      email: u?.email || '',
+      name: u?.name || '',
+      enName: u?.enName || '',
+      tutorialDone: (u && hasSeenTutorial(u.id)) ? '1' : '0'
+    });
+    window.location.href = `${base}?${qs.toString()}`;
+  }, 1000);
+}
+
+function flipToRTM() {
+  if (document.getElementById('flip-running')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'flip-running';
+  overlay.className = 'flip-overlay';
+  overlay.innerHTML = `
+    <div class="flip-overlay-shadow"></div>
+    <div class="flip-overlay-page">
+      <div class="flip-overlay-front">
+        <div class="flip-overlay-leaving">
+          <div class="lv-chip">
+            <div class="lv-tei">TEi</div>
+            <div class="lv-name">PMSYS</div>
+          </div>
+          <div class="lv-sub">正在翻頁前往 TEi-RTM…</div>
+        </div>
+      </div>
+      <div class="flip-overlay-back">
+        <div>
+          <div class="flip-overlay-brand">
+            <div class="brand-mark"><span class="brand-dot"></span>TEi-RTM</div>
+            <div class="brand-sub">製造 / 試模管理系統</div>
+          </div>
+          <div class="flip-overlay-runner-wrap">
+            <span class="flip-overlay-runner">🏃</span>
+            <div>
+              <div class="flip-overlay-runner-text">正在連接 TEi-RTM</div>
+              <div class="flip-overlay-runner-track"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    const base = 'https://rtm-rtm-app-app.vercel.app/index.html';
     const u = currentUser || USERS.find(x => x.id === 'u100');
     const qs = new URLSearchParams({
       from: 'pmsys',
