@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>TEi-PMSYS · 專案人員工作檯</title>
+<!-- 預熱 ProjFlow 網域：使用者一進 PMSYS 就先做 DNS / TLS 握手，按翻書頁時不用再等 -->
+<link rel="dns-prefetch" href="https://pm-system-mauve.vercel.app">
+<link rel="preconnect" href="https://pm-system-mauve.vercel.app" crossorigin>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232F5D50'/%3E%3Ctext x='32' y='24' font-family='Georgia,serif' font-size='11' font-weight='700' fill='%23ffffff' fill-opacity='0.72' text-anchor='middle' letter-spacing='1.2'%3ETEi%3C/text%3E%3Ctext x='32' y='49' font-family='Georgia,serif' font-size='20' font-weight='700' fill='white' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -3575,9 +3578,8 @@ function flipToProjFlow() {
     </div>
   `;
   document.body.appendChild(overlay);
-  // ✨ 動畫 2500ms,2200ms 才觸發 navigation(動畫已翻到 88%,主要視覺都看完了)
-  // 預留 300ms 給 Vercel 啟動,動畫結束的瞬間 ProjFlow 多半剛好可以接手
-  // 若 Vercel 載入快於 300ms,過渡仍流暢;若慢於 300ms,看到的是已翻好的「ProjFlow 落地頁 + 載入點」
+  // 動畫總長 2500ms，1000ms 觸發 navigation：靠 head 的 preconnect 預熱，
+  // 跳轉啟動瞬間網路已就緒，剩餘 1500ms 動畫期間 ProjFlow 通常已接手，過渡幾乎無斷層。
   setTimeout(() => {
     const base = 'https://pm-system-mauve.vercel.app/schedule';
     // SSO 交握（正向）：帶完整身份 + 教學狀態過去，ProjFlow 認得就免再登入、不必再學一次教學
@@ -3591,7 +3593,7 @@ function flipToProjFlow() {
       tutorialDone: (u && hasSeenTutorial(u.id)) ? '1' : '0'
     });
     window.location.href = `${base}?${qs.toString()}`;
-  }, 2200);
+  }, 1000);
 }
 </script>
 
