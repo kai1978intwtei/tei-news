@@ -3127,7 +3127,7 @@ function messageListRow(m) {
 function messageDetail(m) {
   const user = m.from ? USERS.find(u => u.id === m.from) : null;
   const project = m.project ? PROJECTS.find(p => p.id === m.project) : null;
-  const externalUrl = m.source === 'projflow' ? 'https://pm-system-mauve.vercel.app'
+  const externalUrl = m.source === 'projflow' ? 'https://pm-system-mauve.vercel.app/schedule'
                     : m.source === 'rtm'      ? 'https://rtm-rtm-app-app.vercel.app'
                     : null;
 
@@ -3492,7 +3492,7 @@ const projflowSync = (() => {
         <li><strong>閒置自動登出</strong>：60 分鐘無操作自動登出，55 分鐘出 5 分鐘預告。</li>
         <li><strong>首次教學引導</strong>：ProjFlow 也需走一次首次引導；若 SSO 帶 <code>?tutorialDone=1</code>，視為已學過、跳過。</li>
         <li><strong>SSO URL 契約</strong>：
-          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
+          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/schedule/?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
           <br>ProjFlow → PMSYS：<code>${pmsysUrl}?from=projflow&u=&lt;id&gt;&email=&lt;email&gt;&tutorialDone=&lt;0|1&gt;</code>
         </li>
         <li><strong>正式版</strong>：上線後改用 Supabase JWT，URL 明碼參數僅原型階段使用。</li>
@@ -3579,7 +3579,7 @@ function flipToProjFlow() {
   // 預留 300ms 給 Vercel 啟動,動畫結束的瞬間 ProjFlow 多半剛好可以接手
   // 若 Vercel 載入快於 300ms,過渡仍流暢;若慢於 300ms,看到的是已翻好的「ProjFlow 落地頁 + 載入點」
   setTimeout(() => {
-    const base = 'https://pm-system-mauve.vercel.app';
+    const base = 'https://pm-system-mauve.vercel.app/schedule';
     // SSO 交握（正向）：帶完整身份 + 教學狀態過去，ProjFlow 認得就免再登入、不必再學一次教學
     const u = currentUser || USERS.find(x => x.id === 'u100');
     const qs = new URLSearchParams({
