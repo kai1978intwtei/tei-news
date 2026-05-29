@@ -3003,6 +3003,100 @@ function unreadMessageCount() {
   return MESSAGES.filter(m => m.unread).length;
 }
 
+function renderChatRoster() {
+  const me = currentUser?.id;
+  const eligible = u => u && u.id !== me && u.role !== 'admin';
+
+  // 頂層部（在 DEPTS 中無 parent）
+  const topDepts = Object.keys(DEPTS).filter(k => !DEPTS[k].parent);
+  // 課 / 中心（在 DEPTS 中有 parent）
+  const sectionDepts = Object.keys(DEPTS).filter(k => DEPTS[k].parent);
+
+  // 部下所有人 = 直屬 + 所有後代課的成員（沿 parent 鏈遞迴）
+  const descendantsOf = (root) => {
+    const out = new Set([root]);
+    let added = true;
+    while (added) {
+      added = false;
+      Object.keys(DEPTS).forEach(k => {
+        if (DEPTS[k].parent && out.has(DEPTS[k].parent) && !out.has(k)) {
+          out.add(k); added = true;
+        }
+      });
+    }
+    return out;
+  };
+  const byDept = topDepts.map(deptKey => ({
+    deptInfo: DEPTS[deptKey],
+    members: USERS.filter(u => descendantsOf(deptKey).has(u.dept) && eligible(u))
+  })).filter(g => g.members.length > 0);
+
+  const bySection = sectionDepts.map(secKey => ({
+    deptInfo: DEPTS[secKey],
+    members: USERS.filter(u => u.dept === secKey && eligible(u))
+  })).filter(g => g.members.length > 0);
+
+  const pill = (u) => `
+    <button onclick="openChatWith('${u.id}')"
+            class="flex items-center gap-1.5 px-2 py-1 rounded-full transition hover:shadow-sm border"
+            style="background: white; border-color: var(--border);"
+            title="與 ${displayName(u)} 開始對話">
+      <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9.5px] font-semibold" style="background: var(--${DEPTS[u.dept]?.color || 'ink'});">${u.avatar}</span>
+      <span class="text-[11.5px] font-medium" style="color: var(--text);">${displayName(u)}</span>
+    </button>
+  `;
+
+  return `
+    <div class="paper p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="serif font-semibold text-[14px] flex items-center gap-2">
+          <i data-lucide="users-round" class="w-4 h-4"></i>聊天名單
+        </h3>
+        <div class="text-[11px] flex items-center gap-1.5" style="color: var(--text-3);">
+          <span class="sync-dot"></span>來源同步自 ProjFlow profiles · 點對象開啟對話
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按部門</div>
+          <div class="space-y-1.5">
+            ${byDept.map(g => `
+              <div class="flex items-start gap-3">
+                <div class="text-[11.5px] font-semibold w-24 flex-shrink-0 pt-1" style="color: var(--text-2);">${g.deptInfo.name}</div>
+                <div class="flex flex-wrap gap-1.5 flex-1">${g.members.map(pill).join('')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按課</div>
+          <div class="space-y-1.5">
+            ${bySection.map(g => `
+              <div class="flex items-start gap-3">
+                <div class="text-[11.5px] font-semibold w-24 flex-shrink-0 pt-1" style="color: var(--text-2);">${g.deptInfo.name}</div>
+                <div class="flex flex-wrap gap-1.5 flex-1">${g.members.map(pill).join('')}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openChatWith(userId) {
+  const u = USERS.find(x => x.id === userId);
+  if (!u) return;
+  const existing = MESSAGES.find(m => m.from === userId);
+  if (existing) {
+    activeMessageId = existing.id;
+    messageFilter = 'all';
+    renderMessages();
+    return;
+  }
+  alert(`與 ${displayName(u)}（${u.title || ''}）的對話\n\n原型階段：尚未匯入此對象的對話紀錄。\n正式版接 ProjFlow Supabase 後，所有跨系統訊息會即時同步。`);
+}
+
 function renderMessages() {
   setTitle('訊息中心', '與 ProjFlow 即時雙向同步');
 
@@ -3054,6 +3148,9 @@ function renderMessages() {
           <i data-lucide="check-check" class="w-3.5 h-3.5"></i>全部標為已讀
         </button>
       </div>
+
+      <!-- 聊天名單（同步自 ProjFlow profiles，分部 / 分課） -->
+      ${renderChatRoster()}
 
       <!-- 過濾 -->
       <div class="flex items-center gap-2 flex-wrap">
@@ -3494,6 +3591,10 @@ const projflowSync = (() => {
         <li><strong>PM 角色允許清單</strong>：登入閘只放行 <code>role ∈ {${rolesText}}</code>，須與 PMSYS 完全一致（避免資料同步混亂）。</li>
         <li><strong>閒置自動登出</strong>：60 分鐘無操作自動登出，55 分鐘出 5 分鐘預告。</li>
         <li><strong>首次教學引導</strong>：ProjFlow 也需走一次首次引導；若 SSO 帶 <code>?tutorialDone=1</code>，視為已學過、跳過。</li>
+        <li><strong>訊息中心 · 聊天名單</strong>：兩種分組必須與 PMSYS 一致——<br>
+          · <strong>按部</strong>：DEPTS 中 <code>parent</code> 為空的頂層部（dev / sales / exec ...），列出該部及其所有後代課的成員<br>
+          · <strong>按課</strong>：DEPTS 中有 <code>parent</code> 的課/中心（spe / pmo / pur / hr / fin / adm ...）<br>
+          · 排除目前使用者本人與 <code>role==='admin'</code>。名單來源以 ProjFlow profiles 表為唯一真實來源。</li>
         <li><strong>SSO URL 契約</strong>：
           <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/schedule/?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
           <br>ProjFlow → PMSYS：<code>${pmsysUrl}?from=projflow&u=&lt;id&gt;&email=&lt;email&gt;&tutorialDone=&lt;0|1&gt;</code>
