@@ -3364,7 +3364,7 @@ function messageListRow(m) {
 function messageDetail(m) {
   const user = m.from ? USERS.find(u => u.id === m.from) : null;
   const project = m.project ? PROJECTS.find(p => p.id === m.project) : null;
-  const externalUrl = m.source === 'projflow' ? 'https://pm-system-mauve.vercel.app/schedule'
+  const externalUrl = m.source === 'projflow' ? 'https://pm-system-mauve.vercel.app/dashboard'
                     : m.source === 'rtm'      ? 'https://rtm-rtm-app-app.vercel.app'
                     : null;
 
@@ -3737,7 +3737,7 @@ const projflowSync = (() => {
           · <strong>按課</strong>：DEPTS 中有 <code>parent</code> 的課/中心（spe / pmo / pur / hr / fin / adm ...）<br>
           · 排除目前使用者本人與 <code>role==='admin'</code>。名單來源以 ProjFlow profiles 表為唯一真實來源。</li>
         <li><strong>SSO URL 契約</strong>：
-          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/schedule?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
+          <br>PMSYS → ProjFlow：<code>https://pm-system-mauve.vercel.app/dashboard?from=pmsys&u=&lt;id&gt;&email=&lt;email&gt;&name=&lt;name&gt;&enName=&lt;enName&gt;&tutorialDone=&lt;0|1&gt;</code>
           <br>ProjFlow → PMSYS：<code>${pmsysUrl}?from=projflow&u=&lt;id&gt;&email=&lt;email&gt;&tutorialDone=&lt;0|1&gt;</code>
         </li>
         <li><strong>聊天 deep-link（訊息對映關鍵）</strong>：在 SSO URL 上額外加 <code>&chat=&lt;對象 user id&gt;</code>，ProjFlow 收到後須直接開啟與該對象的對話視窗，這樣 PMSYS 聊天名單裡的對象才能對上 ProjFlow 同一條訊息串。<br>
@@ -3825,7 +3825,7 @@ function flipToProjFlow() {
   // 動畫總長 2500ms，1000ms 觸發 navigation：靠 head 的 preconnect 預熱，
   // 跳轉啟動瞬間網路已就緒，剩餘 1500ms 動畫期間 ProjFlow 通常已接手，過渡幾乎無斷層。
   setTimeout(() => {
-    const base = 'https://pm-system-mauve.vercel.app/schedule';
+    const base = 'https://pm-system-mauve.vercel.app/dashboard';
     // SSO 交握（正向）：帶完整身份 + 教學狀態過去，ProjFlow 認得就免再登入、不必再學一次教學
     const u = currentUser || USERS.find(x => x.id === 'u100');
     const qs = new URLSearchParams({
