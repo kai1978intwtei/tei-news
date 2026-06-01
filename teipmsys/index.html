@@ -1113,8 +1113,11 @@ function login(userId) {
   updateBellBadge();
   // 閒置 60 分鐘自動登出
   idleManager.start();
-  // 背景載入 ProjFlow 真實員工名單（不阻塞 UI）
-  loadProjFlowRoster().catch(e => console.error('[ProjFlow] roster load failed:', e));
+  // 背景載入 ProjFlow 真實員工名單與群組（不阻塞 UI）
+  loadProjFlowRoster()
+    .then(() => loadMyGroups())
+    .then(() => { if (currentView === 'messages') renderMessages(); })
+    .catch(e => console.error('[ProjFlow] roster/groups load failed:', e));
   // 首次登入強制走教學引導
   if (!hasSeenTutorial(currentUser.id)) startTutorial({ forced: true });
 }
@@ -3345,6 +3348,33 @@ function renderChatRoster() {
           `).join('')}
         </div>
       </div>
+      <div class="pt-3 border-t" style="border-color: var(--border-soft);">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[11px] uppercase tracking-wider font-semibold" style="color: var(--caramel-hover);">▌ 群組</div>
+          <button onclick="openGroupCreator()" class="text-[11px] flex items-center gap-1 hover:underline" style="color: var(--ink);">
+            <i data-lucide="users-round" class="w-3 h-3"></i>建立群組
+          </button>
+        </div>
+        ${(myGroups && myGroups.length > 0) ? `
+          <div class="flex flex-wrap gap-1.5">
+            ${myGroups.map(g => {
+              const memberCount = g.memberIds.length;
+              return `
+                <button onclick="openGroupChat('${g.channel.id}')"
+                        class="flex items-center gap-1.5 px-2 py-1 rounded-full transition hover:shadow-sm border"
+                        style="background: white; border-color: var(--border);"
+                        title="${g.channel.name}（${memberCount} 名成員）">
+                  <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px]" style="background: var(--caramel-hover);"><i data-lucide="users" class="w-2.5 h-2.5"></i></span>
+                  <span class="text-[11.5px] font-medium" style="color: var(--text);">${(g.channel.name || '未命名').replace(/</g,'&lt;')}</span>
+                  <span class="text-[10px] mono" style="color: var(--text-3);">${memberCount}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        ` : `
+          <div class="text-[11.5px] py-3 text-center" style="color: var(--text-3);">尚未加入任何群組。點上方「建立群組」開始第一個。</div>
+        `}
+      </div>
     </div>
   `);
 }
@@ -3367,6 +3397,181 @@ let realChatReactSub = null;     // 訂閱 chat_message_reactions realtime
 let realChatReactPickerFor = null; // 哪則訊息正打開 emoji picker（message_id）
 
 const QUICK_EMOJIS = ['👍','❤️','😂','🎉','🙌','👀','🔥'];
+
+/* ============================================================
+   Stage 6：群組聊天 — chat_channels(kind='group') + chat_channel_members
+   ============================================================ */
+let realChatKind = 'dm';        // 'dm' | 'group'
+let realChatGroup = null;       // group mode 時的 channel 物件 {id, name, kind, created_by}
+let realChatGroupMemberIds = [];// group mode 時的所有成員 user_id
+let myGroups = [];              // 我加入的群組 [{channel, memberIds: []}]
+
+async function loadMyGroups() {
+  if (!sb) return;
+  const me = getMyProfile();
+  if (!me) { myGroups = []; return; }
+  // 我加入的所有頻道
+  const { data: memberships, error: e1 } = await sb.from('chat_channel_members')
+    .select('channel_id').eq('user_id', me.id);
+  if (e1) { console.warn('[group] load memberships failed:', e1); myGroups = []; return; }
+  const ids = (memberships || []).map(m => m.channel_id);
+  if (!ids.length) { myGroups = []; return; }
+  // 只挑群組類型的
+  const { data: channels, error: e2 } = await sb.from('chat_channels')
+    .select('id, name, kind, created_at, created_by')
+    .eq('kind', 'group').in('id', ids).order('updated_at', { ascending: false });
+  if (e2) { console.warn('[group] load channels failed:', e2); myGroups = []; return; }
+  // 抓所有群組的成員
+  const { data: allMembers } = await sb.from('chat_channel_members')
+    .select('channel_id, user_id').in('channel_id', (channels || []).map(c => c.id));
+  myGroups = (channels || []).map(c => ({
+    channel: c,
+    memberIds: (allMembers || []).filter(m => m.channel_id === c.id).map(m => m.user_id)
+  }));
+}
+
+async function createGroupChat(name, memberIds) {
+  const me = getMyProfile();
+  if (!me) { alert('請先選擇你的身份'); return null; }
+  if (!name?.trim()) { alert('請輸入群組名稱'); return null; }
+  const allMemberIds = [...new Set([me.id, ...memberIds])];
+  // 建立 channel
+  const { data: ch, error: e1 } = await sb.from('chat_channels')
+    .insert({ kind: 'group', name: name.trim(), created_by: me.id })
+    .select('id, name, kind, created_at, created_by').single();
+  if (e1) { alert('建立群組失敗：' + e1.message); return null; }
+  // 加 members
+  const memberRows = allMemberIds.map(uid => ({
+    channel_id: ch.id, user_id: uid,
+    role: uid === me.id ? 'owner' : 'member'
+  }));
+  const { error: e2 } = await sb.from('chat_channel_members').insert(memberRows);
+  if (e2) { console.warn('[group] add members partial failure:', e2); }
+  await loadMyGroups();
+  await openGroupChat(ch.id);
+  return ch;
+}
+
+async function openGroupChat(channelId) {
+  const me = getMyProfile();
+  if (!me) { me = await pickMyIdentity(); if (!me) return; }
+  // 拿 channel 資料
+  const { data: ch, error } = await sb.from('chat_channels')
+    .select('id, name, kind, created_at, created_by').eq('id', channelId).single();
+  if (error) { alert('讀取群組失敗：' + error.message); return; }
+  // 拿成員
+  const { data: members } = await sb.from('chat_channel_members')
+    .select('user_id').eq('channel_id', channelId);
+  realChatGroupMemberIds = (members || []).map(m => m.user_id);
+  // 拿歷史訊息
+  const { data: msgs, error: e2 } = await sb.from('chat_messages')
+    .select('id, channel_id, sender_id, body, created_at, reply_to_id')
+    .eq('channel_id', channelId)
+    .order('created_at', { ascending: true }).limit(200);
+  if (e2) { alert('讀取訊息失敗：' + e2.message); return; }
+
+  realChatActive = true;
+  realChatKind = 'group';
+  realChatMe = me;
+  realChatTarget = null;
+  realChatGroup = ch;
+  realChatChannelId = channelId;
+  realChatMessages = msgs || [];
+  realChatReplyingTo = null;
+  chatPartnerId = null;
+  activeMessageId = null;
+
+  await markChannelAsRead(channelId, me.id);
+  realChatPeerReadAt = null; // 群組不顯示單一對方已讀
+
+  // 訂閱訊息
+  if (realChatSub) { sb.removeChannel(realChatSub); realChatSub = null; }
+  realChatSub = sb.channel(`ch-${channelId}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'chat_messages',
+      filter: `channel_id=eq.${channelId}`
+    }, (payload) => {
+      if (!realChatMessages.find(m => m.id === payload.new.id)) {
+        realChatMessages.push(payload.new);
+        if (currentView === 'messages') renderMessages();
+        if (payload.new.sender_id !== realChatMe.id) {
+          markChannelAsRead(channelId, realChatMe.id);
+        }
+      }
+    }).subscribe();
+
+  // 訂閱反應
+  await loadReactions(realChatMessages.map(m => m.id));
+  if (realChatReactSub) { sb.removeChannel(realChatReactSub); realChatReactSub = null; }
+  realChatReactSub = sb.channel(`reacts-${channelId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_message_reactions' }, (payload) => {
+      const row = payload.new || payload.old;
+      if (!row) return;
+      if (!realChatMessages.find(m => m.id === row.message_id)) return;
+      if (payload.eventType === 'INSERT') {
+        if (!realChatReactions.find(r => r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji))
+          realChatReactions.push(row);
+      } else if (payload.eventType === 'DELETE') {
+        realChatReactions = realChatReactions.filter(r =>
+          !(r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji));
+      }
+      if (currentView === 'messages') renderMessages();
+    }).subscribe();
+
+  renderMessages();
+  setTimeout(() => {
+    const sc = document.getElementById('real-chat-thread-scroll');
+    if (sc) sc.scrollTop = sc.scrollHeight;
+    document.getElementById('real-chat-composer')?.focus();
+  }, 50);
+}
+
+function openGroupCreator() {
+  if (!allProfiles || !allProfiles.length) { alert('員工名單尚未載入'); return; }
+  const me = getMyProfile();
+  const candidates = allProfiles.filter(p => p.id !== me?.id);
+  let selected = new Set();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div style="background:#fffaf2;border:1px solid #e6dfd1;border-radius:14px;padding:22px 24px;max-width:560px;width:100%;max-height:84vh;display:flex;flex-direction:column;font-family:inherit;">
+      <h3 style="font-family:ui-serif,Georgia,serif;font-size:18px;font-weight:700;margin:0 0 4px;">建立群組</h3>
+      <p style="font-size:12px;color:#7a6a52;margin:0 0 14px;">給群組取個名字、勾選成員。建立後會自動把你加進去（owner）。</p>
+      <input id="group-name-input" type="text" placeholder="群組名稱（例如：碳纖維量產 PMO）" style="width:100%;padding:8px 10px;border:1px solid #d8cdb6;border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:12px;">
+      <div style="font-size:11px;color:#7a6a52;margin-bottom:6px;">選擇成員（<span id="group-selected-count">0</span> 人已選）</div>
+      <div id="group-member-list" style="flex:1;overflow-y:auto;border:1px solid #e6dfd1;border-radius:8px;background:white;max-height:340px;">
+        ${candidates.map(p => `
+          <label data-pid="${p.id}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f0e8d8;cursor:pointer;font-family:inherit;">
+            <input type="checkbox" value="${p.id}" style="width:14px;height:14px;cursor:pointer;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:${p.role==='admin'?'#7a5a1a':p.is_pm?'#c47a3a':'#2F5D50'};color:white;font-size:11px;font-weight:600;flex-shrink:0;">${(p.avatar && p.avatar.trim()) || (p.english_name||p.name||'?')[0]}</span>
+            <span style="flex:1;font-size:12.5px;"><strong>${p.english_name || p.name}</strong> <span style="color:#7a6a52;">${p.title || ''}</span></span>
+          </label>
+        `).join('')}
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+        <button id="group-cancel" style="padding:8px 16px;border-radius:8px;border:1px solid #d8cdb6;background:transparent;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#5a3a1a;">取消</button>
+        <button id="group-create" style="padding:8px 18px;border-radius:8px;border:none;background:#1f1f1c;color:#fffaf2;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">建立群組</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const countEl = overlay.querySelector('#group-selected-count');
+  overlay.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.onchange = () => {
+      if (cb.checked) selected.add(cb.value); else selected.delete(cb.value);
+      countEl.textContent = selected.size;
+    };
+  });
+  overlay.querySelector('#group-cancel').onclick = () => document.body.removeChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
+  overlay.querySelector('#group-create').onclick = async () => {
+    const name = overlay.querySelector('#group-name-input').value.trim();
+    if (!name) { alert('請輸入群組名稱'); return; }
+    if (selected.size === 0) { alert('至少選一個成員'); return; }
+    document.body.removeChild(overlay);
+    await createGroupChat(name, [...selected]);
+  };
+}
 
 async function loadReactions(messageIds) {
   if (!messageIds || !messageIds.length) { realChatReactions = []; return; }
@@ -3524,6 +3729,9 @@ async function openChatWithReal(profileId) {
   if (error) { alert('讀取訊息失敗：' + error.message); return; }
 
   realChatActive = true;
+  realChatKind = 'dm';
+  realChatGroup = null;
+  realChatGroupMemberIds = [];
   realChatMe = me;
   realChatTarget = target;
   realChatChannelId = channelId;
@@ -3605,6 +3813,9 @@ async function openChatWithReal(profileId) {
 
 function exitRealChat() {
   realChatActive = false;
+  realChatKind = 'dm';
+  realChatGroup = null;
+  realChatGroupMemberIds = [];
   realChatReplyingTo = null;
   realChatReactPickerFor = null;
   if (realChatSub)      { sb.removeChannel(realChatSub);      realChatSub = null; }
@@ -3646,11 +3857,18 @@ function realChatPanel() {
   const escape = (s) => (s || '').replace(/</g, '&lt;');
   const displayOf = (p) => p ? (p.english_name || p.name) : '（未知）';
 
+  const isGroupMode = realChatKind === 'group';
   const bubble = (m) => {
     const mine = m.sender_id === me.id;
     const msgTime = m.created_at ? new Date(m.created_at).getTime() : 0;
-    const read = mine && msgTime > 0 && peerReadAt >= msgTime;
-    const tick = mine ? `<span class="ml-1" style="color: ${read ? '#9be39b' : 'rgba(255,255,255,.55)'};">${read ? '✓✓' : '✓'}</span>` : '';
+    // 群組不顯示已讀回執（複雜度太高，下版做）
+    const read = mine && !isGroupMode && msgTime > 0 && peerReadAt >= msgTime;
+    const tick = (mine && !isGroupMode) ? `<span class="ml-1" style="color: ${read ? '#9be39b' : 'rgba(255,255,255,.55)'};">${read ? '✓✓' : '✓'}</span>` : '';
+    // 群組對方訊息：顯示寄件人名稱
+    const sender = senderOf(m.sender_id);
+    const senderNameBlock = (isGroupMode && !mine) ? `
+      <div class="text-[10.5px] font-semibold mb-0.5" style="color: var(--caramel-hover);">${escape(displayOf(sender))}</div>
+    ` : '';
     // 引用顯示
     let replyBlock = '';
     if (m.reply_to_id) {
@@ -3713,6 +3931,7 @@ function realChatPanel() {
           ${pickerPopup}
           <div class="px-3 py-2 rounded-lg text-[12.5px] leading-snug"
                style="background: ${mine ? 'var(--ink)' : 'var(--ink-soft)'}; color: ${mine ? 'white' : 'var(--text)'};">
+            ${senderNameBlock}
             ${replyBlock}
             <div style="white-space: pre-wrap; word-break: break-word;">${escape(m.body)}</div>
             <div class="text-[9.5px] mt-1 flex items-center ${mine ? 'justify-end opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">
@@ -3742,9 +3961,43 @@ function realChatPanel() {
     `;
   })() : '';
 
-  const targetDisplay = displayOf(target);
-  const targetInitial = (target.avatar && target.avatar.trim()) || targetDisplay[0] || '?';
+  const isGroup = realChatKind === 'group';
   const meDisplay = displayOf(me);
+
+  // Header 內容（DM vs Group）
+  let headerHTML;
+  if (isGroup) {
+    const grp = realChatGroup;
+    const memberProfiles = realChatGroupMemberIds.map(id => allProfiles?.find(p => p.id === id)).filter(Boolean);
+    const memberStack = memberProfiles.slice(0, 5).map((p, i) => `
+      <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold -ml-${i === 0 ? '0' : '2'}" style="background: var(--ink); border: 2px solid white;" title="${displayOf(p)}">${(p.avatar && p.avatar.trim()) || displayOf(p)[0]}</div>
+    `).join('');
+    headerHTML = `
+      <div class="flex items-center gap-2 flex-1 justify-end">
+        <div class="text-right">
+          <div class="text-[13px] font-semibold leading-tight">${escape(grp.name || '群組')}</div>
+          <div class="text-[10.5px]" style="color: var(--text-3);">${memberProfiles.length} 名成員 · 群組</div>
+        </div>
+        <div class="flex items-center">${memberStack}${memberProfiles.length > 5 ? `<span class="ml-1 text-[10px]" style="color: var(--text-3);">+${memberProfiles.length - 5}</span>` : ''}</div>
+      </div>
+    `;
+  } else {
+    const targetDisplay = displayOf(target);
+    const targetInitial = (target.avatar && target.avatar.trim()) || targetDisplay[0] || '?';
+    headerHTML = `
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold" style="background: var(--ink);">${targetInitial}</div>
+        <div class="text-right">
+          <div class="text-[13px] font-semibold leading-tight">${targetDisplay}</div>
+          <div class="text-[10.5px]" style="color: var(--text-3);">${target.title || ''}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const emptyText = isGroup
+    ? `送出第一則訊息開啟 <strong>${escape(realChatGroup?.name || '群組')}</strong> 的對話`
+    : `送出第一則訊息開啟與 ${displayOf(target)} 的對話`;
 
   return `
     <div class="flex flex-col h-full" style="min-height: 520px;">
@@ -3752,13 +4005,7 @@ function realChatPanel() {
         <button onclick="exitRealChat()" class="text-[11px] flex items-center gap-1 hover:underline" style="color: var(--text-3);">
           <i data-lucide="arrow-left" class="w-3 h-3"></i>返回收件匣
         </button>
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold" style="background: var(--ink);">${targetInitial}</div>
-          <div class="text-right">
-            <div class="text-[13px] font-semibold leading-tight">${targetDisplay}</div>
-            <div class="text-[10.5px]" style="color: var(--text-3);">${target.title || ''}</div>
-          </div>
-        </div>
+        ${headerHTML}
       </div>
       <div class="px-4 py-2 text-[10.5px] flex items-center justify-between" style="background: var(--ink-soft); color: var(--text-2); border-bottom: 1px solid var(--border-soft);">
         <span><span class="sync-dot"></span>即時連線 · 你以 <strong>${meDisplay}</strong> 身份 · 滑過訊息可回覆 ↩</span>
@@ -3769,7 +4016,7 @@ function realChatPanel() {
           <div class="text-center py-10 text-[12px]" style="color: var(--text-3);">
             <i data-lucide="message-circle" class="w-7 h-7 mx-auto mb-2 opacity-40"></i>
             <div>尚無對話紀錄</div>
-            <div class="text-[10.5px] mt-1">送出第一則訊息開啟與 ${targetDisplay} 的對話</div>
+            <div class="text-[10.5px] mt-1">${emptyText}</div>
           </div>
         ` : messages.map(bubble).join('')}
       </div>
