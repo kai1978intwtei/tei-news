@@ -1002,6 +1002,14 @@ if (sb) {
 const USERS = [
   { id: 'u100', name: '王耀裕', enName: 'Brad Wang', role: 'pm', dept: 'spe', title: '專案經理 · SPE課級主管', avatar: '裕', primary: true, email: 'yu.wang@tei.com' },
   { id: 'u1', name: '總經理', enName: '', role: 'admin', dept: 'exec', title: '後台維護', avatar: '管', email: 'admin@tei.com' },
+  // --- 原型展示用 demo 人員（正式版由 Supabase profiles 動態載入並覆蓋）---
+  { id: 'u101', name: '林佳穎', enName: 'Ariel Lin',   role: 'pm',    dept: 'pmo',   title: '專案經理 · PMO', avatar: '穎', email: 'ariel.lin@tei.com' },
+  { id: 'u102', name: '陳冠宇', enName: 'Kevin Chen',  role: 'pm',    dept: 'spe',   title: '專案經理 · SPE', avatar: '宇', email: 'kevin.chen@tei.com' },
+  { id: 'u103', name: '黃詩涵', enName: 'Sophie Huang',role: 'pm',    dept: 'pmo',   title: '專案經理 · PMO', avatar: '涵', email: 'sophie.huang@tei.com' },
+  { id: 'u200', name: '張博翔', enName: 'Marcus Chang',role: 'staff', dept: 'spe',   title: '複材工程師',     avatar: '翔', email: 'marcus.chang@tei.com' },
+  { id: 'u201', name: '李宛蓉', enName: 'Wendy Lee',   role: 'staff', dept: 'spe',   title: '製程工程師',     avatar: '蓉', email: 'wendy.lee@tei.com' },
+  { id: 'u202', name: '吳建德', enName: 'Derek Wu',    role: 'staff', dept: 'sales', title: '業務專員',       avatar: '德', email: 'derek.wu@tei.com' },
+  { id: 'u203', name: '周雅婷', enName: 'Tina Chou',   role: 'staff', dept: 'qa',    title: '品保工程師',     avatar: '婷', email: 'tina.chou@tei.com' },
 ];
 
 // 王耀裕統籌的專案 — 跨三個系統來源（pmsys 主場 + RTM 統整 + ProjFlow 通用）
@@ -1011,8 +1019,17 @@ const USERS = [
 //   .by         哪位同仁改的（顯示為相對來源系統的使用者）
 //   .when       人話時間（mock；正式版用 lastEdit.updated_at 計算）
 //   .field      改了哪個欄位（顯示給 PMO 知道誰動了什麼）
-// PROJECTS 已清空，待從 Supabase 對應表載入真實資料
-const PROJECTS = [];
+// PROJECTS — 原型展示用 demo 資料（正式版從 Supabase 對應表載入真實資料）
+const PROJECTS = [
+  { id:'p1', code:'PF-2601', name:'友達 Mini-LED 背板碳纖支架', pm:'u100', members:['u100','u200','u201'], source:'pmsys',    status:'on-track', progress:62,  client:'友達光電', start:'2026-03-10', end:'2026-07-30', lastEdit:{ source:'pmsys',    by:'王耀裕（PMSYS）',   when:'2 小時前', field:'進度 58% → 62%' } },
+  { id:'p2', code:'PF-2602', name:'台達電 EV 電控碳纖外殼',     pm:'u100', members:['u100','u201','u202'], source:'projflow', status:'at-risk',  progress:34,  client:'台達電子', start:'2026-04-01', end:'2026-08-15', extRef:'ProjFlow 通用案 P-2606', lastEdit:{ source:'projflow', by:'業務 A（ProjFlow）', when:'3 小時前', field:'交期 8/15 → 8/22' } },
+  { id:'p3', code:'PF-2603', name:'工研院 碳纖回收製程驗證',     pm:'u100', members:['u100','u203'],        source:'rtm',      status:'on-track', progress:78,  client:'工研院',   start:'2026-03-01', end:'2026-06-30', extRef:'RTM SOP-12', lastEdit:{ source:'rtm',      by:'製程 A（RTM）',     when:'1 天前',  field:'良率 84% → 87%' } },
+  { id:'p4', code:'PF-2604', name:'台灣高鐵 內裝複材輕量化',     pm:'u100', members:['u100','u200'],        source:'pmsys',    status:'on-track', progress:45,  client:'台灣高鐵', start:'2026-04-20', end:'2026-09-10', lastEdit:{ source:'pmsys',    by:'王耀裕（PMSYS）',   when:'昨天',    field:'新增里程碑：防火認證' } },
+  { id:'p5', code:'PF-2605', name:'巨大機械 自行車碳纖車架 Q3', pm:'u101', members:['u101','u200','u201'], source:'pmsys',    status:'at-risk',  progress:28,  client:'巨大機械', start:'2026-04-05', end:'2026-08-30', lastEdit:{ source:'pmsys',    by:'林佳穎（PMSYS）',   when:'4 小時前', field:'試模延後' } },
+  { id:'p6', code:'PF-2606', name:'中鋼 風電葉片碳梁',           pm:'u102', members:['u102','u202'],        source:'projflow', status:'on-track', progress:55,  client:'中鋼集團', start:'2026-03-15', end:'2026-07-20', lastEdit:{ source:'projflow', by:'業務 B（ProjFlow）', when:'2 天前',  field:'大樑成型參數' } },
+  { id:'p7', code:'PF-2607', name:'漢翔 航太結構件認證',         pm:'u103', members:['u103','u203'],        source:'pmsys',    status:'on-track', progress:70,  client:'漢翔航空', start:'2026-03-05', end:'2026-06-25', lastEdit:{ source:'pmsys',    by:'黃詩涵（PMSYS）',   when:'今早',    field:'認證文件送審' } },
+  { id:'p8', code:'PF-2608', name:'內部 Q2 PMO 流程優化',        pm:'u100', members:['u100','u101'],        source:'projflow', status:'done',     progress:100, client:'內部 · PMO', start:'2026-02-15', end:'2026-05-10', lastEdit:{ source:'projflow', by:'總經理（ProjFlow）', when:'上週',  field:'結案備註' } },
+];
 
 const today = new Date('2026-05-21');
 const d = (offset) => { const x = new Date(today); x.setDate(x.getDate() + offset); return x.toISOString().slice(0,10); };
@@ -1020,8 +1037,25 @@ const d = (offset) => { const x = new Date(today); x.setDate(x.getDate() + offse
 // 任務狀態 — 與 ProjFlow 對齊（5 種，雙向同步）
 // todo 待辦 / doing 進行中 / blocked 卡住 / overdue 延遲 / done 已完成
 // blockReason 僅在 status='blocked' 時填，會同步寫回 ProjFlow tasks.block_reason
-// TASKS 已清空，待從 Supabase 對應表載入真實資料
-const TASKS = [];
+// TASKS — 原型展示用 demo 資料（正式版從 Supabase 對應表載入真實資料）
+const TASKS = [
+  { id:'t1',  project:'p1', assignee:'u100', status:'doing',   due:'2026-05-22', priority:'high',   title:'友達背板 第二版打樣回廠檢測' },
+  { id:'t2',  project:'p1', assignee:'u200', status:'todo',    due:'2026-05-26', priority:'medium', title:'碳纖維鋪層角度模擬' },
+  { id:'t3',  project:'p1', assignee:'u201', status:'done',    due:'2026-05-12', priority:'low',    title:'CMM 量測報告彙整' },
+  { id:'t4',  project:'p2', assignee:'u100', status:'overdue', due:'2026-05-18', priority:'high',   title:'台達電控外殼 模具修改確認' },
+  { id:'t5',  project:'p2', assignee:'u201', status:'blocked', due:'2026-05-20', priority:'high',   title:'電控散熱孔位待客戶圖面', blockReason:'等台達提供最新 3D 圖面' },
+  { id:'t6',  project:'p2', assignee:'u202', status:'doing',   due:'2026-05-21', priority:'medium', title:'交期延後 對客戶說明簡報' },
+  { id:'t7',  project:'p3', assignee:'u100', status:'doing',   due:'2026-05-21', priority:'high',   title:'工研院 良率數據第三批送驗' },
+  { id:'t8',  project:'p3', assignee:'u203', status:'todo',    due:'2026-05-28', priority:'medium', title:'回收製程 SOP 文件更新' },
+  { id:'t9',  project:'p4', assignee:'u100', status:'todo',    due:'2026-05-25', priority:'medium', title:'高鐵內裝 防火法規查核' },
+  { id:'t10', project:'p4', assignee:'u200', status:'overdue', due:'2026-05-15', priority:'medium', title:'輕量化 結構強度初算' },
+  { id:'t11', project:'p8', assignee:'u100', status:'done',    due:'2026-05-08', priority:'low',    title:'PMO 流程文件結案' },
+  { id:'t12', project:'p8', assignee:'u101', status:'done',    due:'2026-05-09', priority:'low',    title:'流程優化成效簡報' },
+  { id:'t13', project:'p5', assignee:'u101', status:'overdue', due:'2026-05-17', priority:'high',   title:'巨大車架 第一版試模' },
+  { id:'t14', project:'p5', assignee:'u200', status:'doing',   due:'2026-05-23', priority:'medium', title:'車架接點疲勞測試' },
+  { id:'t15', project:'p6', assignee:'u102', status:'doing',   due:'2026-05-24', priority:'medium', title:'中鋼風電碳梁 大樑成型' },
+  { id:'t16', project:'p7', assignee:'u103', status:'todo',    due:'2026-05-27', priority:'high',   title:'漢翔航太件 認證文件送審' },
+];
 
 // 任務狀態元資料 — 5 種，跟 ProjFlow TaskStatus 對齊
 const TASK_STATUS_META = {
@@ -1035,11 +1069,24 @@ const TASK_STATUS_ORDER = ['todo','doing','blocked','overdue','done'];
 
 function statusMeta(s) { return TASK_STATUS_META[s] || TASK_STATUS_META.todo; }
 
-// SCHEDULE 已清空，待從 Supabase 對應表載入真實資料
-const SCHEDULE = [];
+// SCHEDULE — 原型展示用 demo 資料（正式版從 Supabase 對應表載入真實資料）
+const SCHEDULE = [
+  { id:'s1', owner:'u100', date:'2026-05-21', start:'09:30', title:'友達背板 進度同步會', project:'p1' },
+  { id:'s2', owner:'u100', date:'2026-05-21', start:'14:00', title:'台達電 交期協調會',   project:'p2' },
+  { id:'s3', owner:'u100', date:'2026-05-22', start:'10:00', title:'工研院 良率檢討',     project:'p3' },
+  { id:'s4', owner:'u100', date:'2026-05-23', start:'11:00', title:'PMO 週會',           project:null },
+  { id:'s5', owner:'u100', date:'2026-05-26', start:'16:00', title:'高鐵內裝 法規說明',   project:'p4' },
+  { id:'s6', owner:'u101', date:'2026-05-21', start:'15:30', title:'巨大車架 試模檢討',   project:'p5' },
+];
 
-// REPORTS 已清空，待從 Supabase 對應表載入真實資料
-const REPORTS = [];
+// REPORTS — 原型展示用 demo 資料（正式版從 Supabase 對應表載入真實資料）
+const REPORTS = [
+  { id:'r1', project:'p1', author:'u100', title:'友達 Mini-LED 背板 W20 週報',   pages:4,  updated:'2026-05-21', status:'draft'  },
+  { id:'r2', project:'p3', author:'u100', title:'工研院 碳纖回收 階段性成果報告', pages:8,  updated:'2026-05-20', status:'shared' },
+  { id:'r3', project:'p2', author:'u100', title:'台達電控外殼 風險檢討報告',       pages:6,  updated:'2026-05-18', status:'draft'  },
+  { id:'r4', project:'p8', author:'u100', title:'Q2 PMO 流程優化 結案報告',        pages:12, updated:'2026-05-10', status:'shared' },
+  { id:'r5', project:'p5', author:'u101', title:'巨大車架 Q3 啟動報告',            pages:5,  updated:'2026-05-19', status:'shared' },
+];
 
 // NOTIFICATIONS 已清空，待從 Supabase 對應表載入真實資料
 const NOTIFICATIONS = [];
@@ -1868,6 +1915,20 @@ function renderExecutive() {
           </div>
         </div>
       ` : ''}
+
+      <!-- 各 PM 績效（每位專案經理的專案數 / 逾期 / 平均進度 / 最新報告）-->
+      <div>
+        <div class="flex items-end justify-between mb-3 mt-1">
+          <div>
+            <h3 class="serif font-semibold text-[15px]">各專案經理績效</h3>
+            <p class="text-[12px]" style="color: var(--text-3);">專案數 · 逾期任務 · 平均進度 · 最新報告 — 點報告可直接閱讀</p>
+          </div>
+          <span class="text-[11px]" style="color: var(--text-3);">共 ${USERS.filter(u => u.role === 'pm').length} 位 PM</span>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${USERS.filter(u => u.role === 'pm').map(pmCardForExec).join('')}
+        </div>
+      </div>
     </div>
   `;
   lucide?.createIcons?.();
