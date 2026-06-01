@@ -3179,6 +3179,41 @@ let realChatTarget = null;
 let realChatChannelId = null;
 let realChatMessages = [];
 let realChatSub = null;
+let realChatReadsSub = null;     // 訂閱 chat_reads 變更（已讀回執 realtime）
+let realChatPeerReadAt = null;   // 對方上次讀到哪（ISO 時間）
+let realChatReplyingTo = null;   // 正在回覆哪則訊息（{id, body, sender_id}）
+
+async function markChannelAsRead(channelId, userId) {
+  if (!channelId || !userId) return;
+  const { error } = await sb.from('chat_reads').upsert({
+    channel_id: channelId,
+    user_id: userId,
+    last_read_at: new Date().toISOString()
+  }, { onConflict: 'channel_id,user_id' });
+  if (error) console.warn('[chat] mark read failed:', error);
+}
+
+async function loadPeerReadAt(channelId, peerId) {
+  const { data } = await sb.from('chat_reads')
+    .select('last_read_at')
+    .eq('channel_id', channelId)
+    .eq('user_id', peerId)
+    .maybeSingle();
+  return data?.last_read_at || null;
+}
+
+function setReply(messageId) {
+  const m = realChatMessages.find(x => x.id === messageId);
+  if (!m) return;
+  realChatReplyingTo = m;
+  renderMessages();
+  setTimeout(() => { document.getElementById('real-chat-composer')?.focus(); }, 30);
+}
+
+function cancelReply() {
+  realChatReplyingTo = null;
+  renderMessages();
+}
 
 function getMyProfile() {
   if (currentProfile) return currentProfile;
@@ -3260,9 +3295,9 @@ async function openChatWithReal(profileId) {
   const channelId = await findOrCreateDmChannel(me.id, target.id);
   if (!channelId) return;
 
-  // 讀歷史訊息
+  // 讀歷史訊息（含 reply_to_id 以支援引用顯示）
   const { data: msgs, error } = await sb.from('chat_messages')
-    .select('id, channel_id, sender_id, body, created_at')
+    .select('id, channel_id, sender_id, body, created_at, reply_to_id')
     .eq('channel_id', channelId)
     .order('created_at', { ascending: true })
     .limit(200);
@@ -3273,24 +3308,46 @@ async function openChatWithReal(profileId) {
   realChatTarget = target;
   realChatChannelId = channelId;
   realChatMessages = msgs || [];
+  realChatReplyingTo = null;
   chatPartnerId = null;       // 關掉 mock 模式
   activeMessageId = null;
+
+  // 標記我這邊為已讀 + 抓對方目前讀到哪
+  await markChannelAsRead(channelId, me.id);
+  realChatPeerReadAt = await loadPeerReadAt(channelId, target.id);
 
   // Realtime 訂閱新訊息
   if (realChatSub) { sb.removeChannel(realChatSub); realChatSub = null; }
   realChatSub = sb.channel(`ch-${channelId}`)
     .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'chat_messages',
+      event: 'INSERT', schema: 'public', table: 'chat_messages',
       filter: `channel_id=eq.${channelId}`
     }, (payload) => {
       if (!realChatMessages.find(m => m.id === payload.new.id)) {
         realChatMessages.push(payload.new);
         if (currentView === 'messages') renderMessages();
+        // 對方傳來的新訊息 → 自動標記為已讀
+        if (payload.new.sender_id !== realChatMe.id) {
+          markChannelAsRead(channelId, realChatMe.id);
+        }
       }
     })
-    .subscribe(status => console.log('[chat] realtime status:', status));
+    .subscribe(status => console.log('[chat] msgs realtime:', status));
+
+  // Realtime 訂閱對方的已讀回執變更
+  if (realChatReadsSub) { sb.removeChannel(realChatReadsSub); realChatReadsSub = null; }
+  realChatReadsSub = sb.channel(`reads-${channelId}`)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'chat_reads',
+      filter: `channel_id=eq.${channelId}`
+    }, (payload) => {
+      const row = payload.new || payload.old;
+      if (row?.user_id === realChatTarget.id) {
+        realChatPeerReadAt = row.last_read_at;
+        if (currentView === 'messages') renderMessages();
+      }
+    })
+    .subscribe(status => console.log('[chat] reads realtime:', status));
 
   renderMessages();
   setTimeout(() => {
@@ -3303,7 +3360,9 @@ async function openChatWithReal(profileId) {
 
 function exitRealChat() {
   realChatActive = false;
-  if (realChatSub) { sb.removeChannel(realChatSub); realChatSub = null; }
+  realChatReplyingTo = null;
+  if (realChatSub)      { sb.removeChannel(realChatSub);      realChatSub = null; }
+  if (realChatReadsSub) { sb.removeChannel(realChatReadsSub); realChatReadsSub = null; }
   renderMessages();
 }
 
@@ -3311,40 +3370,98 @@ async function sendRealChat() {
   const ta = document.getElementById('real-chat-composer');
   const text = (ta?.value || '').trim();
   if (!text || !realChatMe || !realChatChannelId) return;
-  const { error } = await sb.from('chat_messages').insert({
+  const payload = {
     channel_id: realChatChannelId,
     sender_id: realChatMe.id,
     body: text,
     is_urgent: false
-  });
+  };
+  if (realChatReplyingTo) payload.reply_to_id = realChatReplyingTo.id;
+  const { error } = await sb.from('chat_messages').insert(payload);
   if (error) { alert('送出失敗：' + error.message); return; }
+  realChatReplyingTo = null;
   if (ta) { ta.value = ''; ta.focus(); }
-  // realtime 會把新訊息回推進來
+  renderMessages(); // 立即重繪以清掉回覆 banner（realtime 也會推回新訊息）
 }
 
 function realChatPanel() {
   const me = realChatMe;
   const target = realChatTarget;
   const messages = realChatMessages;
+  const peerReadAt = realChatPeerReadAt ? new Date(realChatPeerReadAt).getTime() : 0;
+  const msgById = new Map(messages.map(m => [m.id, m]));
+  const senderOf = (id) => allProfiles?.find(p => p.id === id);
+
   const fmtTime = (iso) => {
     if (!iso) return '';
     try { return new Date(iso).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) { return ''; }
   };
+  const escape = (s) => (s || '').replace(/</g, '&lt;');
+  const displayOf = (p) => p ? (p.english_name || p.name) : '（未知）';
+
   const bubble = (m) => {
     const mine = m.sender_id === me.id;
+    const msgTime = m.created_at ? new Date(m.created_at).getTime() : 0;
+    const read = mine && msgTime > 0 && peerReadAt >= msgTime;
+    const tick = mine ? `<span class="ml-1" style="color: ${read ? '#9be39b' : 'rgba(255,255,255,.55)'};">${read ? '✓✓' : '✓'}</span>` : '';
+    // 引用顯示
+    let replyBlock = '';
+    if (m.reply_to_id) {
+      const parent = msgById.get(m.reply_to_id);
+      if (parent) {
+        const pSender = senderOf(parent.sender_id);
+        const previewText = (parent.body || '').slice(0, 80);
+        replyBlock = `
+          <div class="text-[10.5px] mb-1.5 pl-2 border-l-2 ${mine ? 'opacity-80' : ''}"
+               style="border-color: ${mine ? 'rgba(255,255,255,.4)' : 'var(--caramel)'}; ${mine ? 'color: rgba(255,255,255,.85);' : 'color: var(--text-3);'}">
+            <div class="font-semibold">↩ ${escape(displayOf(pSender))}</div>
+            <div style="white-space: pre-wrap; word-break: break-word;">${escape(previewText)}${parent.body && parent.body.length > 80 ? '…' : ''}</div>
+          </div>
+        `;
+      } else {
+        replyBlock = `<div class="text-[10.5px] mb-1.5 opacity-60 italic">↩ （引用訊息已不在範圍內）</div>`;
+      }
+    }
     return `
-      <div class="flex ${mine ? 'justify-end' : 'justify-start'}">
+      <div class="flex ${mine ? 'justify-end' : 'justify-start'} group">
+        ${mine ? '' : `
+          <button onclick="setReply('${m.id}')" class="self-end mb-3 mr-1.5 px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition" style="background: var(--bg-subtle); color: var(--text-3);" title="回覆">↩</button>
+        `}
         <div class="max-w-[75%] px-3 py-2 rounded-lg text-[12.5px] leading-snug"
              style="background: ${mine ? 'var(--ink)' : 'var(--ink-soft)'}; color: ${mine ? 'white' : 'var(--text)'};">
-          <div style="white-space: pre-wrap; word-break: break-word;">${(m.body || '').replace(/</g, '&lt;')}</div>
-          <div class="text-[9.5px] mt-1 ${mine ? 'opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">${fmtTime(m.created_at)}</div>
+          ${replyBlock}
+          <div style="white-space: pre-wrap; word-break: break-word;">${escape(m.body)}</div>
+          <div class="text-[9.5px] mt-1 flex items-center ${mine ? 'justify-end opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">
+            <span>${fmtTime(m.created_at)}</span>${tick}
+          </div>
         </div>
+        ${mine ? `
+          <button onclick="setReply('${m.id}')" class="self-end mb-3 ml-1.5 px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition" style="background: var(--bg-subtle); color: var(--text-3);" title="回覆">↩</button>
+        ` : ''}
       </div>
     `;
   };
-  const targetDisplay = target.english_name || target.name;
+
+  // 正在回覆中的 banner
+  const replyBanner = realChatReplyingTo ? (() => {
+    const parent = realChatReplyingTo;
+    const pSender = senderOf(parent.sender_id);
+    return `
+      <div class="px-4 py-2 flex items-start gap-2 border-t" style="border-color: var(--border-soft); background: var(--ink-soft);">
+        <i data-lucide="corner-up-left" class="w-3.5 h-3.5 mt-0.5" style="color: var(--text-3);"></i>
+        <div class="flex-1 min-w-0">
+          <div class="text-[10.5px] font-semibold" style="color: var(--ink);">回覆 ${escape(displayOf(pSender))}</div>
+          <div class="text-[11px] truncate" style="color: var(--text-3);">${escape((parent.body || '').slice(0, 100))}</div>
+        </div>
+        <button onclick="cancelReply()" class="text-[14px] leading-none px-1" style="color: var(--text-3);" title="取消回覆">×</button>
+      </div>
+    `;
+  })() : '';
+
+  const targetDisplay = displayOf(target);
   const targetInitial = (target.avatar && target.avatar.trim()) || targetDisplay[0] || '?';
-  const meDisplay = me.english_name || me.name;
+  const meDisplay = displayOf(me);
+
   return `
     <div class="flex flex-col h-full" style="min-height: 520px;">
       <div class="px-4 py-3 border-b flex items-center justify-between" style="border-color: var(--border-soft);">
@@ -3360,7 +3477,7 @@ function realChatPanel() {
         </div>
       </div>
       <div class="px-4 py-2 text-[10.5px] flex items-center justify-between" style="background: var(--ink-soft); color: var(--text-2); border-bottom: 1px solid var(--border-soft);">
-        <span><span class="sync-dot"></span>即時連線 ProjFlow chat_messages · 你以 <strong>${meDisplay}</strong> 身份</span>
+        <span><span class="sync-dot"></span>即時連線 · 你以 <strong>${meDisplay}</strong> 身份 · 滑過訊息可回覆 ↩</span>
         <button onclick="changeMyIdentity()" class="underline" style="color: var(--text-3);">換個身份</button>
       </div>
       <div id="real-chat-thread-scroll" class="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style="background: white;">
@@ -3372,8 +3489,9 @@ function realChatPanel() {
           </div>
         ` : messages.map(bubble).join('')}
       </div>
+      ${replyBanner}
       <div class="px-4 py-3 border-t flex gap-2 items-end" style="border-color: var(--border-soft); background: var(--paper);">
-        <textarea id="real-chat-composer" rows="2" placeholder="輸入訊息給 ${targetDisplay}… (Enter 送出 / Shift+Enter 換行)"
+        <textarea id="real-chat-composer" rows="2" placeholder="${realChatReplyingTo ? '回覆中… ' : ''}輸入訊息給 ${targetDisplay}… (Enter 送出 / Shift+Enter 換行)"
                   class="flex-1 text-[12.5px] resize-none rounded-md px-3 py-2 border"
                   style="border-color: var(--border); background: white;"
                   onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRealChat();}"></textarea>
