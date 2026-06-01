@@ -1077,20 +1077,22 @@ function isAuthorizedForPMSYS(u) { return !!u && PMSYS_ALLOWED_ROLES.includes(u.
    ============================================================ */
 
 function initLogin() {
-  // 預設快速進入：總經理（全權限）
+  // 預設快速進入：總經理 — 一鍵直接進，跳過 OTP
   const u = USERS.find(x => x.id === 'u1');
-  document.getElementById('demo-accounts').innerHTML = `
-    <button onclick="fillEmail('${u.email}')" class="col-span-2 text-left p-3 rounded-md border hover:bg-stone-50 transition flex items-center gap-3" style="border-color: var(--border);">
-      <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-[13px] flex-shrink-0" style="background: var(--ink);">${u.avatar}</div>
+  const el = document.getElementById('demo-accounts');
+  if (!el) return;
+  if (!u) { el.innerHTML = '<div class="text-[11px] text-stone-400 col-span-2">USERS 未載入</div>'; return; }
+  el.innerHTML = `
+    <button onclick="login('u1')" class="col-span-2 text-left p-3 rounded-md border hover:bg-stone-50 transition flex items-center gap-3" style="border-color: var(--border); background: var(--ink-soft);">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-[13px] flex-shrink-0" style="background: var(--plum);">${u.avatar}</div>
       <div class="flex-1 min-w-0">
-        <div class="text-[13px] font-semibold" style="color: var(--text);">${u.name}</div>
-        <div class="text-[11px]" style="color: var(--text-3);">${u.title}</div>
-        <div class="mono text-[10.5px] mt-0.5" style="color: var(--text-3);">${u.email}</div>
+        <div class="text-[13px] font-semibold" style="color: var(--text);">${u.name}（一鍵進入）</div>
+        <div class="text-[11px]" style="color: var(--text-3);">${u.title} · 跳過驗證碼</div>
       </div>
-      <i data-lucide="arrow-right" class="w-4 h-4" style="color: var(--text-3);"></i>
+      <span class="text-[11px] font-bold" style="color: var(--ink);">→</span>
     </button>
   `;
-  lucide.createIcons();
+  try { lucide.createIcons(); } catch(e) {}
 }
 
 function fillEmail(email) {
@@ -4960,12 +4962,16 @@ function ssoLoginFromUrl() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-  initLogin();
-  // 已在 ProjFlow 登入並翻頁回來 → 帶身份直接進，不重複登入（SSO：擇一登入即可）
-  if (ssoLoginFromUrl()) return;
-  // 原型階段：直接以總經理（admin）進入，享全權限
-  // （登出後仍可走 Email + OTP 完整流程；正式上線時移除這行）
-  login('u1');
+  try { initLogin(); } catch(e) { console.error('[init] initLogin failed:', e); }
+  // 已在 ProjFlow 登入並翻頁回來 → 帶身份直接進
+  try { if (ssoLoginFromUrl()) return; } catch(e) { console.error('[init] ssoLoginFromUrl failed:', e); }
+  // 強制一鍵進總經理視角
+  try {
+    login('u1');
+  } catch(e) {
+    console.error('[init] auto-login failed:', e);
+    // fallback：登入頁總會至少看得到一鍵進入鈕
+  }
 });
 
 // 原型階段快速切換視角（王耀裕 ↔ 總經理）
