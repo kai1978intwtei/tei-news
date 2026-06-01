@@ -559,6 +559,16 @@
     font-size: 11px; font-weight: 500;
     display: inline-flex; align-items: center; gap: 5px;
   }
+/* ===== 員工名片卡片 hover 效果 ===== */
+.member-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.08);
+  border-color: var(--caramel) !important;
+}
+.member-card:active { transform: translateY(0); }
+.member-card .w-14 { transition: transform .15s; }
+.member-card:hover .w-14 { transform: scale(1.06); }
+
 /* ===== 教學引導 overlay ===== */
 #tutorial-overlay { position:fixed; inset:0; z-index:80; display:none; background:rgba(31,31,28,.55); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:24px; }
 #tutorial-overlay.show { display:flex; }
@@ -2803,36 +2813,55 @@ function renderTeammates() {
   }
 
   // 遞迴渲染部門節點
+  // 視覺化卡片：每層用顏色 + 縮排 + 大頭像呈現
+  const memberCard = (p) => {
+    const display = p.english_name || p.name;
+    const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
+    const avatarBg = p.role === 'admin' ? 'var(--plum)' : p.is_pm ? 'var(--caramel)' : 'var(--ink)';
+    const badge = p.role === 'admin' ? '<div class="mt-1 text-[8.5px] font-bold tracking-wider px-1.5 py-0.5 rounded-full" style="background: var(--plum); color: white;">總經理</div>'
+              : p.is_pm ? '<div class="mt-1 text-[8.5px] font-bold tracking-wider px-1.5 py-0.5 rounded-full" style="background: var(--caramel-soft); color: var(--caramel-hover);">PM</div>'
+              : '';
+    return `
+      <button onclick="openChatWithReal('${p.id}')"
+              class="member-card group flex flex-col items-center p-3 rounded-xl border transition cursor-pointer"
+              style="background: white; border-color: var(--border); min-width: 110px;"
+              title="點此開始與 ${display} 對話">
+        <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-[22px] font-semibold mb-2 transition" style="background: ${avatarBg}; box-shadow: 0 2px 10px rgba(0,0,0,.1);">
+          ${initial}
+        </div>
+        <div class="text-[12.5px] font-semibold text-center leading-tight">${display}</div>
+        <div class="text-[10px] text-center mt-0.5 leading-tight" style="color: var(--text-3); max-width: 100px;">${p.title || ''}</div>
+        ${badge}
+      </button>
+    `;
+  };
+
+  const depthStyle = (depth) => {
+    if (depth === 0) return { bg: 'linear-gradient(135deg, var(--ink-soft) 0%, transparent 100%)', accent: 'var(--ink)',     icon: 'building-2', titleSize: 'text-[16px]' };
+    if (depth === 1) return { bg: 'rgba(196, 122, 58, 0.05)',                                       accent: 'var(--caramel)', icon: 'briefcase',  titleSize: 'text-[14px]' };
+    return                  { bg: 'rgba(122, 90, 26, 0.03)',                                        accent: 'var(--border-strong)', icon: 'folder',     titleSize: 'text-[12.5px]' };
+  };
+
   const renderUnit = (unit, depth) => {
     const members = profilesByUnit.get(unit.id) || [];
     const children = childrenOf(unit.id);
+    const s = depthStyle(depth);
     return `
-      <div class="${depth > 0 ? 'ml-5 pl-3 border-l' : ''}" style="${depth > 0 ? 'border-color: var(--border-soft);' : ''}">
-        <div class="flex items-center gap-2 mb-2 ${depth === 0 ? 'mt-4 pb-1.5 border-b' : 'mt-3'}" style="${depth === 0 ? 'border-color: var(--border-soft);' : ''}">
-          <i data-lucide="${depth === 0 ? 'building' : depth === 1 ? 'briefcase' : 'folder'}" class="w-3.5 h-3.5" style="color: var(--text-3);"></i>
-          <span class="${depth === 0 ? 'serif text-[14px]' : 'text-[12.5px]'} font-semibold">${unit.name}</span>
-          <span class="mono text-[10px]" style="color: var(--text-3);">${members.length} 人</span>
-          ${unit.code ? `<span class="mono text-[10px]" style="color: var(--text-3);">· ${unit.code}</span>` : ''}
+      <div class="rounded-xl ${depth > 0 ? 'mt-4' : 'mt-5'}" style="background: ${s.bg}; border-left: 4px solid ${s.accent}; padding: ${depth === 0 ? '16px 18px' : '12px 14px'};">
+        <div class="flex items-center gap-2.5 mb-3">
+          <div class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background: ${s.accent}; color: white;">
+            <i data-lucide="${s.icon}" class="w-3.5 h-3.5"></i>
+          </div>
+          <span class="serif font-semibold ${s.titleSize}">${unit.name}</span>
+          ${unit.code ? `<span class="mono text-[10px] px-1.5 py-0.5 rounded" style="background: rgba(0,0,0,.04); color: var(--text-3);">${unit.code}</span>` : ''}
+          <span class="ml-auto text-[11px] px-2 py-0.5 rounded-full" style="background: white; color: var(--text-2); border: 1px solid var(--border);">${members.length} 人</span>
         </div>
         ${members.length > 0 ? `
-          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
-            ${members.map(p => {
-              const display = p.english_name || p.name;
-              const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
-              const roleColor = p.role === 'admin' ? 'var(--plum)' : p.is_pm ? 'var(--caramel)' : 'var(--ink)';
-              return `
-                <div class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 cursor-pointer transition" onclick="openChatWithReal('${p.id}')" title="點此開始對話">
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-medium flex-shrink-0" style="background: ${roleColor};">${initial}</div>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-[12.5px] font-medium truncate">${display}</div>
-                    <div class="text-[10px] truncate" style="color: var(--text-3);">${p.title || ''}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
+          <div class="flex flex-wrap gap-2.5 mb-${children.length > 0 ? '4' : '1'}">
+            ${members.map(memberCard).join('')}
           </div>
         ` : ''}
-        ${children.map(c => renderUnit(c, depth + 1)).join('')}
+        ${children.length > 0 ? `<div class="${depth >= 0 ? 'ml-2' : ''}">${children.map(c => renderUnit(c, depth + 1)).join('')}</div>` : ''}
       </div>
     `;
   };
@@ -2879,21 +2908,9 @@ function renderTeammates() {
           <div>${topUnits.map(u => renderUnit(u, 0)).join('')}</div>
           ${orphans.length > 0 ? `
             <div class="mt-5 pt-4 border-t" style="border-color: var(--border-soft);">
-              <div class="text-[11px] mb-2" style="color: var(--text-3);">未歸屬部門（${orphans.length}）</div>
-              <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
-                ${orphans.map(p => {
-                  const display = p.english_name || p.name;
-                  const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
-                  return `
-                    <div class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 cursor-pointer" onclick="openChatWithReal('${p.id}')">
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-medium" style="background: var(--text-3);">${initial}</div>
-                      <div class="flex-1 min-w-0">
-                        <div class="text-[12.5px] font-medium truncate">${display}</div>
-                        <div class="text-[10px] truncate" style="color: var(--text-3);">${p.title || ''}</div>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
+              <div class="text-[11px] mb-2.5" style="color: var(--text-3);">未歸屬部門（${orphans.length}）</div>
+              <div class="flex flex-wrap gap-2.5">
+                ${orphans.map(memberCard).join('')}
               </div>
             </div>
           ` : ''}
