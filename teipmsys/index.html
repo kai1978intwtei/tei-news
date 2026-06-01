@@ -559,6 +559,73 @@
     font-size: 11px; font-weight: 500;
     display: inline-flex; align-items: center; gap: 5px;
   }
+/* ===== 公司組織圖（橫向樹狀 + CSS connectors） ===== */
+.org-tree { display: inline-block; padding: 8px 20px 30px; min-width: 100%; }
+.org-tree-inner { display: inline-flex; flex-direction: column; align-items: center; min-width: 100%; }
+.org-level { display: flex; justify-content: center; }
+.org-children-wrap { display: flex; justify-content: center; position: relative; padding-top: 28px; }
+.org-children-wrap::before {
+  content: ''; position: absolute; left: 50%; top: 0;
+  width: 0; height: 14px; border-left: 1.5px solid #c9bca3;
+}
+.org-branch {
+  position: relative; padding: 0 10px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.org-branch::before {
+  content: ''; position: absolute; left: 50%; top: 0;
+  width: 0; height: 14px; border-left: 1.5px solid #c9bca3;
+}
+.org-branch::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 14px;
+  height: 0; border-top: 1.5px solid #c9bca3;
+}
+.org-branch:first-child::after { left: 50%; }
+.org-branch:last-child::after { right: 50%; }
+.org-branch:only-child::after { display: none; }
+.org-branch:only-child::before { display: none; }
+.org-branch > .org-children-wrap { padding-top: 14px; }
+.org-branch > .org-children-wrap::before { display: none; }
+.org-branch > .org-node-box { margin-top: 14px; }
+.org-branch:only-child > .org-node-box { margin-top: 0; }
+.org-node-box {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: 10px 14px; background: white;
+  border: 1.5px solid #c9bca3; border-radius: 10px;
+  min-width: 140px; box-shadow: 0 2px 6px rgba(0,0,0,.04);
+  cursor: pointer; transition: all .15s;
+}
+.org-node-box:hover { border-color: var(--caramel); box-shadow: 0 4px 14px rgba(196,122,58,.18); transform: translateY(-1px); }
+.org-node-box.is-top    { background: linear-gradient(135deg, var(--ink-soft) 0%, white 100%); border-color: var(--ink); }
+.org-node-box.is-mid    { background: rgba(196, 122, 58, 0.06); border-color: var(--caramel); }
+.org-node-box.is-leaf   { background: white; }
+.org-node-box .org-name { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.org-node-box .org-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 9.5px; color: var(--text-3); }
+.org-node-box .org-count {
+  font-size: 9.5px; font-weight: 600;
+  padding: 1px 6px; border-radius: 999px;
+  background: var(--ink-soft); color: var(--text-2);
+}
+.org-node-box .org-avatars { display: flex; margin-top: 6px; }
+.org-node-box .org-avatars > * { margin-left: -6px; border: 2px solid white; }
+.org-node-box .org-avatars > *:first-child { margin-left: 0; }
+.org-mini-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: white; font-size: 10px; font-weight: 600; flex-shrink: 0;
+}
+.org-more { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-subtle); color: var(--text-3); font-size: 9px; display: inline-flex; align-items: center; justify-content: center; }
+
+/* 按課的卡片 grid */
+.section-card {
+  background: white; border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 16px; transition: all .15s;
+}
+.section-card:hover { border-color: var(--caramel); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.section-card .sec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-soft); }
+.section-card .sec-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.section-card .sec-path { font-size: 10px; color: var(--text-3); }
+
 /* ===== 員工名片卡片 hover 效果 ===== */
 .member-card:hover {
   transform: translateY(-2px);
@@ -1106,7 +1173,7 @@ function login(userId) {
   renderUserInfo();
   renderSidebar();
   // 總經理進入後台總覽；其他角色進入工作檯
-  showView(currentUser.role === 'admin' ? 'executive' : 'dashboard');
+  showView(currentUser.role === 'admin' ? 'projects' : 'dashboard');
   // 更新原型切換按鈕標籤
   const swEl = document.getElementById('quick-switch-label');
   if (swEl) swEl.textContent = currentUser.id === 'u100' ? '切到後台' : '切到 PM 視角';
@@ -1213,13 +1280,12 @@ function renderSidebar() {
     // 總經理：以總覽為主
     nav = [
       { section: '總經理視角' },
-      { id:'executive', icon:'crown',           label:'全公司總覽' },
-      { id:'projects',  icon:'folders',         label:'全部專案' },
+      { id:'projects',  icon:'folders',         label:'專案總覽' },
       { id:'tasks',     icon:'check-square',    label:'全部任務' },
       { id:'schedule',  icon:'calendar-days',   label:'全部行程' },
       { section: '彙整' },
       { id:'reports',   icon:'file-text',       label:'詳細專案報告' },
-      { id:'teammates', icon:'users',           label:'全公司同仁' },
+      { id:'teammates', icon:'sitemap',         label:'公司組織圖' },
       { id:'messages',  icon:'messages-square', label:'訊息中心', badge: 'unread' },
       { section: '系統' },
       { id:'sync',      icon:'refresh-cw',      label:'ProjFlow 同步' },
@@ -1235,7 +1301,7 @@ function renderSidebar() {
       { id:'schedule',  icon:'calendar-days',   label:'部門行程' },
       { section: '撰寫與彙整' },
       { id:'reports',   icon:'file-text',       label:'部門報告' },
-      { id:'teammates', icon:'users',           label:'部門隊友' },
+      { id:'teammates', icon:'sitemap',         label:'公司組織圖' },
       { id:'messages',  icon:'messages-square', label:'訊息中心', badge: 'unread' },
       { section: '系統' },
       { id:'sync',      icon:'refresh-cw',      label:'ProjFlow 同步' },
@@ -1252,7 +1318,7 @@ function renderSidebar() {
       { section: '撰寫與彙整' },
       { id:'reports',   icon:'file-text',        label:'A4 報告' },
       { id:'cost',      icon:'calculator',       label:'專案成本分析' },
-      { id:'teammates', icon:'users',            label:'隊友與部門' },
+      { id:'teammates', icon:'sitemap',          label:'公司組織圖' },
       { id:'messages',  icon:'messages-square',  label:'訊息中心', badge: 'unread' },
       { section: '系統' },
       { id:'sync',      icon:'refresh-cw',       label:'ProjFlow 同步' },
@@ -1994,8 +2060,8 @@ function taskRow(t) {
    ============================================================ */
 
 function renderProjects() {
-  const titleByRole = { admin:'全部專案', manager:'部門專案', pm:'我的專案', staff:'我的專案' };
-  setTitle(titleByRole[currentUser.role] || '專案', '甘特圖視圖');
+  const titleByRole = { admin:'專案總覽', manager:'部門專案', pm:'我的專案', staff:'我的專案' };
+  setTitle(titleByRole[currentUser.role] || '專案', '進行中的專案案件 · 甘特圖視圖');
 
   const projects = visibleProjects();
 
