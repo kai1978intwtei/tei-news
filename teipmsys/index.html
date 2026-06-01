@@ -902,30 +902,11 @@ if (sb) {
 // 唯一真人：王耀裕（SPE 課級主管，PMO 唯一專案經理）
 // 總經理保留為後台管理角色（待指派真實姓名）
 // 隊友池（dev/sales）暫以代號顯示，連 ProjFlow Supabase 後會即時抓真人
+// 假資料已清空，僅保留 Brad / 總經理兩個 auth scaffold 角色。
+// 真實員工名單從 Supabase profiles 表動態載入（使用者登入 ProjFlow 帳號後生效）。
 const USERS = [
-  // 真人 — 可登入 PMSYS
-  // enName 欄：稱呼優先用英文名；沒填則 fallback 到 name（中文）。ProjFlow 端 profiles 表須對齊此欄位。
   { id: 'u100', name: '王耀裕', enName: 'Brad Wang', role: 'pm', dept: 'spe', title: '專案經理 · SPE課級主管', avatar: '裕', primary: true, email: 'yu.wang@tei.com' },
-
-  // 後台維護 — 總經理視角（待指派真實姓名 / 接 ProjFlow 後同步）
-  { id: 'u1', name: '總經理', enName: '', role: 'admin', dept: 'exec', title: '後台維護 · 待指派姓名', avatar: '管', email: 'admin@tei.com' },
-
-  // 隊友池 — 跨部門代號顯示（連 ProjFlow Supabase profiles 後替換為真實同仁）
-  { id: 'u5',  name: '開發 A', role: 'staff', dept: 'dev',   title: '資深工程師',   avatar: 'D1', placeholder: true },
-  { id: 'u6',  name: '開發 B', role: 'staff', dept: 'dev',   title: '前端工程師',   avatar: 'D2', placeholder: true },
-  { id: 'u7',  name: '開發 C', role: 'staff', dept: 'dev',   title: '後端工程師',   avatar: 'D3', placeholder: true },
-  { id: 'u8',  name: '開發 D', role: 'staff', dept: 'dev',   title: '全端工程師',   avatar: 'D4', placeholder: true },
-  { id: 'u9',  name: '設計 A', role: 'staff', dept: 'dev',   title: 'UI/UX 設計師', avatar: 'X1', placeholder: true },
-  { id: 'u14', name: '業務 A', role: 'staff', dept: 'sales', title: '資深業務',     avatar: 'S1', placeholder: true },
-  { id: 'u15', name: '業務 B', role: 'staff', dept: 'sales', title: '業務專員',     avatar: 'S2', placeholder: true },
-  // 跨部門池
-  { id: 'u20', name: '採購 A', role: 'staff', dept: 'pur',   title: '採購專員',     avatar: 'P1', placeholder: true },
-  { id: 'u21', name: '採購 B', role: 'staff', dept: 'pur',   title: '採購主任',     avatar: 'P2', placeholder: true },
-  { id: 'u22', name: '人資 A', role: 'staff', dept: 'hr',    title: '人資專員',     avatar: 'H1', placeholder: true },
-  { id: 'u23', name: '財務 A', role: 'staff', dept: 'fin',   title: '會計專員',     avatar: 'F1', placeholder: true },
-  { id: 'u24', name: '財務 B', role: 'staff', dept: 'fin',   title: '財務主任',     avatar: 'F2', placeholder: true },
-  { id: 'u25', name: '行政 A', role: 'staff', dept: 'adm',   title: '行政專員',     avatar: 'A1', placeholder: true },
-  { id: 'u26', name: '執行 A', role: 'staff', dept: 'exec',  title: '特助',         avatar: 'E1', placeholder: true },
+  { id: 'u1', name: '總經理', enName: '', role: 'admin', dept: 'exec', title: '後台維護', avatar: '管', email: 'admin@tei.com' },
 ];
 
 // 王耀裕統籌的專案 — 跨三個系統來源（pmsys 主場 + RTM 統整 + ProjFlow 通用）
@@ -935,23 +916,8 @@ const USERS = [
 //   .by         哪位同仁改的（顯示為相對來源系統的使用者）
 //   .when       人話時間（mock；正式版用 lastEdit.updated_at 計算）
 //   .field      改了哪個欄位（顯示給 PMO 知道誰動了什麼）
-const PROJECTS = [
-  // PMSYS 主場（王耀裕本人寫 A4、排行程）
-  { id: 'p1', name: '電商平台 V2 改版策略', code:'P-2604', pm: 'u100', members: ['u100','u5','u6','u9'], start: '2026-04-01', end: '2026-07-15', progress: 42, status: 'on-track',  client: '宜居家居',   source: 'pmsys',
-    lastEdit: { source:'pmsys',    by:'王耀裕（您）',   when:'15 分鐘前', field:'進度 38% → 42%' } },
-  { id: 'p2', name: '客戶後台系統導入',     code:'P-2603', pm: 'u100', members: ['u100','u7','u8'],       start: '2026-03-15', end: '2026-06-30', progress: 68, status: 'on-track',  client: '永泰運通',   source: 'pmsys',
-    lastEdit: { source:'projflow', by:'業務 A（ProjFlow）', when:'1 小時前', field:'客戶聯絡資訊' } },
-  { id: 'p3', name: '行動 App 首版發布',    code:'P-2605', pm: 'u100', members: ['u100','u5','u6','u9'], start: '2026-04-10', end: '2026-09-01', progress: 22, status: 'at-risk',   client: '內部產品',   source: 'pmsys',
-    lastEdit: { source:'pmsys',    by:'王耀裕（您）',   when:'昨天',     field:'狀態改為 at-risk' } },
-  { id: 'p4', name: 'Q2 大客戶導入專案',    code:'P-2606', pm: 'u100', members: ['u100','u14','u15'],    start: '2026-04-05', end: '2026-06-20', progress: 55, status: 'on-track',  client: '友達光電',   source: 'pmsys',
-    lastEdit: { source:'projflow', by:'業務 A（ProjFlow）', when:'3 小時前', field:'交期 6/15 → 6/20' } },
-  // 從 RTM 串入（先進部件部門主導，王耀裕統整 pulse）
-  { id: 'p9', name: '碳纖維結構件量產導入',  code:'RTM-026',pm: 'u100', members: ['u100','u8','u22'],     start: '2026-03-20', end: '2026-08-15', progress: 38, status: 'on-track',  client: '北美客戶 A',  source: 'rtm', extRef: 'RTM · P/S/L 模組',
-    lastEdit: { source:'rtm',      by:'人資 A（RTM）',  when:'2 小時前', field:'SOP-12 試模良率 87%' } },
-  // 從 ProjFlow 通用案串入（總經理指派）
-  { id: 'p10',name: 'Q2 內部組織調整輔導',   code:'PF-067', pm: 'u100', members: ['u100','u26','u22'],    start: '2026-04-20', end: '2026-06-30', progress: 15, status: 'on-track',  client: '內部 · HR',  source: 'projflow', extRef: 'ProjFlow · 任務 / 行政模組',
-    lastEdit: { source:'projflow', by:'總經理（ProjFlow）', when:'今早',  field:'新增指示備註' } },
-];
+// PROJECTS 已清空，待從 Supabase 對應表載入真實資料
+const PROJECTS = [];
 
 const today = new Date('2026-05-21');
 const d = (offset) => { const x = new Date(today); x.setDate(x.getDate() + offset); return x.toISOString().slice(0,10); };
@@ -959,24 +925,8 @@ const d = (offset) => { const x = new Date(today); x.setDate(x.getDate() + offse
 // 任務狀態 — 與 ProjFlow 對齊（5 種，雙向同步）
 // todo 待辦 / doing 進行中 / blocked 卡住 / overdue 延遲 / done 已完成
 // blockReason 僅在 status='blocked' 時填，會同步寫回 ProjFlow tasks.block_reason
-const TASKS = [
-  { id:'t1',  title:'會員註冊流程 API 規格定稿', project:'p1', assignee:'u7',  due:d(2),  priority:'high',   status:'doing' },
-  { id:'t2',  title:'首頁改版 UI 第二輪稿',       project:'p1', assignee:'u9',  due:d(5),  priority:'medium', status:'doing' },
-  { id:'t3',  title:'購物車前端整合（逾期）',     project:'p1', assignee:'u6',  due:d(-1), priority:'high',   status:'overdue' },
-  { id:'t4',  title:'付款串接測試',                project:'p1', assignee:'u5',  due:d(10), priority:'high',   status:'blocked', blockReason:'等待客戶確認金流串接規格（友達光電法務審核中）' },
-  { id:'t5',  title:'後台資料表 schema review',    project:'p2', assignee:'u7',  due:d(1),  priority:'medium', status:'doing' },
-  { id:'t6',  title:'權限模組驗收',                project:'p2', assignee:'u8',  due:d(8),  priority:'medium', status:'todo' },
-  { id:'t7',  title:'App 原型互動腳本',            project:'p3', assignee:'u9',  due:d(4),  priority:'high',   status:'doing' },
-  { id:'t8',  title:'推播服務技術選型',            project:'p3', assignee:'u5',  due:d(12), priority:'medium', status:'blocked', blockReason:'第三方 push service 報價尚未到位，等採購回覆' },
-  { id:'t9',  title:'友達 Q2 啟動會議準備',        project:'p4', assignee:'u100',due:d(3),  priority:'high',   status:'doing' },
-  { id:'t10', title:'友達合約附件追蹤',            project:'p4', assignee:'u14', due:d(-2), priority:'medium', status:'overdue' },
-  { id:'t11', title:'本週專案週會議程',            project:'p1', assignee:'u100',due:d(0),  priority:'medium', status:'doing' },
-  { id:'t12', title:'App 專案風險評估報告',        project:'p3', assignee:'u100',due:d(3),  priority:'high',   status:'todo' },
-  { id:'t13', title:'RTM 試模良率 PMO 統整',       project:'p9', assignee:'u100',due:d(1),  priority:'high',   status:'doing' },
-  { id:'t14', title:'量產驗證里程碑會議',          project:'p9', assignee:'u100',due:d(8),  priority:'medium', status:'todo' },
-  { id:'t15', title:'組織調整 KO 簡報',             project:'p10',assignee:'u100',due:d(2),  priority:'high',   status:'doing' },
-  { id:'t16', title:'HR 訪談排程',                  project:'p10',assignee:'u22', due:d(6),  priority:'medium', status:'todo' },
-];
+// TASKS 已清空，待從 Supabase 對應表載入真實資料
+const TASKS = [];
 
 // 任務狀態元資料 — 5 種，跟 ProjFlow TaskStatus 對齊
 const TASK_STATUS_META = {
@@ -990,45 +940,21 @@ const TASK_STATUS_ORDER = ['todo','doing','blocked','overdue','done'];
 
 function statusMeta(s) { return TASK_STATUS_META[s] || TASK_STATUS_META.todo; }
 
-const SCHEDULE = [
-  { id:'s1', title:'宜居家居 KO 會議',  owner:'u100', project:'p1', date:d(0),  start:'10:00', end:'11:30', color:'ink' },
-  { id:'s2', title:'技術評審：付款串接', owner:'u100', project:'p1', date:d(0),  start:'14:00', end:'15:00', color:'caramel' },
-  { id:'s3', title:'PMO 週會',           owner:'u100', project:null, date:d(1),  start:'09:30', end:'10:30', color:'plum' },
-  { id:'s4', title:'友達 Q2 預備會',    owner:'u100', project:'p4', date:d(2),  start:'13:30', end:'15:00', color:'moss' },
-  { id:'s5', title:'App 原型 review',   owner:'u100', project:'p3', date:d(3),  start:'11:00', end:'12:00', color:'caramel' },
-  { id:'s6', title:'撰寫 P-2604 週報',  owner:'u100', project:'p1', date:d(4),  start:'16:00', end:'17:30', color:'ink' },
-  { id:'s7', title:'1:1 主管會談',      owner:'u100', project:null, date:d(5),  start:'10:00', end:'10:30', color:'plum' },
-];
+// SCHEDULE 已清空，待從 Supabase 對應表載入真實資料
+const SCHEDULE = [];
 
-const REPORTS = [
-  { id:'r1', project:'p1', title:'宜居家居 V2 改版 · 期中報告',     author:'u100', updated:d(-2), status:'draft',  pages:8  },
-  { id:'r2', project:'p2', title:'永泰運通後台系統 · 第三次進度報告', author:'u100', updated:d(-7), status:'shared', pages:6  },
-  { id:'r3', project:'p3', title:'行動 App · 風險評估與排程調整建議', author:'u100', updated:d(-1), status:'draft',  pages:12 },
-  // 跨系統 — 王耀裕仍可在 PMSYS 寫，內容自動回流 ProjFlow / RTM
-  { id:'r4', project:'p9', title:'碳纖維量產 · PMO 階段彙整（含 RTM 試模數據摘要）', author:'u100', updated:d(0),  status:'draft', pages:10, crossSync:'rtm' },
-  { id:'r5', project:'p10',title:'Q2 組織調整 · 啟動報告',          author:'u100', updated:d(-3), status:'shared', pages:6, crossSync:'projflow' },
-];
+// REPORTS 已清空，待從 Supabase 對應表載入真實資料
+const REPORTS = [];
 
-const NOTIFICATIONS = [
-  { type:'sync',     text:'P-2604 進度於 ProjFlow 被更新',           time:'10 分鐘前' },
-  { type:'deadline', text:'任務「購物車前端整合」已逾期 1 天',       time:'1 小時前' },
-  { type:'mention',  text:'王總在 P-2605 詳細專案報告留下了評論',   time:'3 小時前' },
-  { type:'team',     text:'開發 B 接受了 P-2604 的隊友邀請',         time:'昨天' },
-];
+// NOTIFICATIONS 已清空，待從 Supabase 對應表載入真實資料
+const NOTIFICATIONS = [];
 
 // 訊息中心 — 與 ProjFlow / RTM 雙向同步的對話/通知
 // type: 'message' = 人對人對話、'notification' = 系統提醒、'mention' = 被 @
 // source: 'pmsys' | 'projflow' | 'rtm'
 // synced: 是否已寫回 ProjFlow（read state、reply、等）
-const MESSAGES = [
-  { id:'msg1', type:'message',      from:'u5',  subject:'付款 API 回呼 URL 待確認',     preview:'王哥，付款串接的 webhook 端點您之前提的網域是 https://api.tei.com/v2/pay-callback 對嗎？我這邊配置好了想再確認一次。', time:'15 分鐘前',  unread:true,  project:'p1',  source:'projflow', synced:true },
-  { id:'msg2', type:'message',      from:'u22', subject:'RTM-026 SOP-12 試模結果',      preview:'剛完成第三輪試模，良率達 87%、孔隙率 < 2%、壓力曲線平穩。下一步要進入量產驗證請您指示時程。',         time:'2 小時前',   unread:true,  project:'p9',  source:'rtm',      synced:true },
-  { id:'msg3', type:'mention',      from:'u1',  subject:'Q2 組織調整 · 進度確認',       preview:'王耀裕，請於本週五前提交 HR 訪談排程草案，總經理會議要用。@王耀裕',                                  time:'今早 09:12', unread:true,  project:'p10', source:'projflow', synced:true },
-  { id:'msg4', type:'message',      from:'u14', subject:'友達合約附件 D 缺漏',          preview:'客戶法務反映合約缺少附件 D，是否需要這週內補上？我可以協助跟法務協調。',                              time:'昨天 16:40', unread:false, project:'p4',  source:'projflow', synced:true },
-  { id:'msg5', type:'notification', from:null,  subject:'P-2603 後台系統權限模組驗收通過', preview:'開發 D 完成驗收，可進入下個里程碑。狀態已自動同步到 ProjFlow。',                                  time:'昨天 14:10', unread:false, project:'p2',  source:'pmsys',    synced:true },
-  { id:'msg6', type:'message',      from:'u9',  subject:'宜居家居首頁 v2 第二輪稿',     preview:'已上傳到 Figma，連結：figma.com/file/abc123，請審視配色和字級。',                                   time:'昨天 11:00', unread:false, project:'p1',  source:'pmsys',    synced:true },
-  { id:'msg7', type:'notification', from:null,  subject:'ProjFlow 推送：3 件任務本週截止', preview:'P-2604 會員註冊 API、P-2603 schema review、P-2605 App 原型互動腳本。',                              time:'今早 08:00', unread:false, project:null,  source:'projflow', synced:true },
-];
+// MESSAGES 已清空，待從 Supabase 對應表載入真實資料
+const MESSAGES = [];
 
 /* ============================================================
    狀態 / 路由
@@ -3148,6 +3074,14 @@ function renderChatRoster() {
           <span class="sync-dot"></span>來源同步自 ProjFlow profiles · 點對象開啟對話
         </div>
       </div>
+      ${(byDept.length === 0 && bySection.length === 0) ? `
+        <div class="text-center py-8 text-[12px]" style="color: var(--text-3);">
+          <i data-lucide="users-round" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+          <div class="font-medium" style="color: var(--text-2);">尚無聊天對象</div>
+          <div class="mt-1.5">真實員工名單來自 ProjFlow 資料庫。</div>
+          <div>請從 <strong>登入頁</strong> 點「<strong>用 ProjFlow 帳號登入</strong>」啟用真實聊天。</div>
+        </div>
+      ` : `
       <div class="space-y-3">
         <div>
           <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按部門</div>
@@ -3172,6 +3106,7 @@ function renderChatRoster() {
           </div>
         </div>
       </div>
+      `}
     </div>
   `;
 }
