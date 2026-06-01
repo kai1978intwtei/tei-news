@@ -1238,6 +1238,7 @@ function renderSidebar() {
       { id:'schedule',  icon:'calendar-days',    label:'行程表' },
       { section: '撰寫與彙整' },
       { id:'reports',   icon:'file-text',        label:'A4 報告' },
+      { id:'cost',      icon:'calculator',       label:'專案成本分析' },
       { id:'teammates', icon:'users',            label:'隊友與部門' },
       { id:'messages',  icon:'messages-square',  label:'訊息中心', badge: 'unread' },
       { section: '系統' },
@@ -1284,6 +1285,7 @@ function showView(view) {
     tasks:     renderTasks,
     schedule:  renderSchedule,
     reports:   renderReports,
+    cost:      renderCostAnalysis,
     teammates: renderTeammates,
     messages:  renderMessages,
     sync:      renderSync,
@@ -2655,6 +2657,129 @@ async function syncProjFlowAndReload() {
   if (currentView === 'messages') renderMessages();
 }
 
+/* ============================================================
+   View: 專案成本分析（PM 限定）
+   ============================================================ */
+function renderCostAnalysis() {
+  setTitle('專案成本分析', 'PM 限定 · 從 ProjFlow projects + purchases 彙整');
+
+  // admin 不該進來；保險擋一下
+  if (currentUser?.role === 'admin') {
+    document.getElementById('main-content').innerHTML = `
+      <div class="paper p-8 text-center text-[13px]" style="color: var(--text-3);">
+        此功能僅限專案經理使用。
+      </div>
+    `;
+    return;
+  }
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-5 max-w-[1280px]">
+
+      <!-- 同步說明 -->
+      <div class="paper p-4 flex items-center gap-4" style="background: linear-gradient(135deg, var(--caramel-soft) 0%, var(--paper) 100%);">
+        <div class="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0" style="background: var(--caramel-hover);">
+          <i data-lucide="calculator" class="w-5 h-5 text-white"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-[13px] font-semibold">專案成本分析</div>
+          <div class="text-[11.5px]" style="color: var(--text-2);">由 ProjFlow projects（預算）+ purchases（實際支出）彙整 · 即時計算成本差異</div>
+        </div>
+        <button class="btn-ink" onclick="renderCostAnalysis()"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>重新計算</button>
+      </div>
+
+      <!-- KPI 摘要 -->
+      <div class="grid md:grid-cols-4 gap-3">
+        <div class="paper p-4">
+          <div class="text-[11px] tracking-wider uppercase font-semibold mb-1" style="color: var(--text-3);">▌ 總預算</div>
+          <div class="mono text-[22px] font-bold" style="color: var(--ink);">—</div>
+          <div class="text-[10.5px] mt-1" style="color: var(--text-3);">所有負責專案合計</div>
+        </div>
+        <div class="paper p-4">
+          <div class="text-[11px] tracking-wider uppercase font-semibold mb-1" style="color: var(--text-3);">▌ 已支出</div>
+          <div class="mono text-[22px] font-bold" style="color: var(--caramel-hover);">—</div>
+          <div class="text-[10.5px] mt-1" style="color: var(--text-3);">purchases · approved</div>
+        </div>
+        <div class="paper p-4">
+          <div class="text-[11px] tracking-wider uppercase font-semibold mb-1" style="color: var(--text-3);">▌ 待付款</div>
+          <div class="mono text-[22px] font-bold" style="color: var(--plum);">—</div>
+          <div class="text-[10.5px] mt-1" style="color: var(--text-3);">purchases · pending</div>
+        </div>
+        <div class="paper p-4">
+          <div class="text-[11px] tracking-wider uppercase font-semibold mb-1" style="color: var(--text-3);">▌ 餘額</div>
+          <div class="mono text-[22px] font-bold" style="color: var(--moss);">—</div>
+          <div class="text-[10.5px] mt-1" style="color: var(--text-3);">總預算 − 已支出 − 待付款</div>
+        </div>
+      </div>
+
+      <!-- 專案成本列表 -->
+      <div class="paper p-0 overflow-hidden">
+        <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color: var(--border-soft);">
+          <div>
+            <h3 class="serif font-semibold text-[15px]">專案成本列表</h3>
+            <p class="text-[11.5px] mt-0.5" style="color: var(--text-3);">每行：預算 · 已支出 · 待付款 · 完成度 · 成本警示</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-ghost text-[11px]"><i data-lucide="filter" class="w-3 h-3"></i>篩選</button>
+            <button class="btn-ghost text-[11px]"><i data-lucide="download" class="w-3 h-3"></i>匯出 CSV</button>
+          </div>
+        </div>
+        <div id="cost-list" class="px-5 py-12 text-center text-[12.5px]" style="color: var(--text-3);">
+          <i data-lucide="loader" class="w-7 h-7 mx-auto mb-2 opacity-40"></i>
+          <div class="font-medium" style="color: var(--text-2);">正在從 ProjFlow 載入專案與採購資料…</div>
+          <div class="mt-1.5">資料源：<code style="background: var(--bg-subtle); padding: 1px 5px; border-radius: 3px;">projects</code> · <code style="background: var(--bg-subtle); padding: 1px 5px; border-radius: 3px;">purchases</code></div>
+          <div class="mt-3 text-[11px]">（schema 細節接好後完整實作；目前為 UI 骨架）</div>
+        </div>
+      </div>
+
+      <!-- 成本警示 -->
+      <div class="paper p-5">
+        <h3 class="serif font-semibold text-[14px] mb-3 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-4 h-4" style="color: var(--rust);"></i>
+          成本警示
+        </h3>
+        <div class="text-[12px]" style="color: var(--text-3);">
+          專案實際支出超過預算 80% 或預測超支會在此提醒。
+        </div>
+      </div>
+    </div>
+  `;
+  lucide?.createIcons?.();
+
+  // 嘗試從 Supabase 拉資料（schema 還沒看過 projects / purchases，先 best-effort）
+  loadCostAnalysisData().catch(e => console.error('[cost] load failed:', e));
+}
+
+async function loadCostAnalysisData() {
+  if (!sb) return;
+  // 我目前還沒看過 projects 與 purchases 的 schema。
+  // 先嘗試查最小欄位集；schema 對齊後再展開計算。
+  const meId = currentProfile?.id || getMyProfile()?.id;
+  const list = document.getElementById('cost-list');
+  if (!list) return;
+
+  let projQuery = sb.from('projects').select('*');
+  // 若有 me，過濾自己負責的專案（欄位名先試常見的）
+  if (meId) projQuery = projQuery.or(`pm.eq.${meId},owner_id.eq.${meId},created_by.eq.${meId}`);
+  const { data: projs, error: pErr } = await projQuery.limit(100);
+  if (pErr) {
+    list.innerHTML = `<div style="color: var(--rust);">無法載入 projects：${pErr.message}</div><div class="mt-2 text-[11px]" style="color: var(--text-3);">需要看到 projects 表的 schema 才能對齊欄位（如預算欄位名稱）。SQL Editor 跑這段給我看：<br><code style="background: var(--bg-subtle); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">select column_name, data_type from information_schema.columns where table_schema='public' and table_name in ('projects','purchases') order by table_name, ordinal_position;</code></div>`;
+    return;
+  }
+  list.innerHTML = `
+    <div class="text-left" style="color: var(--text);">
+      <div class="text-[12px] mb-3" style="color: var(--text-2);">
+        已從 ProjFlow 拉到 <strong>${projs?.length || 0}</strong> 個專案。
+        正在估算成本欄位… 但 schema 我還沒看過，需要你提供 <code>projects</code> 和 <code>purchases</code> 的欄位列表。
+      </div>
+      <div class="mono text-[10.5px] p-3 rounded" style="background: var(--bg-subtle); color: var(--text-3); white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto;">${(projs || []).slice(0, 5).map(p => JSON.stringify(p)).join('\n\n')}</div>
+      <div class="text-[11px] mt-3" style="color: var(--text-3);">
+        ↑ 前 5 筆 raw data 預覽。看到實際欄位後就能寫出正確的成本計算。
+      </div>
+    </div>
+  `;
+}
+
 function renderTeammates() {
   const titleByRole = { admin:'全公司同仁', manager:'部門隊友', pm:'隊友與部門', staff:'隊友與部門' };
   setTitle(titleByRole[currentUser.role] || '隊友', '即時來自 ProjFlow profiles + org_units');
@@ -3427,6 +3552,31 @@ async function openChatWithReal(profileId) {
     })
     .subscribe(status => console.log('[chat] reads realtime:', status));
 
+  // 載入 + 訂閱訊息反應
+  await loadReactions(realChatMessages.map(m => m.id));
+  if (realChatReactSub) { sb.removeChannel(realChatReactSub); realChatReactSub = null; }
+  realChatReactSub = sb.channel(`reacts-${channelId}`)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'chat_message_reactions'
+    }, (payload) => {
+      const row = payload.new || payload.old;
+      if (!row) return;
+      // 過濾：只處理本頻道訊息的反應
+      const inChannel = realChatMessages.find(m => m.id === row.message_id);
+      if (!inChannel) return;
+      if (payload.eventType === 'INSERT') {
+        if (!realChatReactions.find(r => r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji)) {
+          realChatReactions.push(row);
+        }
+      } else if (payload.eventType === 'DELETE') {
+        realChatReactions = realChatReactions.filter(r =>
+          !(r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji)
+        );
+      }
+      if (currentView === 'messages') renderMessages();
+    })
+    .subscribe(status => console.log('[chat] reactions realtime:', status));
+
   renderMessages();
   setTimeout(() => {
     const sc = document.getElementById('real-chat-thread-scroll');
@@ -3439,8 +3589,10 @@ async function openChatWithReal(profileId) {
 function exitRealChat() {
   realChatActive = false;
   realChatReplyingTo = null;
+  realChatReactPickerFor = null;
   if (realChatSub)      { sb.removeChannel(realChatSub);      realChatSub = null; }
   if (realChatReadsSub) { sb.removeChannel(realChatReadsSub); realChatReadsSub = null; }
+  if (realChatReactSub) { sb.removeChannel(realChatReactSub); realChatReactSub = null; }
   renderMessages();
 }
 
@@ -3500,22 +3652,59 @@ function realChatPanel() {
         replyBlock = `<div class="text-[10.5px] mb-1.5 opacity-60 italic">↩ （引用訊息已不在範圍內）</div>`;
       }
     }
+    // 反應彙整：emoji → [user_id...]
+    const msgReactions = realChatReactions.filter(r => r.message_id === m.id);
+    const grouped = {};
+    msgReactions.forEach(r => {
+      if (!grouped[r.emoji]) grouped[r.emoji] = [];
+      grouped[r.emoji].push(r.user_id);
+    });
+    const reactionsRow = Object.entries(grouped).length === 0 ? '' : `
+      <div class="flex flex-wrap gap-1 mt-1.5 ${mine ? 'justify-end' : 'justify-start'}">
+        ${Object.entries(grouped).map(([emoji, userIds]) => {
+          const reacted = userIds.includes(me.id);
+          const names = userIds.map(uid => {
+            const u = senderOf(uid);
+            return u ? (u.english_name || u.name) : '？';
+          }).join(', ');
+          return `<button onclick="toggleReaction('${m.id}','${emoji}')"
+                          class="px-1.5 py-0.5 rounded-full text-[11px] flex items-center gap-1 transition"
+                          style="background: ${reacted ? 'var(--caramel-soft)' : 'var(--bg-subtle)'}; border: 1px solid ${reacted ? 'var(--caramel)' : 'var(--border)'};"
+                          title="${escape(names)}">
+                    <span>${emoji}</span><span class="mono text-[10px]" style="color: var(--text-2);">${userIds.length}</span>
+                  </button>`;
+        }).join('')}
+      </div>
+    `;
+    // emoji picker（hover 才顯示，點 + 開啟）
+    const pickerOpen = realChatReactPickerFor === m.id;
+    const pickerPopup = pickerOpen ? `
+      <div class="absolute z-10 ${mine ? 'right-0' : 'left-0'} -top-9 flex items-center gap-1 px-2 py-1 rounded-full shadow-md" style="background: white; border: 1px solid var(--border);">
+        ${QUICK_EMOJIS.map(e => `<button onclick="toggleReaction('${m.id}','${e}')" class="text-[15px] hover:scale-125 transition px-1" title="加 ${e} 反應">${e}</button>`).join('')}
+      </div>
+    ` : '';
+    const actionBtns = `
+      <div class="flex items-center gap-1 ${mine ? 'self-end mb-3 ml-1.5' : 'self-end mb-3 mr-1.5'} opacity-0 group-hover:opacity-100 transition">
+        <button onclick="toggleReactPicker('${m.id}')" class="px-1.5 py-0.5 rounded text-[11px]" style="background: var(--bg-subtle); color: var(--text-3);" title="加反應">😀+</button>
+        <button onclick="setReply('${m.id}')" class="px-1.5 py-0.5 rounded text-[10px]" style="background: var(--bg-subtle); color: var(--text-3);" title="回覆">↩</button>
+      </div>
+    `;
     return `
       <div class="flex ${mine ? 'justify-end' : 'justify-start'} group">
-        ${mine ? '' : `
-          <button onclick="setReply('${m.id}')" class="self-end mb-3 mr-1.5 px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition" style="background: var(--bg-subtle); color: var(--text-3);" title="回覆">↩</button>
-        `}
-        <div class="max-w-[75%] px-3 py-2 rounded-lg text-[12.5px] leading-snug"
-             style="background: ${mine ? 'var(--ink)' : 'var(--ink-soft)'}; color: ${mine ? 'white' : 'var(--text)'};">
-          ${replyBlock}
-          <div style="white-space: pre-wrap; word-break: break-word;">${escape(m.body)}</div>
-          <div class="text-[9.5px] mt-1 flex items-center ${mine ? 'justify-end opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">
-            <span>${fmtTime(m.created_at)}</span>${tick}
+        ${mine ? '' : actionBtns}
+        <div class="max-w-[75%] relative">
+          ${pickerPopup}
+          <div class="px-3 py-2 rounded-lg text-[12.5px] leading-snug"
+               style="background: ${mine ? 'var(--ink)' : 'var(--ink-soft)'}; color: ${mine ? 'white' : 'var(--text)'};">
+            ${replyBlock}
+            <div style="white-space: pre-wrap; word-break: break-word;">${escape(m.body)}</div>
+            <div class="text-[9.5px] mt-1 flex items-center ${mine ? 'justify-end opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">
+              <span>${fmtTime(m.created_at)}</span>${tick}
+            </div>
           </div>
+          ${reactionsRow}
         </div>
-        ${mine ? `
-          <button onclick="setReply('${m.id}')" class="self-end mb-3 ml-1.5 px-1.5 py-0.5 rounded text-[10px] opacity-0 group-hover:opacity-100 transition" style="background: var(--bg-subtle); color: var(--text-3);" title="回覆">↩</button>
-        ` : ''}
+        ${mine ? actionBtns : ''}
       </div>
     `;
   };
