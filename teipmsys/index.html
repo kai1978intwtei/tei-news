@@ -3170,14 +3170,219 @@ function renderChatRoster() {
 }
 
 // 點真實 ProjFlow profile：原型階段顯示提示（聊天送收 Stage 3 接 chat_messages）
-function openChatWithReal(profileId) {
-  const p = allProfiles?.find(x => x.id === profileId);
-  if (!p) return;
-  alert(
-    `與 ${p.english_name || p.name}（${p.title || ''}）的對話\n\n` +
-    `已正確抓到 ProjFlow 真實 profile（uuid: ${p.id}）。\n` +
-    `下一步 Stage 3：把對話讀寫接到 chat_messages 表（即將支援）。`
-  );
+/* ============================================================
+   Stage 3：真實聊天 — 讀寫 ProjFlow chat_messages + Realtime
+   ============================================================ */
+let realChatActive = false;
+let realChatMe = null;
+let realChatTarget = null;
+let realChatChannelId = null;
+let realChatMessages = [];
+let realChatSub = null;
+
+function getMyProfile() {
+  if (currentProfile) return currentProfile;
+  try {
+    const id = localStorage.getItem('pmsys.myProfileId');
+    if (id && allProfiles) return allProfiles.find(p => p.id === id) || null;
+  } catch(e) {}
+  return null;
+}
+
+function pickMyIdentity() {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    const list = (allProfiles || []).map(p => `
+      <button data-pid="${p.id}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;text-align:left;border:1px solid #e6dfd1;border-radius:8px;cursor:pointer;background:white;width:100%;font-family:inherit;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#2F5D50;color:white;font-size:11px;font-weight:600;flex-shrink:0;">${(p.avatar && p.avatar.trim()) || (p.english_name||p.name||'?')[0]}</span>
+        <span style="flex:1;"><strong>${p.english_name || p.name}</strong> <span style="color:#7a6a52;font-size:11.5px;">${p.title || ''}</span></span>
+      </button>
+    `).join('');
+    overlay.innerHTML = `
+      <div style="background:#fffaf2;border:1px solid #e6dfd1;border-radius:14px;padding:22px 24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;font-family:inherit;">
+        <h3 style="font-family:ui-serif,Georgia,serif;font-size:18px;font-weight:700;margin:0 0 4px;">以哪個身份發送訊息？</h3>
+        <p style="font-size:12px;color:#7a6a52;margin:0 0 16px;line-height:1.5;">原型階段：選一個 ProjFlow 帳號作為「你」。會記在瀏覽器，下次自動套用；點對話頭頂的「換個身份」可重新選。</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">${list}</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll('button[data-pid]').forEach(btn => {
+      btn.onclick = () => {
+        const pid = btn.dataset.pid;
+        const p = allProfiles.find(x => x.id === pid);
+        try { localStorage.setItem('pmsys.myProfileId', pid); } catch(e) {}
+        document.body.removeChild(overlay);
+        resolve(p || null);
+      };
+    });
+    overlay.onclick = (e) => {
+      if (e.target === overlay) { document.body.removeChild(overlay); resolve(null); }
+    };
+  });
+}
+
+function changeMyIdentity() {
+  try { localStorage.removeItem('pmsys.myProfileId'); } catch(e) {}
+  exitRealChat();
+  // 立即重新觸發 picker 後續流程：交給 user 下次點對象時跳
+}
+
+async function findOrCreateDmChannel(meId, otherId) {
+  // 找既有的 DM channel
+  const { data: existing, error: e1 } = await sb.from('chat_channels')
+    .select('id, user_a, user_b')
+    .eq('kind', 'dm')
+    .or(`and(user_a.eq.${meId},user_b.eq.${otherId}),and(user_a.eq.${otherId},user_b.eq.${meId})`);
+  if (e1) { console.error('[chat] find channel error:', e1); }
+  if (existing && existing.length > 0) return existing[0].id;
+  // 沒有 → 建一個
+  const { data: created, error: e2 } = await sb.from('chat_channels')
+    .insert({ kind: 'dm', user_a: meId, user_b: otherId, created_by: meId })
+    .select('id').single();
+  if (e2) { alert('建立對話頻道失敗：' + e2.message); return null; }
+  // 同時加 members（用 upsert 容忍重複錯誤）
+  await sb.from('chat_channel_members').insert([
+    { channel_id: created.id, user_id: meId,   role: 'member' },
+    { channel_id: created.id, user_id: otherId, role: 'member' }
+  ]);
+  return created.id;
+}
+
+async function openChatWithReal(profileId) {
+  const target = allProfiles?.find(x => x.id === profileId);
+  if (!target) return;
+  let me = getMyProfile();
+  if (!me) me = await pickMyIdentity();
+  if (!me) return;
+  if (me.id === target.id) { alert('不能跟自己對話'); return; }
+
+  const channelId = await findOrCreateDmChannel(me.id, target.id);
+  if (!channelId) return;
+
+  // 讀歷史訊息
+  const { data: msgs, error } = await sb.from('chat_messages')
+    .select('id, channel_id, sender_id, body, created_at')
+    .eq('channel_id', channelId)
+    .order('created_at', { ascending: true })
+    .limit(200);
+  if (error) { alert('讀取訊息失敗：' + error.message); return; }
+
+  realChatActive = true;
+  realChatMe = me;
+  realChatTarget = target;
+  realChatChannelId = channelId;
+  realChatMessages = msgs || [];
+  chatPartnerId = null;       // 關掉 mock 模式
+  activeMessageId = null;
+
+  // Realtime 訂閱新訊息
+  if (realChatSub) { sb.removeChannel(realChatSub); realChatSub = null; }
+  realChatSub = sb.channel(`ch-${channelId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'chat_messages',
+      filter: `channel_id=eq.${channelId}`
+    }, (payload) => {
+      if (!realChatMessages.find(m => m.id === payload.new.id)) {
+        realChatMessages.push(payload.new);
+        if (currentView === 'messages') renderMessages();
+      }
+    })
+    .subscribe(status => console.log('[chat] realtime status:', status));
+
+  renderMessages();
+  setTimeout(() => {
+    const sc = document.getElementById('real-chat-thread-scroll');
+    if (sc) sc.scrollTop = sc.scrollHeight;
+    const ta = document.getElementById('real-chat-composer');
+    if (ta) ta.focus();
+  }, 50);
+}
+
+function exitRealChat() {
+  realChatActive = false;
+  if (realChatSub) { sb.removeChannel(realChatSub); realChatSub = null; }
+  renderMessages();
+}
+
+async function sendRealChat() {
+  const ta = document.getElementById('real-chat-composer');
+  const text = (ta?.value || '').trim();
+  if (!text || !realChatMe || !realChatChannelId) return;
+  const { error } = await sb.from('chat_messages').insert({
+    channel_id: realChatChannelId,
+    sender_id: realChatMe.id,
+    body: text,
+    is_urgent: false
+  });
+  if (error) { alert('送出失敗：' + error.message); return; }
+  if (ta) { ta.value = ''; ta.focus(); }
+  // realtime 會把新訊息回推進來
+}
+
+function realChatPanel() {
+  const me = realChatMe;
+  const target = realChatTarget;
+  const messages = realChatMessages;
+  const fmtTime = (iso) => {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch(e) { return ''; }
+  };
+  const bubble = (m) => {
+    const mine = m.sender_id === me.id;
+    return `
+      <div class="flex ${mine ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[75%] px-3 py-2 rounded-lg text-[12.5px] leading-snug"
+             style="background: ${mine ? 'var(--ink)' : 'var(--ink-soft)'}; color: ${mine ? 'white' : 'var(--text)'};">
+          <div style="white-space: pre-wrap; word-break: break-word;">${(m.body || '').replace(/</g, '&lt;')}</div>
+          <div class="text-[9.5px] mt-1 ${mine ? 'opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">${fmtTime(m.created_at)}</div>
+        </div>
+      </div>
+    `;
+  };
+  const targetDisplay = target.english_name || target.name;
+  const targetInitial = (target.avatar && target.avatar.trim()) || targetDisplay[0] || '?';
+  const meDisplay = me.english_name || me.name;
+  return `
+    <div class="flex flex-col h-full" style="min-height: 520px;">
+      <div class="px-4 py-3 border-b flex items-center justify-between" style="border-color: var(--border-soft);">
+        <button onclick="exitRealChat()" class="text-[11px] flex items-center gap-1 hover:underline" style="color: var(--text-3);">
+          <i data-lucide="arrow-left" class="w-3 h-3"></i>返回收件匣
+        </button>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold" style="background: var(--ink);">${targetInitial}</div>
+          <div class="text-right">
+            <div class="text-[13px] font-semibold leading-tight">${targetDisplay}</div>
+            <div class="text-[10.5px]" style="color: var(--text-3);">${target.title || ''}</div>
+          </div>
+        </div>
+      </div>
+      <div class="px-4 py-2 text-[10.5px] flex items-center justify-between" style="background: var(--ink-soft); color: var(--text-2); border-bottom: 1px solid var(--border-soft);">
+        <span><span class="sync-dot"></span>即時連線 ProjFlow chat_messages · 你以 <strong>${meDisplay}</strong> 身份</span>
+        <button onclick="changeMyIdentity()" class="underline" style="color: var(--text-3);">換個身份</button>
+      </div>
+      <div id="real-chat-thread-scroll" class="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style="background: white;">
+        ${messages.length === 0 ? `
+          <div class="text-center py-10 text-[12px]" style="color: var(--text-3);">
+            <i data-lucide="message-circle" class="w-7 h-7 mx-auto mb-2 opacity-40"></i>
+            <div>尚無對話紀錄</div>
+            <div class="text-[10.5px] mt-1">送出第一則訊息開啟與 ${targetDisplay} 的對話</div>
+          </div>
+        ` : messages.map(bubble).join('')}
+      </div>
+      <div class="px-4 py-3 border-t flex gap-2 items-end" style="border-color: var(--border-soft); background: var(--paper);">
+        <textarea id="real-chat-composer" rows="2" placeholder="輸入訊息給 ${targetDisplay}… (Enter 送出 / Shift+Enter 換行)"
+                  class="flex-1 text-[12.5px] resize-none rounded-md px-3 py-2 border"
+                  style="border-color: var(--border); background: white;"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRealChat();}"></textarea>
+        <button onclick="sendRealChat()" class="btn-ink flex items-center gap-1.5">
+          <i data-lucide="send" class="w-3.5 h-3.5"></i>送出
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 /* 聊天面板：完全在 PMSYS 內部運作，不跳 ProjFlow。
@@ -3366,14 +3571,14 @@ function renderMessages() {
 
         <!-- 詳細 / 聊天面板 -->
         <div class="col-span-12 lg:col-span-7 paper p-0 flex flex-col">
-          ${chatPartnerId ? chatThreadPanel(chatPartnerId) : (active ? messageDetail(active) : `
+          ${realChatActive ? realChatPanel() : (chatPartnerId ? chatThreadPanel(chatPartnerId) : (active ? messageDetail(active) : `
             <div class="flex-1 flex items-center justify-center text-[12px]" style="color: var(--text-3);">
               <div class="text-center">
                 <i data-lucide="mouse-pointer-click" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
                 <div>從左側選擇一則訊息，或從上方聊天名單點對象開始對話</div>
               </div>
             </div>
-          `)}
+          `))}
         </div>
 
       </div>
