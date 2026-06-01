@@ -982,8 +982,8 @@ function isAuthorizedForPMSYS(u) { return !!u && PMSYS_ALLOWED_ROLES.includes(u.
    ============================================================ */
 
 function initLogin() {
-  // 目前唯一已登錄的真人
-  const u = USERS.find(x => x.id === 'u100');
+  // 預設快速進入：總經理（全權限）
+  const u = USERS.find(x => x.id === 'u1');
   document.getElementById('demo-accounts').innerHTML = `
     <button onclick="fillEmail('${u.email}')" class="col-span-2 text-left p-3 rounded-md border hover:bg-stone-50 transition flex items-center gap-3" style="border-color: var(--border);">
       <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-[13px] flex-shrink-0" style="background: var(--ink);">${u.avatar}</div>
@@ -3679,9 +3679,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initLogin();
   // 已在 ProjFlow 登入並翻頁回來 → 帶身份直接進，不重複登入（SSO：擇一登入即可）
   if (ssoLoginFromUrl()) return;
-  // 原型階段：直接以王耀裕進入工作檯，不走 OTP
+  // 原型階段：直接以總經理（admin）進入，享全權限
   // （登出後仍可走 Email + OTP 完整流程；正式上線時移除這行）
-  login('u100');
+  login('u1');
 });
 
 // 原型階段快速切換視角（王耀裕 ↔ 總經理）
