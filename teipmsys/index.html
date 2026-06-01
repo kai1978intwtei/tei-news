@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://pm-system-mauve.vercel.app" crossorigin>
 <link rel="dns-prefetch" href="https://rtm-rtm-app-app.vercel.app">
 <link rel="preconnect" href="https://rtm-rtm-app-app.vercel.app" crossorigin>
+<link rel="preconnect" href="https://dlmjsiwouyhhdatpenwp.supabase.co" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232F5D50'/%3E%3Ctext x='32' y='24' font-family='Georgia,serif' font-size='11' font-weight='700' fill='%23ffffff' fill-opacity='0.72' text-anchor='middle' letter-spacing='1.2'%3ETEi%3C/text%3E%3Ctext x='32' y='49' font-family='Georgia,serif' font-size='20' font-weight='700' fill='white' text-anchor='middle'%3EPM%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -659,6 +661,20 @@
         <div class="text-[10px] tracking-[.16em] font-semibold mb-3 uppercase" style="color: var(--text-3);">快速進入</div>
         <div class="grid grid-cols-2 gap-2" id="demo-accounts"></div>
       </div>
+
+      <!-- 連 ProjFlow 真實帳號（Supabase auth）-->
+      <div class="mt-5 pt-5 border-t" style="border-color: var(--border);">
+        <div class="text-[10px] tracking-[.16em] font-semibold mb-3 uppercase" style="color: var(--text-3);">啟用真實聊天</div>
+        <button onclick="signInWithProjFlow()" class="w-full p-3 rounded-md border text-left flex items-center gap-3 hover:bg-stone-50 transition" style="border-color: var(--border);">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-semibold flex-shrink-0" style="background: linear-gradient(135deg, var(--moss) 0%, var(--ink) 100%);">PF</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12.5px] font-semibold" style="color: var(--text);">用 ProjFlow 帳號登入</div>
+            <div class="text-[10.5px] mt-0.5" style="color: var(--text-3);">寄 magic link 到信箱 · 接 ProjFlow 真實聊天</div>
+          </div>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5" style="color: var(--text-3);"></i>
+        </button>
+        <div id="projflow-status" class="text-[10.5px] mt-2" style="color: var(--text-3);"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -790,6 +806,98 @@ const DEPTS = {
   dev:   { name: '開發部',         color: 'caramel',code: 'DEV' },
   sales: { name: '業務部',         color: 'moss',  code: 'SAL' },
 };
+
+/* ============================================================
+   ProjFlow Supabase 整合（Stage 1：連線 + Auth + 抓 profile）
+   ------------------------------------------------------------
+   anon key 是給前端用的公開金鑰，配合 RLS policy 安全。
+   只在使用者點「用 ProjFlow 帳號登入」後才會建 session；
+   未登入時 PMSYS 全部走 mock 資料（保留原 demo 體驗）。
+   ============================================================ */
+const PROJFLOW_SB = {
+  url: 'https://dlmjsiwouyhhdatpenwp.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsbWpzaXdvdXloaGRhdHBlbndwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDU0NTAsImV4cCI6MjA5MjQ4MTQ1MH0.5PZr2v81Wh2B_e_QtxYgBf8tCwK2kBzoqDVIn4hjAjk'
+};
+const sb = (window.supabase && window.supabase.createClient)
+  ? window.supabase.createClient(PROJFLOW_SB.url, PROJFLOW_SB.anonKey)
+  : null;
+if (!sb) console.warn('[ProjFlow] supabase-js SDK 載入失敗，真實聊天功能停用');
+let currentProfile = null;  // 真實 ProjFlow profile（已登入 Supabase 後才有）
+
+async function signInWithProjFlow() {
+  if (!sb) { alert('Supabase SDK 未載入'); return; }
+  const email = prompt('輸入你的 ProjFlow Email\n（系統會寄登入連結到信箱，點連結回來即可）');
+  if (!email) return;
+  const { error } = await sb.auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
+    options: {
+      emailRedirectTo: location.origin + location.pathname,
+      shouldCreateUser: false  // 只允許已存在於 ProjFlow 的帳號
+    }
+  });
+  if (error) {
+    alert('寄送失敗：' + error.message);
+    return;
+  }
+  const status = document.getElementById('projflow-status');
+  if (status) status.innerHTML = `<span style="color: var(--moss);">●</span> 登入連結已寄到 <strong>${email}</strong>，請去信箱點連結。`;
+}
+
+async function signOutProjFlow() {
+  if (!sb) return;
+  await sb.auth.signOut();
+  currentProfile = null;
+  updateProjFlowStatus();
+}
+
+async function fetchMyProfile(userId) {
+  if (!sb) return null;
+  const { data, error } = await sb
+    .from('profiles')
+    .select('id, name, english_name, title, role, dept, org_unit_id, avatar, is_pm, last_seen_at, resigned_at')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) { console.error('[ProjFlow] 抓 profile 失敗', error); return null; }
+  return data;
+}
+
+function updateProjFlowStatus() {
+  const el = document.getElementById('projflow-status');
+  if (!el) return;
+  if (currentProfile) {
+    const display = currentProfile.english_name || currentProfile.name;
+    el.innerHTML = `<span style="color: var(--moss);">●</span> ProjFlow 已連線：<strong>${display}</strong> <button onclick="signOutProjFlow()" class="underline ml-1" style="color: var(--text-3);">登出</button>`;
+  } else {
+    el.textContent = '';
+  }
+}
+
+// Auth 事件監聽：登入時抓 profile、登出時清掉
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    console.log('[ProjFlow auth]', event, session?.user?.email || '(無 session)');
+    if (session?.user) {
+      currentProfile = await fetchMyProfile(session.user.id);
+      if (currentProfile) {
+        console.log('[ProjFlow] 已抓到 profile:', currentProfile);
+      } else {
+        console.warn('[ProjFlow] 此 auth user 找不到對應的 profiles 紀錄（可能 RLS 擋下或 ID 不對）');
+      }
+    } else {
+      currentProfile = null;
+    }
+    updateProjFlowStatus();
+  });
+  // 頁面載入時：若已有 session（之前登入過、token 還沒過期），直接還原狀態
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session?.user) {
+      fetchMyProfile(data.session.user.id).then(p => {
+        currentProfile = p;
+        updateProjFlowStatus();
+      });
+    }
+  });
+}
 
 // 唯一真人：王耀裕（SPE 課級主管，PMO 唯一專案經理）
 // 總經理保留為後台管理角色（待指派真實姓名）
