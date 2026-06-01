@@ -3526,6 +3526,112 @@ async function openGroupChat(channelId) {
   }, 50);
 }
 
+/* ============================================================
+   Stage 7：@ 提及 — composer autocomplete + bubble 高亮
+   ============================================================ */
+let mentionPickerVisible = false;
+let mentionFilterText = '';
+
+function onComposerInput(textarea) {
+  if (!textarea) return;
+  const v = textarea.value;
+  const pos = textarea.selectionStart ?? v.length;
+  const before = v.slice(0, pos);
+  const m = before.match(/@([^\s@]*)$/);
+  if (m) {
+    mentionPickerVisible = true;
+    mentionFilterText = m[1].toLowerCase();
+  } else {
+    mentionPickerVisible = false;
+    mentionFilterText = '';
+  }
+  renderMentionPicker();
+}
+
+function renderMentionPicker() {
+  let picker = document.getElementById('mention-picker');
+  if (!mentionPickerVisible) { picker?.remove(); return; }
+  let candidates = allProfiles || [];
+  // 群組模式：只顯示群組成員；DM 模式：除了自己以外所有人
+  if (realChatKind === 'group' && realChatGroupMemberIds.length) {
+    candidates = candidates.filter(p => realChatGroupMemberIds.includes(p.id));
+  }
+  candidates = candidates.filter(p => p.id !== realChatMe?.id);
+  if (mentionFilterText) {
+    candidates = candidates.filter(p =>
+      (p.english_name || '').toLowerCase().includes(mentionFilterText) ||
+      (p.name || '').toLowerCase().includes(mentionFilterText)
+    );
+  }
+  candidates = candidates.slice(0, 6);
+  if (!candidates.length) { picker?.remove(); return; }
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'mention-picker';
+    picker.style.cssText = 'position:fixed;background:white;border:1px solid #e6dfd1;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:90;min-width:240px;max-width:320px;overflow:hidden;font-family:inherit;';
+    document.body.appendChild(picker);
+  }
+  picker.innerHTML = `
+    <div style="padding:6px 10px;font-size:10.5px;color:#7a6a52;background:#f9f4e8;border-bottom:1px solid #e6dfd1;">@ 提及 · ${mentionFilterText || '輸入名字篩選'}</div>
+    ${candidates.map(p => `
+      <button onclick="insertMention('${p.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;width:100%;text-align:left;background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:12px;border-bottom:1px solid #f4ecd8;"
+              onmouseover="this.style.background='#f9f4e8'" onmouseout="this.style.background='transparent'">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${p.role==='admin'?'#7a5a1a':p.is_pm?'#c47a3a':'#2F5D50'};color:white;font-size:10px;font-weight:600;flex-shrink:0;">${(p.avatar && p.avatar.trim()) || (p.english_name||p.name||'?')[0]}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>${p.english_name || p.name}</strong> <span style="color:#7a6a52;font-size:11px;">${p.title || ''}</span></span>
+      </button>
+    `).join('')}
+  `;
+  // 位置：textarea 上方
+  const ta = document.getElementById('real-chat-composer');
+  if (ta) {
+    const r = ta.getBoundingClientRect();
+    picker.style.left = r.left + 'px';
+    picker.style.top = (r.top - picker.offsetHeight - 6) + 'px';
+  }
+}
+
+function insertMention(profileId) {
+  const p = allProfiles?.find(x => x.id === profileId);
+  if (!p) return;
+  const ta = document.getElementById('real-chat-composer');
+  if (!ta) return;
+  const v = ta.value;
+  const pos = ta.selectionStart ?? v.length;
+  const before = v.slice(0, pos);
+  const after = v.slice(pos);
+  const m = before.match(/@([^\s@]*)$/);
+  if (!m) return;
+  const prefix = before.slice(0, m.index);
+  const insertion = `@${p.english_name || p.name} `;
+  ta.value = prefix + insertion + after;
+  const newPos = (prefix + insertion).length;
+  ta.focus();
+  ta.setSelectionRange(newPos, newPos);
+  mentionPickerVisible = false;
+  document.getElementById('mention-picker')?.remove();
+}
+
+// 把 @英文名 / @中文名 轉成可點擊的 highlight span
+function renderBodyWithMentions(text, escapeFn) {
+  const esc = escapeFn || ((s) => (s || '').replace(/</g, '&lt;'));
+  if (!text) return '';
+  const escaped = esc(text);
+  if (!allProfiles?.length) return escaped;
+  // 排序 profile 名稱：長的先匹配（避免 "Brad" 被 "Brad Wang" 部分匹配）
+  const names = allProfiles
+    .flatMap(p => [{ name: p.english_name, p }, { name: p.name, p }])
+    .filter(x => x.name)
+    .sort((a, b) => b.name.length - a.name.length);
+  let result = escaped;
+  names.forEach(({ name, p }) => {
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`@${escapedName}`, 'g');
+    const isMe = p.id === realChatMe?.id;
+    result = result.replace(re, `<span class="rounded px-1 cursor-pointer" style="background:${isMe?'rgba(196,122,58,.35)':'rgba(196,122,58,.15)'};color:${isMe?'var(--caramel-hover)':'var(--ink)'};font-weight:600;" onclick="event.stopPropagation();openChatWithReal('${p.id}')" title="與 ${esc(name)} 開始對話">@${esc(name)}</span>`);
+  });
+  return result;
+}
+
 function openGroupCreator() {
   if (!allProfiles || !allProfiles.length) { alert('員工名單尚未載入'); return; }
   const me = getMyProfile();
@@ -3933,7 +4039,7 @@ function realChatPanel() {
                style="background: ${mine ? 'var(--ink)' : 'var(--ink-soft)'}; color: ${mine ? 'white' : 'var(--text)'};">
             ${senderNameBlock}
             ${replyBlock}
-            <div style="white-space: pre-wrap; word-break: break-word;">${escape(m.body)}</div>
+            <div style="white-space: pre-wrap; word-break: break-word;">${renderBodyWithMentions(m.body, escape)}</div>
             <div class="text-[9.5px] mt-1 flex items-center ${mine ? 'justify-end opacity-75' : ''}" style="${mine ? '' : 'color: var(--text-3);'}">
               <span>${fmtTime(m.created_at)}</span>${tick}
             </div>
@@ -4022,10 +4128,13 @@ function realChatPanel() {
       </div>
       ${replyBanner}
       <div class="px-4 py-3 border-t flex gap-2 items-end" style="border-color: var(--border-soft); background: var(--paper);">
-        <textarea id="real-chat-composer" rows="2" placeholder="${realChatReplyingTo ? '回覆中… ' : ''}輸入訊息給 ${targetDisplay}… (Enter 送出 / Shift+Enter 換行)"
+        <textarea id="real-chat-composer" rows="2" placeholder="${realChatReplyingTo ? '回覆中… ' : ''}輸入訊息${isGroup ? '到「' + escape(realChatGroup?.name || '群組') + '」' : (target ? '給 ' + displayOf(target) : '')}… (@ 提及 · Enter 送出 · Shift+Enter 換行)"
                   class="flex-1 text-[12.5px] resize-none rounded-md px-3 py-2 border"
                   style="border-color: var(--border); background: white;"
-                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRealChat();}"></textarea>
+                  oninput="onComposerInput(this)"
+                  onkeyup="onComposerInput(this)"
+                  onblur="setTimeout(()=>{mentionPickerVisible=false;document.getElementById('mention-picker')?.remove();},150)"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!mentionPickerVisible){event.preventDefault();sendRealChat();}else if(event.key==='Escape'&&mentionPickerVisible){mentionPickerVisible=false;document.getElementById('mention-picker')?.remove();}"></textarea>
         <button onclick="sendRealChat()" class="btn-ink flex items-center gap-1.5">
           <i data-lucide="send" class="w-3.5 h-3.5"></i>送出
         </button>
