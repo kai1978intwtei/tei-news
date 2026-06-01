@@ -2649,93 +2649,131 @@ function openNewReport() {
    View: 隊友與部門
    ============================================================ */
 
+async function syncProjFlowAndReload() {
+  await loadProjFlowRoster();
+  if (currentView === 'teammates') renderTeammates();
+  if (currentView === 'messages') renderMessages();
+}
+
 function renderTeammates() {
   const titleByRole = { admin:'全公司同仁', manager:'部門隊友', pm:'隊友與部門', staff:'隊友與部門' };
-  setTitle(titleByRole[currentUser.role] || '隊友', currentUser.role === 'admin' ? '所有專案人員與部門結構' : '從 ProjFlow 挑選成員加入專案');
+  setTitle(titleByRole[currentUser.role] || '隊友', '即時來自 ProjFlow profiles + org_units');
 
-  const byDept = {};
-  USERS.forEach(u => {
-    if (!byDept[u.dept]) byDept[u.dept] = [];
-    byDept[u.dept].push(u);
-  });
+  // 載入狀態判斷
+  const loading = allProfiles === null;
+  const failed = !!projflowLoadError;
+  const hasData = allProfiles && allOrgUnits && allProfiles.length > 0;
+
+  // 用真實資料建部門樹
+  const unitsById = hasData ? new Map(allOrgUnits.map(u => [u.id, u])) : new Map();
+  const childrenOf = (parentId) => hasData ? allOrgUnits.filter(u => u.parent_id === parentId) : [];
+  const topUnits = hasData ? allOrgUnits.filter(u => !u.parent_id).sort((a,b) => (a.level||0) - (b.level||0) || a.name.localeCompare(b.name)) : [];
+  const profilesByUnit = new Map();
+  if (hasData) {
+    allProfiles.forEach(p => {
+      if (!p.org_unit_id) return;
+      if (!profilesByUnit.has(p.org_unit_id)) profilesByUnit.set(p.org_unit_id, []);
+      profilesByUnit.get(p.org_unit_id).push(p);
+    });
+  }
+
+  // 遞迴渲染部門節點
+  const renderUnit = (unit, depth) => {
+    const members = profilesByUnit.get(unit.id) || [];
+    const children = childrenOf(unit.id);
+    return `
+      <div class="${depth > 0 ? 'ml-5 pl-3 border-l' : ''}" style="${depth > 0 ? 'border-color: var(--border-soft);' : ''}">
+        <div class="flex items-center gap-2 mb-2 ${depth === 0 ? 'mt-4 pb-1.5 border-b' : 'mt-3'}" style="${depth === 0 ? 'border-color: var(--border-soft);' : ''}">
+          <i data-lucide="${depth === 0 ? 'building' : depth === 1 ? 'briefcase' : 'folder'}" class="w-3.5 h-3.5" style="color: var(--text-3);"></i>
+          <span class="${depth === 0 ? 'serif text-[14px]' : 'text-[12.5px]'} font-semibold">${unit.name}</span>
+          <span class="mono text-[10px]" style="color: var(--text-3);">${members.length} 人</span>
+          ${unit.code ? `<span class="mono text-[10px]" style="color: var(--text-3);">· ${unit.code}</span>` : ''}
+        </div>
+        ${members.length > 0 ? `
+          <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
+            ${members.map(p => {
+              const display = p.english_name || p.name;
+              const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
+              const roleColor = p.role === 'admin' ? 'var(--plum)' : p.is_pm ? 'var(--caramel)' : 'var(--ink)';
+              return `
+                <div class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 cursor-pointer transition" onclick="openChatWithReal('${p.id}')" title="點此開始對話">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-medium flex-shrink-0" style="background: ${roleColor};">${initial}</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[12.5px] font-medium truncate">${display}</div>
+                    <div class="text-[10px] truncate" style="color: var(--text-3);">${p.title || ''}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+        ${children.map(c => renderUnit(c, depth + 1)).join('')}
+      </div>
+    `;
+  };
+
+  // 沒有歸屬部門的 profiles
+  const orphans = hasData ? allProfiles.filter(p => !p.org_unit_id) : [];
 
   document.getElementById('main-content').innerHTML = `
     <div class="fade-in space-y-5 max-w-[1280px]">
 
-      <!-- 同步說明 -->
+      <!-- 同步說明 + 立即同步按鈕 -->
       <div class="paper p-4 flex items-center gap-4" style="background: linear-gradient(135deg, var(--ink-soft) 0%, var(--paper) 100%);">
         <div class="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0" style="background: var(--ink);">
           <i data-lucide="users" class="w-5 h-5 text-white"></i>
         </div>
         <div class="flex-1">
           <div class="text-[13px] font-semibold">部門資料即時來自 ProjFlow</div>
-          <div class="text-[11.5px]" style="color: var(--text-2);">org_units 與 profiles 完全同步；新人加入 ProjFlow 後會自動出現在此清單</div>
+          <div class="text-[11.5px]" style="color: var(--text-2);">
+            ${loading ? '正在載入…' : failed ? `<span style="color: var(--rust);">載入失敗：${projflowLoadError}</span>`
+              : `org_units ${allOrgUnits.length} 個 · profiles ${allProfiles.length} 人 · 點任一人開始對話`}
+          </div>
         </div>
-        <button class="btn-ink"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>立即同步</button>
+        <button class="btn-ink" onclick="syncProjFlowAndReload()"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>立即同步</button>
       </div>
 
-      <!-- 我目前的隊友 -->
-      <div class="paper p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="serif font-semibold text-[15px]">${currentUser.role === 'admin' ? '全公司被指派為隊友的成員' : '我目前的隊友'}</h3>
-            <p class="text-[12px]" style="color: var(--text-3);">${currentUser.role === 'admin' ? '出現在任何專案 members 列表中的成員' : '已加入我所統籌專案的成員'}</p>
-          </div>
-          ${currentUser.role !== 'admin' ? `<button class="btn-caramel" onclick="openTeamPicker()"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i>挑選新隊友</button>` : ''}
+      ${loading ? `
+        <div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">正在從 ProjFlow 載入…</div>
+      ` : failed ? `
+        <div class="paper p-6">
+          <div class="text-[13px] mb-2"><strong>無法載入 ProjFlow 資料</strong></div>
+          <div class="mono text-[11.5px] p-2 rounded" style="background: var(--bg-subtle); color: var(--rust);">${projflowLoadError}</div>
         </div>
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-          ${[...new Set(visibleProjects().flatMap(p => p.members))].filter(id => id !== currentUser.id).map(id => {
-            const u = USERS.find(x => x.id === id);
-            const projects = visibleProjects().filter(p => p.members.includes(id));
-            return `
-              <div class="flex items-center gap-3 p-3 rounded-md border" style="border-color: var(--border);">
-                <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold" style="background: var(--ink);">${u.avatar}</div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13px] font-semibold">${u.name}</div>
-                  <div class="text-[11px]" style="color: var(--text-3);">${u.title} · ${DEPTS[u.dept]?.name}</div>
-                  <div class="flex gap-1 mt-1">
-                    ${projects.map(p => `<span class="tag tag-grey text-[9.5px]">${p.code}</span>`).join('')}
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-
-      <!-- 各部門全覽（來自 ProjFlow） -->
-      <div class="paper p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="serif font-semibold text-[15px]">ProjFlow 部門全覽</h3>
-            <p class="text-[12px]" style="color: var(--text-3);">點擊人員可加入專案</p>
-          </div>
-          <span class="text-[11px]" style="color: var(--text-3);"><span class="sync-dot mr-1.5"></span>最後同步 2 分鐘前</span>
-        </div>
-        <div class="space-y-4">
-          ${Object.entries(byDept).map(([deptId, users]) => `
+      ` : !hasData ? `
+        <div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">ProjFlow profiles 與 org_units 都是空的。</div>
+      ` : `
+        <!-- ProjFlow 真實組織架構 -->
+        <div class="paper p-6">
+          <div class="flex items-center justify-between mb-1">
             <div>
-              <div class="flex items-center gap-2 mb-2.5 pb-1.5 border-b" style="border-color: var(--border-soft);">
-                <i data-lucide="building" class="w-3.5 h-3.5" style="color: var(--text-3);"></i>
-                <span class="serif text-[13px] font-semibold">${DEPTS[deptId]?.name}</span>
-                <span class="mono text-[10px]" style="color: var(--text-3);">${users.length} 人</span>
-                ${deptId === 'spe' || deptId === 'pmo' ? '<span class="tag tag-ink">PMO 體系</span>' : ''}
-              </div>
+              <h3 class="serif font-semibold text-[15px]">ProjFlow 組織架構</h3>
+              <p class="text-[12px]" style="color: var(--text-3);">點任一人開始 1 對 1 對話（資料來源：profiles + org_units）</p>
+            </div>
+          </div>
+          <div>${topUnits.map(u => renderUnit(u, 0)).join('')}</div>
+          ${orphans.length > 0 ? `
+            <div class="mt-5 pt-4 border-t" style="border-color: var(--border-soft);">
+              <div class="text-[11px] mb-2" style="color: var(--text-3);">未歸屬部門（${orphans.length}）</div>
               <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-2">
-                ${users.map(u => `
-                  <div class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 cursor-pointer">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-medium flex-shrink-0" style="background: ${u.role === 'admin' ? 'var(--plum)' : u.role === 'manager' ? 'var(--caramel)' : 'var(--ink)'};">${u.avatar}</div>
-                    <div class="flex-1 min-w-0">
-                      <div class="text-[12.5px] font-medium truncate">${u.name}</div>
-                      <div class="text-[10px] truncate" style="color: var(--text-3);">${u.title}</div>
+                ${orphans.map(p => {
+                  const display = p.english_name || p.name;
+                  const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
+                  return `
+                    <div class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 cursor-pointer" onclick="openChatWithReal('${p.id}')">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-medium" style="background: var(--text-3);">${initial}</div>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-[12.5px] font-medium truncate">${display}</div>
+                        <div class="text-[10px] truncate" style="color: var(--text-3);">${p.title || ''}</div>
+                      </div>
                     </div>
-                  </div>
-                `).join('')}
+                  `;
+                }).join('')}
               </div>
             </div>
-          `).join('')}
+          ` : ''}
         </div>
-      </div>
+      `}
     </div>
   `;
 }
@@ -3182,6 +3220,46 @@ let realChatSub = null;
 let realChatReadsSub = null;     // 訂閱 chat_reads 變更（已讀回執 realtime）
 let realChatPeerReadAt = null;   // 對方上次讀到哪（ISO 時間）
 let realChatReplyingTo = null;   // 正在回覆哪則訊息（{id, body, sender_id}）
+let realChatReactions = [];      // 當前頻道訊息的 emoji 反應 [{message_id, user_id, emoji}]
+let realChatReactSub = null;     // 訂閱 chat_message_reactions realtime
+let realChatReactPickerFor = null; // 哪則訊息正打開 emoji picker（message_id）
+
+const QUICK_EMOJIS = ['👍','❤️','😂','🎉','🙌','👀','🔥'];
+
+async function loadReactions(messageIds) {
+  if (!messageIds || !messageIds.length) { realChatReactions = []; return; }
+  const { data, error } = await sb.from('chat_message_reactions')
+    .select('message_id, user_id, emoji')
+    .in('message_id', messageIds);
+  if (error) console.warn('[chat] load reactions failed:', error);
+  realChatReactions = data || [];
+}
+
+async function toggleReaction(messageId, emoji) {
+  const me = realChatMe?.id;
+  if (!me) return;
+  realChatReactPickerFor = null;
+  const existing = realChatReactions.find(r =>
+    r.message_id === messageId && r.user_id === me && r.emoji === emoji
+  );
+  if (existing) {
+    const { error } = await sb.from('chat_message_reactions')
+      .delete()
+      .eq('message_id', messageId).eq('user_id', me).eq('emoji', emoji);
+    if (error) { alert('移除反應失敗：' + error.message); return; }
+  } else {
+    const { error } = await sb.from('chat_message_reactions')
+      .insert({ message_id: messageId, user_id: me, emoji });
+    if (error) { alert('新增反應失敗：' + error.message); return; }
+  }
+  // realtime 會推回更新；先樂觀重繪
+  renderMessages();
+}
+
+function toggleReactPicker(messageId) {
+  realChatReactPickerFor = (realChatReactPickerFor === messageId) ? null : messageId;
+  renderMessages();
+}
 
 async function markChannelAsRead(channelId, userId) {
   if (!channelId || !userId) return;
