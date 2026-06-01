@@ -1588,169 +1588,290 @@ function renderPulseStrip(myProjects) {
    View: 總經理視角（全公司總覽）
    ============================================================ */
 
-function renderExecutive() {
-  setTitle('全公司總覽', '總經理視角');
+/* ============================================================
+   Stage A：總經理視角「專案總覽」 — 視覺化 dashboard，read-only
+   ============================================================ */
+let allProjects = null;
+let projectsLoadError = null;
+let execFilter = 'all'; // 'all' | 'on-track' | 'at-risk' | 'done'
 
-  const allPMs = USERS.filter(u => u.role === 'pm' || (u.role === 'staff' && u.dept === 'pmo'));
-  const allProjects = PROJECTS;
-  const allTasks = TASKS;
-  const allReports = REPORTS;
-  const atRisk = allProjects.filter(p => p.status === 'at-risk').length;
-  const overdueTasks = allTasks.filter(t => t.status === 'overdue').length;
-  const blockedTasks = allTasks.filter(t => t.status === 'blocked').length;
-  const avgProgress = Math.round(allProjects.reduce((s,p) => s + p.progress, 0) / allProjects.length);
+async function loadProjFlowProjects() {
+  if (!sb) return;
+  const { data, error } = await sb.from('projects').select('*').limit(500);
+  if (error) {
+    projectsLoadError = error.message;
+    allProjects = [];
+    console.error('[projects] load failed:', error);
+    return;
+  }
+  projectsLoadError = null;
+  allProjects = data || [];
+  console.log(`[projects] loaded ${allProjects.length} projects, sample fields:`, Object.keys(allProjects[0] || {}));
+}
 
-  document.getElementById('main-content').innerHTML = `
-    <div class="fade-in space-y-6 max-w-[1480px]">
+function setExecFilter(f) { execFilter = f; renderExecutive(); }
 
-      <!-- Hero -->
-      <div class="paper p-6 flex items-center justify-between" style="background: linear-gradient(135deg, var(--paper) 0%, #F1E6EB 100%);">
-        <div>
-          <div class="flex items-center gap-2 mb-2">
-            <i data-lucide="crown" class="w-4 h-4" style="color: var(--plum);"></i>
-            <span class="tag tag-plum">總經理視角</span>
-            <span class="text-[11px]" style="color: var(--text-3);">${formatDate(today)} · 星期${getWeekday(today)}</span>
-          </div>
-          <h2 class="serif text-2xl font-semibold mb-1">早安，${displayName(currentUser)}</h2>
-          <p class="text-[13px]" style="color: var(--text-2);">
-            全公司 <strong>${allPMs.length}</strong> 位專案人員、<strong>${allProjects.length}</strong> 個進行中專案、平均進度 <strong class="mono">${avgProgress}%</strong>
-            ${atRisk > 0 ? `，<span style="color: var(--rust); font-weight: 600;">${atRisk} 個風險專案需關注</span>` : ''}
-          </p>
-        </div>
-        <div class="flex gap-2">
-          <button class="btn-ghost"><i data-lucide="download" class="w-3.5 h-3.5"></i>匯出總覽 PDF</button>
-          <button class="btn-ink"><i data-lucide="external-link" class="w-3.5 h-3.5"></i>進入 ProjFlow</button>
-        </div>
+// 批示 modal
+let directiveTarget = null; // { kind: 'project'|'profile', id, label }
+function openDirective(kind, id, label) {
+  directiveTarget = { kind, id, label };
+  const overlay = document.createElement('div');
+  overlay.id = 'directive-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(31,31,28,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div style="background:#fffaf2;border:1px solid #e6dfd1;border-radius:14px;padding:22px 24px;max-width:520px;width:100%;font-family:inherit;">
+      <div style="font-size:11px;color:#7a6a52;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px;">總經理批示 · ${kind === 'project' ? '案件' : '人員'}</div>
+      <h3 style="font-family:ui-serif,Georgia,serif;font-size:18px;font-weight:700;margin:0 0 14px;">${label}</h3>
+      <textarea id="directive-body" rows="6" placeholder="寫下對 ${label} 的意見或指示…" style="width:100%;padding:10px 12px;border:1px solid #d8cdb6;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11.5px;color:#7a6a52;">
+        <input type="checkbox" id="directive-urgent" style="width:14px;height:14px;">
+        <label for="directive-urgent">標記為緊急（urgent）</label>
       </div>
-
-      <!-- KPI -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        ${kpiBlock('專案人員',  allPMs.length,        '位',  'users',           'ink')}
-        ${kpiBlock('進行中專案', allProjects.length,  '個',  'folders',         'ink')}
-        ${kpiBlock('全部任務',  allTasks.length,      '件',  'check-square',    'caramel')}
-        ${kpiBlock('風險專案',  atRisk,               '個',  'alert-triangle',  'rust', atRisk > 0)}
-        ${kpiBlock('卡住任務',  blockedTasks,         '件',  'octagon-alert',   'plum', blockedTasks > 0)}
-        ${kpiBlock('延遲任務',  overdueTasks,         '件',  'clock-alert',     'rust', overdueTasks > 0)}
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <button id="directive-cancel" style="padding:8px 16px;border-radius:8px;border:1px solid #d8cdb6;background:transparent;font-size:13px;font-weight:600;cursor:pointer;color:#5a3a1a;font-family:inherit;">取消</button>
+        <button id="directive-submit" style="padding:8px 18px;border-radius:8px;border:none;background:#1f1f1c;color:#fffaf2;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">送出批示</button>
       </div>
-
-      <!-- PM 矩陣 -->
-      <div>
-        <div class="flex items-end justify-between mb-4">
-          <div>
-            <h3 class="serif text-[16px] font-semibold">各專案人員現況</h3>
-            <p class="text-[12px]" style="color: var(--text-3);">點擊卡片右下「閱讀」進入該 PM 的報告</p>
-          </div>
-          <span class="text-[11px] flex items-center gap-1.5" style="color: var(--text-3);">
-            <span class="sync-dot"></span>資料即時來自 ProjFlow profiles
-          </span>
-        </div>
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${allPMs.map(pm => pmCardForExec(pm)).join('')}
-        </div>
-      </div>
-
-      <!-- 全公司專案表 -->
-      <div class="paper p-6">
-        <div class="flex items-end justify-between mb-4">
-          <div>
-            <h3 class="serif text-[16px] font-semibold">全公司專案總表</h3>
-            <p class="text-[12px]" style="color: var(--text-3);">點擊「詳細專案報告」直接閱讀該專案在 PMSYS 撰寫的完整 A4 報告</p>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-[13px]">
-            <thead>
-              <tr style="background: var(--bg-subtle);">
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">代號</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">專案名稱</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">PM</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">客戶</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">期程</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">進度</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-left" style="color: var(--text-3);">狀態</th>
-                <th class="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-right" style="color: var(--text-3);">詳細報告</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${allProjects.map(p => {
-                const pm = USERS.find(u => u.id === p.pm);
-                const projectReport = allReports.find(r => r.project === p.id);
-                return `
-                  <tr class="border-b hover:bg-stone-50" style="border-color: var(--border-soft);">
-                    <td class="px-3 py-3"><span class="mono text-[11px] font-semibold" style="color: var(--text-2);">${p.code}</span></td>
-                    <td class="px-3 py-3">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-medium">${p.name}</span>
-                        ${sourceBadge(p.source)}
-                      </div>
-                    </td>
-                    <td class="px-3 py-3">
-                      <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold" style="background: var(--ink);">${pm?.avatar}</div>
-                        <span>${pm?.name}</span>
-                      </div>
-                    </td>
-                    <td class="px-3 py-3" style="color: var(--text-2);">${p.client}</td>
-                    <td class="px-3 py-3 mono text-[11px]" style="color: var(--text-3);">${p.start}<br>→ ${p.end}</td>
-                    <td class="px-3 py-3 w-32">
-                      <div class="flex items-center gap-2">
-                        <div class="flex-1 h-1.5 rounded-full" style="background: var(--bg-subtle);">
-                          <div class="h-full rounded-full" style="width: ${p.progress}%; background: ${p.status === 'at-risk' ? 'var(--caramel)' : 'var(--ink)'};"></div>
-                        </div>
-                        <span class="mono text-[11px] font-semibold w-8 text-right">${p.progress}%</span>
-                      </div>
-                    </td>
-                    <td class="px-3 py-3">
-                      <span class="tag ${p.status === 'at-risk' ? 'tag-rust' : 'tag-moss'}">${p.status === 'at-risk' ? '風險' : '如期'}</span>
-                    </td>
-                    <td class="px-3 py-3 text-right">
-                      ${projectReport ? `
-                        <button onclick="openReport('${projectReport.id}')" class="text-[11px] font-medium px-2.5 py-1 rounded inline-flex items-center gap-1" style="background: var(--ink); color: white;">
-                          <i data-lucide="file-text" class="w-3 h-3"></i>詳細專案報告
-                        </button>
-                      ` : '<span class="text-[11px]" style="color: var(--text-3);">尚無</span>'}
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 詳細專案報告快速入口 -->
-      <div class="paper p-6">
-        <div class="flex items-end justify-between mb-4">
-          <div>
-            <h3 class="serif text-[16px] font-semibold">最近的詳細專案報告</h3>
-            <p class="text-[12px]" style="color: var(--text-3);">同樣內容也會在 ProjFlow 的「詳細專案報告」按鈕背後出現</p>
-          </div>
-          <button class="btn-ghost" onclick="showView('reports')">查看全部 →</button>
-        </div>
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${allReports.slice(0, 6).map(r => {
-            const project = allProjects.find(p => p.id === r.project);
-            const author = USERS.find(u => u.id === r.author);
-            return `
-              <div class="paper paper-lift p-4 cursor-pointer" onclick="openReport('${r.id}')">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="mono text-[10.5px] font-semibold" style="color: var(--text-3);">${project?.code}</span>
-                  <span class="tag ${r.status === 'draft' ? 'tag-caramel' : 'tag-moss'}">${r.status === 'draft' ? '草稿' : '已分享'}</span>
-                </div>
-                <div class="serif text-[13.5px] font-semibold leading-snug mb-3">${r.title}</div>
-                <div class="flex items-center gap-2 pt-2 border-t" style="border-color: var(--border-soft);">
-                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-medium" style="background: var(--ink);">${author?.avatar}</div>
-                  <span class="text-[11px]">${author?.name}</span>
-                  <span class="mono text-[10.5px] ml-auto" style="color: var(--text-3);">${r.pages} 頁 · ${r.updated}</span>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-
     </div>
   `;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('directive-body')?.focus(), 30);
+  const close = () => { overlay.remove(); directiveTarget = null; };
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  document.getElementById('directive-cancel').onclick = close;
+  document.getElementById('directive-submit').onclick = async () => {
+    const body = document.getElementById('directive-body').value.trim();
+    if (!body) { alert('請寫內容'); return; }
+    const urgent = document.getElementById('directive-urgent').checked;
+    await submitDirective(body, urgent);
+    close();
+  };
+}
+
+async function submitDirective(body, urgent) {
+  if (!sb || !directiveTarget) return;
+  const me = currentProfile?.id || getMyProfile()?.id;
+  if (!me) { alert('請先選擇你的身份'); return; }
+  // best-effort：寫進 activity_log；schema 對不上就跳錯讓我們知道實際欄位
+  const payload = {
+    actor_id: me,
+    action: 'directive',
+    target_type: directiveTarget.kind,
+    target_id: directiveTarget.id,
+    body: body,
+    is_urgent: urgent,
+    created_at: new Date().toISOString()
+  };
+  const { error } = await sb.from('activity_log').insert(payload);
+  if (error) {
+    console.warn('[directive] activity_log insert failed:', error);
+    alert(`批示已記錄（本地）。
+資料庫寫入失敗，原因：${error.message}
+
+如需正式儲存，請給我 activity_log 的 schema，我會對齊欄位。`);
+    return;
+  }
+  alert('批示已送出 ✓');
+}
+
+function renderExecutive() {
+  setTitle('專案總覽', '總經理視角 · 即時追蹤 · 不可編輯');
+
+  const projLoading = allProjects === null;
+  const projFailed = !!projectsLoadError;
+  const hasProjects = allProjects && allProjects.length > 0;
+
+  // 找常見欄位（projects schema 可能各異）
+  const getField = (p, ...names) => { for (const n of names) if (p[n] !== undefined && p[n] !== null) return p[n]; return null; };
+  const getName = (p) => getField(p, 'name', 'title', 'project_name') || '（未命名）';
+  const getCode = (p) => getField(p, 'code', 'project_code', 'no');
+  const getStatus = (p) => (getField(p, 'status', 'state') || '').toString().toLowerCase();
+  const getProgress = (p) => { const v = getField(p, 'progress', 'percent', 'completion'); return v == null ? null : Number(v); };
+  const getEnd = (p) => getField(p, 'end_date', 'deadline', 'due_date', 'planned_end');
+  const getStart = (p) => getField(p, 'start_date', 'kickoff_date', 'planned_start');
+  const getClient = (p) => getField(p, 'client', 'customer', 'client_name');
+  const getPMId = (p) => getField(p, 'pm_id', 'owner_id', 'pm', 'manager_id', 'created_by');
+  const getBudget = (p) => getField(p, 'budget', 'total_budget', 'planned_budget');
+
+  const inferStatus = (p) => {
+    const s = getStatus(p);
+    if (['done', 'completed', 'closed', 'finished'].includes(s)) return 'done';
+    if (['at_risk', 'at-risk', 'delayed', 'risk', 'late', 'blocked'].includes(s)) return 'at-risk';
+    if (['active', 'in_progress', 'on_track', 'on-track', 'running', 'open'].includes(s)) return 'on-track';
+    // fallback: by progress
+    const prog = getProgress(p);
+    if (prog != null && prog >= 100) return 'done';
+    return 'on-track';
+  };
+
+  let projects = hasProjects ? allProjects.map(p => ({ raw: p, statusKind: inferStatus(p) })) : [];
+  if (execFilter !== 'all') projects = projects.filter(x => x.statusKind === execFilter);
+
+  // KPI 計算
+  const all = hasProjects ? allProjects.map(p => ({ raw: p, statusKind: inferStatus(p) })) : [];
+  const kActive  = all.filter(x => x.statusKind === 'on-track').length;
+  const kRisk    = all.filter(x => x.statusKind === 'at-risk').length;
+  const kDone    = all.filter(x => x.statusKind === 'done').length;
+  const allProg  = all.map(x => getProgress(x.raw)).filter(v => v != null);
+  const kAvgProg = allProg.length ? Math.round(allProg.reduce((s,v) => s + v, 0) / allProg.length) : 0;
+
+  const profileById = new Map((allProfiles || []).map(p => [p.id, p]));
+  const pmDisplay = (p) => {
+    const pid = getPMId(p);
+    const prof = pid ? profileById.get(pid) : null;
+    return prof ? (prof.english_name || prof.name) : '—';
+  };
+  const pmInitial = (p) => {
+    const pid = getPMId(p);
+    const prof = pid ? profileById.get(pid) : null;
+    if (!prof) return '—';
+    return (prof.avatar && prof.avatar.trim()) || (prof.english_name || prof.name)[0];
+  };
+
+  const daysUntil = (iso) => {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      const now = new Date();
+      return Math.ceil((d - now) / (1000*60*60*24));
+    } catch(e) { return null; }
+  };
+
+  const statusBadge = (kind) => {
+    if (kind === 'at-risk') return `<span style="background:rgba(168,90,58,.15);color:var(--rust);padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;">⚠ 風險</span>`;
+    if (kind === 'done')    return `<span style="background:rgba(47,93,80,.15);color:var(--ink);padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;">✓ 完成</span>`;
+    return `<span style="background:rgba(90,140,90,.15);color:var(--moss);padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;">● 進行中</span>`;
+  };
+
+  const projectCard = (entry) => {
+    const p = entry.raw;
+    const prog = getProgress(p);
+    const days = daysUntil(getEnd(p));
+    const deadline = getEnd(p) ? new Date(getEnd(p)).toLocaleDateString('zh-TW') : '—';
+    const overdue = days != null && days < 0 && entry.statusKind !== 'done';
+    const progColor = entry.statusKind === 'at-risk' ? 'var(--rust)' : entry.statusKind === 'done' ? 'var(--moss)' : 'var(--ink)';
+    const name = getName(p);
+    const code = getCode(p);
+    return `
+      <div class="paper p-4 flex flex-col gap-2.5 transition" style="border-left: 3px solid ${progColor};">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              ${code ? `<span class="mono text-[10.5px] px-1.5 py-0.5 rounded" style="background: var(--bg-subtle); color: var(--text-3);">${code}</span>` : ''}
+              ${statusBadge(entry.statusKind)}
+            </div>
+            <div class="serif font-semibold text-[14.5px] leading-tight">${(name + '').replace(/</g,'&lt;')}</div>
+            ${getClient(p) ? `<div class="text-[11px] mt-0.5" style="color: var(--text-3);">客戶：${(getClient(p) + '').replace(/</g,'&lt;')}</div>` : ''}
+          </div>
+          <button onclick="openDirective('project','${p.id}','${(name+'').replace(/'/g,'\\'')}')" title="批示" style="background: var(--ink-soft); color: var(--ink); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; flex-shrink: 0;">
+            ✎ 批示
+          </button>
+        </div>
+
+        ${prog != null ? `
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10.5px]" style="color: var(--text-3);">進度</span>
+              <span class="mono text-[13px] font-bold" style="color: ${progColor};">${prog}%</span>
+            </div>
+            <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--bg-subtle);">
+              <div class="h-full rounded-full" style="width: ${Math.max(0,Math.min(100,prog))}%; background: ${progColor};"></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="flex items-center justify-between text-[11px] pt-1 mt-auto" style="color: var(--text-3); border-top: 1px solid var(--border-soft);">
+          <div class="flex items-center gap-1.5">
+            <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9.5px] font-semibold" style="background: var(--caramel);">${pmInitial(p)}</div>
+            <span>PM: ${pmDisplay(p)}</span>
+          </div>
+          <div class="${overdue ? 'font-bold' : ''}" style="color: ${overdue ? 'var(--rust)' : 'var(--text-3)'};">
+            ${deadline}${days != null ? `（${days >= 0 ? days + ' 天' : '逾期 ' + (-days) + ' 天'}）` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const filterBtn = (id, label, count, color) => `
+    <button onclick="setExecFilter('${id}')"
+            class="px-3 py-1.5 rounded-md text-[12px] font-semibold transition"
+            style="background: ${execFilter === id ? 'var(--ink)' : 'transparent'}; color: ${execFilter === id ? 'white' : 'var(--text-2)'}; border: 1px solid ${execFilter === id ? 'var(--ink)' : 'var(--border)'};">
+      ${label}<span class="ml-1.5 mono text-[10.5px] opacity-80">${count}</span>
+    </button>
+  `;
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="fade-in space-y-4 max-w-[1280px]">
+
+      <!-- Hero KPI Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="paper p-4">
+          <div class="text-[10.5px] tracking-wider uppercase font-semibold" style="color: var(--text-3);">進行中</div>
+          <div class="mono text-[28px] font-bold mt-1" style="color: var(--moss);">${kActive}</div>
+          <div class="text-[10.5px] mt-0.5" style="color: var(--text-3);">on-track / running</div>
+        </div>
+        <div class="paper p-4">
+          <div class="text-[10.5px] tracking-wider uppercase font-semibold" style="color: var(--text-3);">風險</div>
+          <div class="mono text-[28px] font-bold mt-1" style="color: var(--rust);">${kRisk}</div>
+          <div class="text-[10.5px] mt-0.5" style="color: var(--text-3);">at-risk / delayed</div>
+        </div>
+        <div class="paper p-4">
+          <div class="text-[10.5px] tracking-wider uppercase font-semibold" style="color: var(--text-3);">已完成</div>
+          <div class="mono text-[28px] font-bold mt-1" style="color: var(--ink);">${kDone}</div>
+          <div class="text-[10.5px] mt-0.5" style="color: var(--text-3);">done / closed</div>
+        </div>
+        <div class="paper p-4">
+          <div class="text-[10.5px] tracking-wider uppercase font-semibold" style="color: var(--text-3);">平均進度</div>
+          <div class="mono text-[28px] font-bold mt-1" style="color: var(--caramel-hover);">${kAvgProg}%</div>
+          <div class="text-[10.5px] mt-0.5" style="color: var(--text-3);">全公司案件</div>
+        </div>
+      </div>
+
+      <!-- 篩選 -->
+      <div class="flex items-center gap-2 flex-wrap">
+        ${filterBtn('all',       '全部',      all.length)}
+        ${filterBtn('on-track',  '進行中',    kActive)}
+        ${filterBtn('at-risk',   '風險',      kRisk)}
+        ${filterBtn('done',      '已完成',    kDone)}
+        <button onclick="loadProjFlowProjects().then(()=>renderExecutive())" class="btn-ghost ml-auto text-[11px]"><i data-lucide="refresh-cw" class="w-3 h-3"></i>重新載入</button>
+      </div>
+
+      <!-- 內容區 -->
+      ${projLoading ? `
+        <div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">正在從 ProjFlow 載入專案資料…</div>
+      ` : projFailed ? `
+        <div class="paper p-6">
+          <div class="text-[13px] mb-2"><strong>無法載入 projects 表</strong></div>
+          <div class="mono text-[11.5px] p-2 rounded" style="background: var(--bg-subtle); color: var(--rust);">${projectsLoadError}</div>
+          <div class="text-[11.5px] mt-3" style="color: var(--text-3);">
+            可能原因：RLS policy 沒對 anon 開放 SELECT。SQL Editor 跑：<br>
+            <code style="background:var(--bg-subtle);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px;">create policy "Anon read projects" on public.projects for select to anon using (true);</code>
+          </div>
+        </div>
+      ` : projects.length === 0 ? `
+        <div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">
+          ${all.length === 0 ? 'ProjFlow projects 表是空的。' : '此篩選下沒有案件。'}
+        </div>
+      ` : `
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${projects.map(projectCard).join('')}
+        </div>
+      `}
+
+      ${kRisk > 0 ? `
+        <div class="paper p-5" style="background: linear-gradient(135deg, rgba(168,90,58,.06) 0%, var(--paper) 100%); border-left: 3px solid var(--rust);">
+          <h3 class="serif font-semibold text-[14px] mb-2 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4" style="color: var(--rust);"></i>
+            風險警報
+          </h3>
+          <div class="text-[12px]" style="color: var(--text-2);">
+            目前有 <strong style="color: var(--rust);">${kRisk}</strong> 個專案需要關注。點擊上方「風險」篩選查看詳情，每張卡片右上「✎ 批示」可下指示。
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  lucide?.createIcons?.();
 }
 
 function kpiBlock(label, value, unit, icon, color, alert = false) {
@@ -2852,10 +2973,10 @@ async function loadCostAnalysisData() {
   `;
 }
 
-let teammatesMode = 'dept'; // 'dept' | 'section'
-let teammatesPickedUnitId = null; // 被點開查看成員的 unit id
+let teammatesMode = 'dept';
+let teammatesPickedUnitId = null;
 
-function setTeammatesMode(m) { teammatesMode = m; teammatesPickedUnitId = null; renderTeammates(); }
+function setTeammatesMode(m) { teammatesMode = m; renderTeammates(); }
 function pickUnit(id) { teammatesPickedUnitId = (teammatesPickedUnitId === id) ? null : id; renderTeammates(); }
 
 function renderTeammates() {
@@ -2867,7 +2988,7 @@ function renderTeammates() {
 
   const unitsById = hasData ? new Map(allOrgUnits.map(u => [u.id, u])) : new Map();
   const childrenOf = (id) => hasData ? allOrgUnits.filter(u => u.parent_id === id) : [];
-  const topUnits = hasData ? allOrgUnits.filter(u => !u.parent_id).sort((a,b)=> (a.code||'').localeCompare(b.code||'')) : [];
+  const topUnits = hasData ? allOrgUnits.filter(u => !u.parent_id) : [];
 
   const profilesByUnit = new Map();
   if (hasData) {
@@ -2878,191 +2999,144 @@ function renderTeammates() {
     });
   }
 
-  // 深度判斷（用 parent_id 鏈算）
-  const depthOf = (unit) => {
-    let d = 0, cur = unit;
-    while (cur?.parent_id) { d++; cur = unitsById.get(cur.parent_id); if (d > 8) break; }
-    return d;
+  const allDescendantUnits = (rootId) => {
+    const out = new Set();
+    const queue = [rootId];
+    while (queue.length) {
+      const id = queue.shift();
+      out.add(id);
+      childrenOf(id).forEach(c => queue.push(c.id));
+    }
+    return out;
   };
-  // 葉子單位（無子部門）= 課
-  const leafUnits = hasData ? allOrgUnits.filter(u => childrenOf(u.id).length === 0) : [];
 
-  const miniAvatar = (p) => {
+  // 部門色彩 palette
+  const palette = ['#d96d6d', '#3aa99b', '#d4a534', '#8b6cb8', '#d68a3a', '#4f8fc4', '#62a665', '#c66996', '#7b8a99'];
+  const iconForDept = ['briefcase', 'briefcase', 'briefcase', 'briefcase', 'briefcase', 'briefcase'];
+
+  const memberRow = (p, showRoleBadge) => {
     const display = p.english_name || p.name;
     const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
     const bg = p.role === 'admin' ? 'var(--plum)' : p.is_pm ? 'var(--caramel)' : 'var(--ink)';
-    return `<button onclick="openChatWithReal('${p.id}')" class="org-mini-avatar" style="background:${bg};" title="${display}${p.title?' · '+p.title:''}">${initial}</button>`;
-  };
-
-  // 組織樹節點
-  const renderNode = (unit) => {
-    const dep = depthOf(unit);
-    const depthClass = dep === 0 ? 'is-top' : (childrenOf(unit.id).length === 0 ? 'is-leaf' : 'is-mid');
-    const members = profilesByUnit.get(unit.id) || [];
-    const shown = members.slice(0, 3);
-    const more = members.length - shown.length;
+    const badge = showRoleBadge && p.is_pm ? '<span class="ml-1.5 mono text-[8.5px] px-1.5 py-0.5 rounded-full" style="background:var(--caramel-soft);color:var(--caramel-hover);">PM</span>' :
+                  showRoleBadge && p.role === 'admin' ? '<span class="ml-1.5 mono text-[8.5px] px-1.5 py-0.5 rounded-full" style="background:var(--plum);color:white;">總經理</span>' : '';
     return `
-      <div class="org-node-box ${depthClass}" onclick="pickUnit('${unit.id}')">
-        <div class="org-name">${unit.name}</div>
-        <div class="org-meta">
-          ${unit.code ? `<span>${unit.code}</span>` : ''}
-          <span class="org-count">${members.length} 人</span>
+      <button onclick="openChatWithReal('${p.id}')" class="flex items-center gap-2 py-1.5 w-full text-left hover:bg-stone-50 rounded px-1 -mx-1 transition">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0" style="background:${bg};">${initial}</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[12.5px] font-semibold leading-tight flex items-center">${display}${badge}</div>
+          <div class="text-[10px]" style="color: var(--text-3);">${p.title || ''}</div>
         </div>
-        ${members.length ? `<div class="org-avatars">${shown.map(miniAvatar).join('')}${more>0?`<span class="org-more">+${more}</span>`:''}</div>` : ''}
-      </div>
+      </button>
     `;
   };
 
-  // 遞迴渲染樹
-  const renderBranch = (unit) => {
-    const kids = childrenOf(unit.id);
-    if (kids.length === 0) {
-      return `<div class="org-branch">${renderNode(unit)}</div>`;
-    }
+  const courseBlock = (course) => {
+    const members = profilesByUnit.get(course.id) || [];
     return `
-      <div class="org-branch">
-        ${renderNode(unit)}
-        <div class="org-children-wrap">${kids.map(renderBranch).join('')}</div>
+      <div class="border-t pt-2.5 mt-2.5" style="border-color: var(--border-soft);">
+        <div class="flex items-center gap-2 mb-1.5">
+          <i data-lucide="folder" class="w-3 h-3" style="color: var(--text-3);"></i>
+          <span class="text-[12px] font-semibold">${course.name}</span>
+          <span class="mono text-[9.5px] px-1.5 rounded" style="background: var(--bg-subtle); color: var(--text-3);">${course.code || ''}</span>
+        </div>
+        ${members.length > 0 ? `
+          <div>${members.map(p => memberRow(p, true)).join('')}</div>
+          <div class="text-[10px] mt-1 flex items-center gap-1" style="color: var(--text-3);">
+            <i data-lucide="users" class="w-2.5 h-2.5"></i>本課編制 ${members.length} 人
+          </div>
+        ` : `
+          <div class="text-[10.5px] py-1.5 italic" style="color: var(--text-3);">本課目前無編制</div>
+        `}
       </div>
     `;
   };
 
-  const renderTree = () => `
-    <div class="org-fit-wrap">
-      <div class="org-fit-inner">
-        <div class="org-tree">
-          <div class="org-tree-inner">
-            ${topUnits.length === 1 ? renderBranch(topUnits[0]) : `
-              <div class="org-level">${topUnits.map(renderBranch).join('')}</div>
-            `}
+  const deptCard = (dept, i) => {
+    const color = palette[i % palette.length];
+    const courses = childrenOf(dept.id);
+    const directMembers = profilesByUnit.get(dept.id) || [];
+    const allDesc = allDescendantUnits(dept.id);
+    const totalMembers = allProfiles.filter(p => allDesc.has(p.org_unit_id)).length;
+    const head = directMembers.find(p => p.is_pm) || directMembers[0];
+    return `
+      <div class="paper p-4 overflow-hidden" style="border-top: 3px solid ${color};">
+        <div class="flex items-start gap-3 mb-3 pb-3 border-b" style="border-color: var(--border-soft);">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:${color}22; color:${color};">
+            <i data-lucide="briefcase" class="w-5 h-5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="serif text-[14.5px] font-semibold leading-tight">${dept.name}</div>
+            <div class="text-[10.5px] mt-0.5" style="color: var(--text-3);">${dept.code || ''} · ${totalMembers} 人 · ${courses.length} 課</div>
           </div>
         </div>
+        ${directMembers.length > 0 ? `
+          <div class="mb-1">
+            <div class="text-[10px] tracking-wider uppercase font-semibold mb-1.5" style="color: var(--text-3);">部直屬</div>
+            ${directMembers.map(p => memberRow(p, true)).join('')}
+          </div>
+        ` : (courses.length === 0 ? `<div class="text-[11px] py-3 text-center italic" style="color: var(--text-3);">此部目前無編制</div>` : `<div class="text-[10.5px] mb-1" style="color: var(--text-3);">Dept Head：待指派</div>`)}
+        ${courses.map(courseBlock).join('')}
       </div>
-    </div>
-  `;
+    `;
+  };
 
-  // 按課（葉子單位）卡片
-  const renderSections = () => `
-    <div class="org-fit-wrap">
-      <div class="org-fit-inner" style="max-width:100%;">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 px-2">
-          ${leafUnits.map(u => {
-            const members = profilesByUnit.get(u.id) || [];
-            if (members.length === 0) return '';
-            const parentName = unitsById.get(u.parent_id)?.name || '';
-            return `
-              <div class="section-card">
-                <div class="sec-head">
-                  <i data-lucide="folder" class="w-3 h-3" style="color: var(--caramel);"></i>
-                <div class="flex-1 min-w-0">
-                  <div class="sec-name">${u.name} <span style="font-size:10px;color:var(--text-3);font-weight:400;">${u.code||''}</span></div>
-                  ${parentName ? `<div class="sec-path">${parentName}</div>` : ''}
-                </div>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded-full" style="background: var(--ink-soft); color: var(--text-2);">${members.length} 人</span>
-              </div>
-              <div class="flex flex-wrap gap-1.5">
-                ${members.map(p => {
-                  const display = p.english_name || p.name;
-                  const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
-                  const bg = p.role === 'admin' ? 'var(--plum)' : p.is_pm ? 'var(--caramel)' : 'var(--ink)';
-                  return `
-                    <button onclick="openChatWithReal('${p.id}')" class="flex items-center gap-1.5 px-2 py-1 rounded-full border transition hover:shadow-sm" style="background:white;border-color:var(--border);">
-                      <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-semibold" style="background:${bg};">${initial}</span>
-                      <span class="text-[11.5px] font-medium">${display}</span>
-                    </button>
-                  `;
-                }).join('')}
-              </div>
+  const rootCard = (u) => {
+    const head = (profilesByUnit.get(u.id) || [])[0];
+    const headDisplay = head ? (head.english_name || head.name) : '—';
+    const headInitial = head ? ((head.avatar && head.avatar.trim()) || headDisplay[0]) : '?';
+    const headBg = head?.role === 'admin' ? 'var(--plum)' : 'var(--ink)';
+    const allDesc = allDescendantUnits(u.id);
+    const totalMembers = allProfiles.filter(p => allDesc.has(p.org_unit_id)).length;
+    const directChildren = childrenOf(u.id).length;
+    return `
+      <div class="paper px-6 py-4 mx-auto max-w-[440px] text-center" style="border: 1.5px solid var(--ink); box-shadow: 0 4px 16px rgba(47,93,80,.12);">
+        <div class="flex items-center justify-center gap-2 mb-1">
+          <i data-lucide="crown" class="w-4 h-4" style="color: var(--ink);"></i>
+          <span class="serif text-[17px] font-bold">${u.name}</span>
+          <span class="mono text-[10.5px] px-1.5 py-0.5 rounded" style="background: var(--ink-soft); color: var(--text-2);">${u.code || ''}</span>
+        </div>
+        ${head ? `
+          <div class="inline-flex items-center gap-2 mt-2">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-[14px] font-semibold" style="background: ${headBg};">${headInitial}</div>
+            <div class="text-left">
+              <div class="text-[13px] font-semibold">${headDisplay}</div>
+              <div class="text-[10.5px]" style="color: var(--text-3);">${head.title || 'GM / CEO'}</div>
             </div>
-            `;
-          }).filter(Boolean).join('')}
-        </div>
+          </div>
+        ` : ''}
+        <div class="text-[11px] mt-3" style="color: var(--text-3);">編制 <strong style="color: var(--text);">${totalMembers}</strong> 人 · <strong style="color: var(--text);">${directChildren}</strong> 部門</div>
       </div>
-    </div>
-  `;
-
-  // 被點開的 unit drawer（彈出顯示完整成員）
-  const drawer = () => {
-    if (!teammatesPickedUnitId) return '';
-    const u = unitsById.get(teammatesPickedUnitId);
-    if (!u) return '';
-    const members = profilesByUnit.get(u.id) || [];
-    return `
-      <div onclick="pickUnit(null)" style="position:fixed;inset:0;background:rgba(31,31,28,.4);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;">
-        <div onclick="event.stopPropagation()" style="background:white;border-radius:14px;max-width:560px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
-          <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color:var(--border-soft);">
-            <div>
-              <div class="text-[16px] font-semibold serif">${u.name}</div>
-              <div class="text-[11px] mt-0.5" style="color:var(--text-3);">${u.code||''} · ${members.length} 名成員</div>
-            </div>
-            <button onclick="pickUnit(null)" class="text-[18px] px-2" style="color:var(--text-3);">×</button>
-          </div>
-          <div class="px-5 py-4 overflow-y-auto">
-            ${members.length === 0 ? `<div class="text-center py-6 text-[12px]" style="color:var(--text-3);">此單位目前無成員</div>` : `
-              <div class="grid grid-cols-2 gap-2">
-                ${members.map(p => {
-                  const display = p.english_name || p.name;
-                  const initial = (p.avatar && p.avatar.trim()) || display[0] || '?';
-                  const bg = p.role === 'admin' ? 'var(--plum)' : p.is_pm ? 'var(--caramel)' : 'var(--ink)';
-                  return `
-                    <button onclick="pickUnit(null);openChatWithReal('${p.id}')" class="flex items-center gap-2.5 p-2 rounded-md hover:bg-stone-50 border transition" style="border-color:var(--border);">
-                      <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-[13px] font-semibold flex-shrink-0" style="background:${bg};">${initial}</div>
-                      <div class="flex-1 min-w-0 text-left">
-                        <div class="text-[12.5px] font-semibold truncate">${display}</div>
-                        <div class="text-[10.5px] truncate" style="color:var(--text-3);">${p.title||''}</div>
-                      </div>
-                    </button>
-                  `;
-                }).join('')}
-              </div>
-            `}
-          </div>
-        </div>
+      <div class="flex justify-center my-3">
+        <div style="width:0;height:24px;border-left: 1.5px solid #c9bca3;"></div>
       </div>
     `;
   };
+
+  const root = topUnits[0];
+  const secondLevel = root ? childrenOf(root.id) : [];
 
   document.getElementById('main-content').innerHTML = `
-    <div class="fade-in" style="height:calc(100vh - 100px);display:flex;flex-direction:column;">
-      <!-- 工具列：模式切換 + 同步 -->
-      <div class="paper p-3 mb-3 flex items-center gap-3 flex-shrink-0" style="background: linear-gradient(135deg, var(--ink-soft) 0%, var(--paper) 100%);">
-        <div class="flex items-center gap-2">
-          <i data-lucide="sitemap" class="w-4 h-4" style="color: var(--ink);"></i>
-          <span class="text-[12.5px] font-semibold">${loading?'載入中…':failed?'<span style="color:var(--rust)">載入失敗</span>':`${allOrgUnits.length} 個單位 · ${allProfiles.length} 人`}</span>
-        </div>
-        <div class="flex ml-auto gap-1 rounded-md p-0.5" style="background: var(--bg-subtle);">
-          <button onclick="setTeammatesMode('dept')" class="px-3 py-1 rounded text-[11.5px] font-semibold transition" style="background:${teammatesMode==='dept'?'white':'transparent'};color:${teammatesMode==='dept'?'var(--ink)':'var(--text-3)'};box-shadow:${teammatesMode==='dept'?'0 1px 3px rgba(0,0,0,.06)':'none'};">▌ 按部門</button>
-          <button onclick="setTeammatesMode('section')" class="px-3 py-1 rounded text-[11.5px] font-semibold transition" style="background:${teammatesMode==='section'?'white':'transparent'};color:${teammatesMode==='section'?'var(--ink)':'var(--text-3)'};box-shadow:${teammatesMode==='section'?'0 1px 3px rgba(0,0,0,.06)':'none'};">▌ 按課</button>
+    <div class="fade-in max-w-[1280px]">
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-[12.5px] font-semibold" style="color: var(--text-2);">
+          ${loading ? '載入中…' : failed ? '<span style="color:var(--rust)">載入失敗</span>' : `${allOrgUnits.length} 個單位 · ${allProfiles.length} 人`}
         </div>
         <button onclick="syncProjFlowAndReload()" class="btn-ghost text-[11px]"><i data-lucide="refresh-cw" class="w-3 h-3"></i>同步</button>
       </div>
-
-      <!-- 主視覺區（佔滿剩餘高度，不滾頁面） -->
-      <div class="paper flex-1 overflow-hidden p-3" style="display:flex;flex-direction:column;">
-        ${loading ? `<div class="flex-1 flex items-center justify-center text-[13px]" style="color:var(--text-3);">正在從 ProjFlow 載入…</div>`
-          : failed ? `<div class="flex-1 flex items-center justify-center text-[13px]" style="color:var(--rust);">${projflowLoadError}</div>`
-          : !hasData ? `<div class="flex-1 flex items-center justify-center text-[13px]" style="color:var(--text-3);">ProjFlow profiles 與 org_units 是空的</div>`
-          : teammatesMode === 'dept' ? renderTree() : renderSections()}
-      </div>
-
-      ${drawer()}
+      ${loading ? `<div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">正在從 ProjFlow 載入…</div>`
+        : failed ? `<div class="paper p-6"><div class="mono text-[11.5px] p-2 rounded" style="background: var(--bg-subtle); color: var(--rust);">${projflowLoadError}</div></div>`
+        : !hasData ? `<div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">ProjFlow 無資料</div>`
+        : !root ? `<div class="paper p-10 text-center text-[13px]" style="color: var(--text-3);">找不到頂層部門</div>`
+        : `
+          ${rootCard(root)}
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+            ${secondLevel.map(deptCard).join('')}
+          </div>
+        `}
     </div>
   `;
   lucide?.createIcons?.();
-  // 自動縮放：把內容塞進 viewport 內，禁止任何滑動
-  requestAnimationFrame(() => {
-    const wrap = document.querySelector('.org-fit-wrap');
-    const inner = document.querySelector('.org-fit-inner');
-    if (!wrap || !inner) return;
-    inner.style.transform = 'none';
-    const cw = wrap.clientWidth;
-    const ch = wrap.clientHeight;
-    const iw = inner.scrollWidth;
-    const ih = inner.scrollHeight;
-    if (iw <= 0 || ih <= 0 || cw <= 0 || ch <= 0) return;
-    const s = Math.min(cw / iw, ch / ih, 1);
-    inner.style.transform = `scale(${s})`;
-  });
 }
 
 // 隊友選擇器狀態
