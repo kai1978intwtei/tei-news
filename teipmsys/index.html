@@ -823,6 +823,34 @@ const sb = (window.supabase && window.supabase.createClient)
   : null;
 if (!sb) console.warn('[ProjFlow] supabase-js SDK 載入失敗，真實聊天功能停用');
 let currentProfile = null;  // 真實 ProjFlow profile（已登入 Supabase 後才有）
+let allProfiles = null;      // 全公司員工名單（從 profiles table 載入）
+let allOrgUnits = null;      // 組織架構（從 org_units table 載入）
+let projflowLoadError = null; // 載入失敗原因（顯示給使用者）
+
+async function loadProjFlowRoster() {
+  if (!sb) { projflowLoadError = 'Supabase SDK 未載入'; return; }
+  console.log('[ProjFlow] 嘗試載入 profiles + org_units…');
+  const [pRes, oRes] = await Promise.all([
+    sb.from('profiles')
+      .select('id, name, english_name, title, role, dept, org_unit_id, avatar, is_pm, resigned_at')
+      .is('resigned_at', null)
+      .order('name'),
+    sb.from('org_units').select('id, code, name, parent_id, level').order('level')
+  ]);
+  if (pRes.error || oRes.error) {
+    projflowLoadError = (pRes.error?.message || oRes.error?.message || '未知錯誤');
+    console.error('[ProjFlow] 載入失敗:', pRes.error || oRes.error);
+    allProfiles = [];
+    allOrgUnits = [];
+  } else {
+    projflowLoadError = null;
+    allProfiles = pRes.data || [];
+    allOrgUnits = oRes.data || [];
+    console.log(`[ProjFlow] 載入成功 — profiles: ${allProfiles.length}, org_units: ${allOrgUnits.length}`);
+  }
+  // 如果現在正在看訊息中心，重新 render
+  if (currentView === 'messages') renderMessages();
+}
 
 async function signInWithProjFlow() {
   if (!sb) { alert('Supabase SDK 未載入'); return; }
@@ -1075,6 +1103,8 @@ function login(userId) {
   updateBellBadge();
   // 閒置 60 分鐘自動登出
   idleManager.start();
+  // 背景載入 ProjFlow 真實員工名單（不阻塞 UI）
+  loadProjFlowRoster().catch(e => console.error('[ProjFlow] roster load failed:', e));
   // 首次登入強制走教學引導
   if (!hasSeenTutorial(currentUser.id)) startTutorial({ forced: true });
 }
@@ -3022,93 +3052,132 @@ function unreadMessageCount() {
 }
 
 function renderChatRoster() {
-  const me = currentUser?.id;
-  const eligible = u => u && u.id !== me && u.role !== 'admin';
+  const me = currentProfile?.id || currentUser?.id;
 
-  // 頂層部（在 DEPTS 中無 parent）
-  const topDepts = Object.keys(DEPTS).filter(k => !DEPTS[k].parent);
-  // 課 / 中心（在 DEPTS 中有 parent）
-  const sectionDepts = Object.keys(DEPTS).filter(k => DEPTS[k].parent);
-
-  // 部下所有人 = 直屬 + 所有後代課的成員（沿 parent 鏈遞迴）
-  const descendantsOf = (root) => {
-    const out = new Set([root]);
-    let added = true;
-    while (added) {
-      added = false;
-      Object.keys(DEPTS).forEach(k => {
-        if (DEPTS[k].parent && out.has(DEPTS[k].parent) && !out.has(k)) {
-          out.add(k); added = true;
-        }
-      });
-    }
-    return out;
-  };
-  const byDept = topDepts.map(deptKey => ({
-    deptInfo: DEPTS[deptKey],
-    members: USERS.filter(u => descendantsOf(deptKey).has(u.dept) && eligible(u))
-  })).filter(g => g.members.length > 0);
-
-  const bySection = sectionDepts.map(secKey => ({
-    deptInfo: DEPTS[secKey],
-    members: USERS.filter(u => u.dept === secKey && eligible(u))
-  })).filter(g => g.members.length > 0);
-
-  const pill = (u) => `
-    <button onclick="openChatWith('${u.id}')"
-            class="flex items-center gap-1.5 px-2 py-1 rounded-full transition hover:shadow-sm border"
-            style="background: white; border-color: var(--border);"
-            title="與 ${displayName(u)} 開始對話">
-      <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9.5px] font-semibold" style="background: var(--${DEPTS[u.dept]?.color || 'ink'});">${u.avatar}</span>
-      <span class="text-[11.5px] font-medium" style="color: var(--text);">${displayName(u)}</span>
-    </button>
-  `;
-
-  return `
+  // 載入狀態 / 錯誤訊息頭部包裝
+  const wrap = (statusLine, body) => `
     <div class="paper p-4">
       <div class="flex items-center justify-between mb-3">
         <h3 class="serif font-semibold text-[14px] flex items-center gap-2">
           <i data-lucide="users-round" class="w-4 h-4"></i>聊天名單
         </h3>
-        <div class="text-[11px] flex items-center gap-1.5" style="color: var(--text-3);">
-          <span class="sync-dot"></span>來源同步自 ProjFlow profiles · 點對象開啟對話
-        </div>
+        <div class="text-[11px] flex items-center gap-1.5" style="color: var(--text-3);">${statusLine}</div>
       </div>
-      ${(byDept.length === 0 && bySection.length === 0) ? `
-        <div class="text-center py-8 text-[12px]" style="color: var(--text-3);">
-          <i data-lucide="users-round" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
-          <div class="font-medium" style="color: var(--text-2);">尚無聊天對象</div>
-          <div class="mt-1.5">真實員工名單來自 ProjFlow 資料庫。</div>
-          <div>請從 <strong>登入頁</strong> 點「<strong>用 ProjFlow 帳號登入</strong>」啟用真實聊天。</div>
-        </div>
-      ` : `
-      <div class="space-y-3">
-        <div>
-          <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按部門</div>
-          <div class="space-y-1.5">
-            ${byDept.map(g => `
-              <div class="flex items-start gap-3">
-                <div class="text-[11.5px] font-semibold w-24 flex-shrink-0 pt-1" style="color: var(--text-2);">${g.deptInfo.name}</div>
-                <div class="flex flex-wrap gap-1.5 flex-1">${g.members.map(pill).join('')}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        <div>
-          <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按課</div>
-          <div class="space-y-1.5">
-            ${bySection.map(g => `
-              <div class="flex items-start gap-3">
-                <div class="text-[11.5px] font-semibold w-24 flex-shrink-0 pt-1" style="color: var(--text-2);">${g.deptInfo.name}</div>
-                <div class="flex flex-wrap gap-1.5 flex-1">${g.members.map(pill).join('')}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-      `}
+      ${body}
     </div>
   `;
+
+  // 1) 還沒載入完 → 顯示 loading
+  if (allProfiles === null) {
+    return wrap(`<span class="sync-dot"></span>正在從 ProjFlow 載入員工名單…`, `
+      <div class="text-center py-8 text-[12px]" style="color: var(--text-3);">載入中…</div>
+    `);
+  }
+
+  // 2) 載入失敗 → 顯示原因
+  if (projflowLoadError) {
+    return wrap(`<span style="color: var(--rust);">●</span> 載入失敗`, `
+      <div class="text-[12px] py-4" style="color: var(--text-2);">
+        <div class="mb-2"><strong>無法從 ProjFlow 載入員工名單</strong></div>
+        <div class="mono text-[11px] mb-2 p-2 rounded" style="background: var(--bg-subtle); color: var(--rust);">${projflowLoadError}</div>
+        <div style="color: var(--text-3);">最可能原因：RLS policy 擋下匿名查詢。需要從登入頁用「用 ProjFlow 帳號登入」做 Supabase magic link 驗證後才能讀取。</div>
+      </div>
+    `);
+  }
+
+  // 3) 真資料載入成功 → 用真實 profiles + org_units 分組
+  const unitsById = new Map(allOrgUnits.map(u => [u.id, u]));
+  const eligible = p => p && p.id !== me && p.role !== 'admin';
+  const profiles = allProfiles.filter(eligible);
+
+  // 找 profile 所屬最頂層的部
+  const findTopAncestor = (unitId) => {
+    let cur = unitsById.get(unitId);
+    while (cur?.parent_id) cur = unitsById.get(cur.parent_id);
+    return cur;
+  };
+
+  // 按部分組（頂層 org_unit 為單位）
+  const deptMap = new Map();
+  profiles.forEach(p => {
+    const top = findTopAncestor(p.org_unit_id);
+    if (!top) return;
+    if (!deptMap.has(top.id)) deptMap.set(top.id, { unit: top, members: [] });
+    deptMap.get(top.id).members.push(p);
+  });
+  const byDept = [...deptMap.values()].sort((a, b) => a.unit.name.localeCompare(b.unit.name));
+
+  // 按課分組（profile 直接歸屬的 unit）
+  const sectionMap = new Map();
+  profiles.forEach(p => {
+    const u = unitsById.get(p.org_unit_id);
+    if (!u || !u.parent_id) return; // 跳過頂層（已歸入按部）
+    if (!sectionMap.has(u.id)) sectionMap.set(u.id, { unit: u, members: [] });
+    sectionMap.get(u.id).members.push(p);
+  });
+  const bySection = [...sectionMap.values()].sort((a, b) => a.unit.name.localeCompare(b.unit.name));
+
+  const pill = (p) => {
+    const display = p.english_name || p.name;
+    const initial = (p.avatar && p.avatar.trim()) || (p.english_name?.[0] || p.name?.[0] || '?');
+    return `
+      <button onclick="openChatWithReal('${p.id}')"
+              class="flex items-center gap-1.5 px-2 py-1 rounded-full transition hover:shadow-sm border"
+              style="background: white; border-color: var(--border);"
+              title="${display}${p.title ? ' · ' + p.title : ''}">
+        <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9.5px] font-semibold" style="background: var(--ink);">${initial}</span>
+        <span class="text-[11.5px] font-medium" style="color: var(--text);">${display}</span>
+      </button>
+    `;
+  };
+
+  const statusLine = `<span style="color: var(--moss);">●</span> 來源：ProjFlow profiles · ${profiles.length} 人 · 點對象開始對話`;
+
+  if (byDept.length === 0 && bySection.length === 0) {
+    return wrap(statusLine, `
+      <div class="text-center py-8 text-[12px]" style="color: var(--text-3);">
+        ProjFlow profiles 表是空的，或全部都是 admin / 你自己。
+      </div>
+    `);
+  }
+
+  return wrap(statusLine, `
+    <div class="space-y-3">
+      <div>
+        <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按部門</div>
+        <div class="space-y-1.5">
+          ${byDept.map(g => `
+            <div class="flex items-start gap-3">
+              <div class="text-[11.5px] font-semibold w-28 flex-shrink-0 pt-1" style="color: var(--text-2);">${g.unit.name}</div>
+              <div class="flex flex-wrap gap-1.5 flex-1">${g.members.map(pill).join('')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="text-[11px] uppercase tracking-wider font-semibold mb-2" style="color: var(--caramel-hover);">▌ 按課</div>
+        <div class="space-y-1.5">
+          ${bySection.map(g => `
+            <div class="flex items-start gap-3">
+              <div class="text-[11.5px] font-semibold w-28 flex-shrink-0 pt-1" style="color: var(--text-2);">${g.unit.name}</div>
+              <div class="flex flex-wrap gap-1.5 flex-1">${g.members.map(pill).join('')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+// 點真實 ProjFlow profile：原型階段顯示提示（聊天送收 Stage 3 接 chat_messages）
+function openChatWithReal(profileId) {
+  const p = allProfiles?.find(x => x.id === profileId);
+  if (!p) return;
+  alert(
+    `與 ${p.english_name || p.name}（${p.title || ''}）的對話\n\n` +
+    `已正確抓到 ProjFlow 真實 profile（uuid: ${p.id}）。\n` +
+    `下一步 Stage 3：把對話讀寫接到 chat_messages 表（即將支援）。`
+  );
 }
 
 /* 聊天面板：完全在 PMSYS 內部運作，不跳 ProjFlow。
@@ -3260,9 +3329,8 @@ function renderMessages() {
             </span>
           </div>
           <p class="text-[11.5px] mt-0.5" style="color: var(--text-3);">
-            已讀狀態、回覆、@提及在 PMSYS / ProjFlow / RTM 三邊一致 ·
+            已讀狀態、回覆、@提及在 PMSYS / ProjFlow 雙邊一致 ·
             ProjFlow <strong class="mono">${fromSource('projflow')}</strong> ·
-            RTM <strong class="mono">${fromSource('rtm')}</strong> ·
             本系統 <strong class="mono">${fromSource('pmsys')}</strong>
           </p>
         </div>
