@@ -5026,9 +5026,9 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initLogin(); } catch(e) { console.error('[init] initLogin failed:', e); }
   // 已在 ProjFlow 登入並翻頁回來 → 帶身份直接進
   try { if (ssoLoginFromUrl()) return; } catch(e) { console.error('[init] ssoLoginFromUrl failed:', e); }
-  // 強制一鍵進總經理視角
+  // 強制一鍵進專案經理（王耀裕）工作檯；要看後台總覽用右上「切到後台」鈕
   try {
-    login('u1');
+    login('u100');
   } catch(e) {
     console.error('[init] auto-login failed:', e);
     // fallback：登入頁總會至少看得到一鍵進入鈕
