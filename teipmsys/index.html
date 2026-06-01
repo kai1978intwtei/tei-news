@@ -1761,7 +1761,7 @@ function renderExecutive() {
             <div class="serif font-semibold text-[14.5px] leading-tight">${(name + '').replace(/</g,'&lt;')}</div>
             ${getClient(p) ? `<div class="text-[11px] mt-0.5" style="color: var(--text-3);">客戶：${(getClient(p) + '').replace(/</g,'&lt;')}</div>` : ''}
           </div>
-          <button onclick="openDirective('project','${p.id}','${(name+'').replace(/'/g,'\\'')}')" title="批示" style="background: var(--ink-soft); color: var(--ink); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; flex-shrink: 0;">
+          <button onclick="openDirective('project','${p.id}','${(name+'').replace(/'/g,"\\'")}')" title="批示" style="background: var(--ink-soft); color: var(--ink); padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; flex-shrink: 0;">
             ✎ 批示
           </button>
         </div>
