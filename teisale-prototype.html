@@ -1482,6 +1482,53 @@
   }
   .contacts-table .kind-customer{color:#0891B2;background:#CFFAFE;}
   .contacts-table .kind-supplier{color:#C2410C;background:#FFEDD5;}
+
+  /* 產業別 chip 與區域 chip */
+  .ind-chip{
+    display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+    border-radius:6px;font-size:11px;font-weight:500;
+    background:var(--surface-soft);color:var(--text-sub);border:1px solid var(--border);
+  }
+  .ind-chip .em{font-size:12px;}
+  .region-chip{
+    display:inline-flex;align-items:center;gap:3px;padding:2px 8px;
+    border-radius:6px;font-size:11px;font-weight:500;
+    color:#4338CA;background:#E0E7FF;
+  }
+  .region-chip .country{
+    font-family:var(--font-mono);font-weight:700;font-size:10px;
+    padding:0 4px;border-radius:3px;background:rgba(67,56,202,0.15);
+  }
+
+  /* 聯絡簿篩選列 */
+  .contacts-filters{
+    display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;
+    padding:12px 16px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;
+  }
+  .contacts-filters .group{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .contacts-filters .group-label{
+    font-size:11px;font-weight:600;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.06em;
+    margin-right:4px;
+  }
+  .contacts-filters .filter-pill{
+    padding:4px 10px;font-size:11px;border:1px solid var(--border);
+    background:var(--surface-soft);border-radius:999px;cursor:pointer;
+    color:var(--text-sub);transition:all 0.12s ease;
+  }
+  .contacts-filters .filter-pill:hover{background:var(--surface);color:var(--text);}
+  .contacts-filters .filter-pill.active{
+    background:var(--accent-soft);border-color:var(--accent-border);color:var(--accent-dark);font-weight:600;
+  }
+  .contacts-filters .count{
+    font-family:var(--font-mono);font-size:10px;opacity:0.7;margin-left:3px;
+  }
+
+  /* cascade country select 在 modal 中 */
+  .mini-modal .cascade{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  }
   .contacts-empty{padding:48px 24px;text-align:center;color:var(--text-muted);font-size:13px;}
 
   /* --- 簡易 inline 表單 modal --- */
@@ -2589,19 +2636,33 @@
       <button data-contact-kind="supplier">供應商 <span class="count" id="cntSupplier">0</span></button>
     </div>
 
+    <!-- ===== 產業 + 區域 篩選列 ===== -->
+    <div class="contacts-filters">
+      <div class="group">
+        <span class="group-label">產業</span>
+        <div id="contactsIndustryFilters"></div>
+      </div>
+      <div class="group">
+        <span class="group-label">區域</span>
+        <div id="contactsRegionFilters"></div>
+      </div>
+    </div>
+
     <table class="contacts-table" id="contactsTable">
       <thead>
         <tr>
           <th>類型</th>
+          <th>產業</th>
+          <th>區域 / 國家</th>
           <th>公司 / 聯絡人</th>
           <th>電話 / Email</th>
           <th>地址</th>
           <th>負責人</th>
-          <th style="width:80px;"></th>
+          <th style="width:60px;"></th>
         </tr>
       </thead>
       <tbody id="contactsBody">
-        <tr><td colspan="6" class="contacts-empty">尚無聯絡人 ‧ 點右上「+ 新增聯絡人」開始建檔</td></tr>
+        <tr><td colspan="8" class="contacts-empty">尚無聯絡人 ‧ 點右上「+ 新增聯絡人」開始建檔</td></tr>
       </tbody>
     </table>
   </section>
@@ -3011,14 +3072,27 @@
 
 <!-- ===== MINI MODAL ‧ 新增聯絡人 ===== -->
 <div class="mini-modal-backdrop" id="newContactBackdrop" data-open="false">
-  <div class="mini-modal">
+  <div class="mini-modal" style="max-width:560px;">
     <h3>新增聯絡人</h3>
-    <div class="mm-sub">客戶與供應商統一在此建檔,所有業務、船務皆可查閱</div>
+    <div class="mm-sub">客戶與供應商統一在此建檔,所有業務、船務皆可查閱;支援產業別 + 區域國家分類</div>
     <label>類型</label>
     <select id="ncKind">
       <option value="customer">客戶 ‧ Customer</option>
       <option value="supplier">供應商 ‧ Supplier</option>
     </select>
+    <label>產業別 ‧ Industry</label>
+    <select id="ncIndustry">
+      <!-- 由 JS 渲染選項 -->
+    </select>
+    <label>區域 / 國家 ‧ Region / Country</label>
+    <div class="cascade">
+      <select id="ncRegion">
+        <!-- 由 JS 渲染選項 -->
+      </select>
+      <select id="ncCountry">
+        <!-- 由 JS 依 region 連動 -->
+      </select>
+    </div>
     <label>公司名稱</label>
     <input type="text" id="ncCompany" placeholder="例:三井化學股份有限公司" />
     <label>聯絡窗口姓名</label>
@@ -3617,13 +3691,124 @@
   //   status:  'requested' | 'booked' | 'customs' | 'delivered'
   //   ediStatus: null | 'pending' | 'submitted' | 'cleared' | 'rejected'
   const shippingItems = [];
-  // contacts: {id, kind:'customer'|'supplier', company, person, phone, email, addr, owner}
+  // contacts: {id, kind, industry, region, country, company, person, phone, email, addr, owner}
+  //   kind: 'customer' | 'supplier'
+  //   industry: 產業代碼(見 INDUSTRY)
+  //   region/country: 區域 + 國家代碼(見 REGIONS)
   const contacts = [];
+
+  // ===== 產業別常數(focus 在 TEi Composites 複材業務場域) =====
+  const INDUSTRY = [
+    { code:"aero",   label:"航太",       emoji:"✈️" },
+    { code:"auto",   label:"汽車",       emoji:"🏎️" },
+    { code:"moto",   label:"重機",       emoji:"🏍️" },
+    { code:"cycle",  label:"自行車/運動", emoji:"🚴" },
+    { code:"ev",     label:"電動車/能源", emoji:"🔋" },
+    { code:"ind",    label:"工業/機械",   emoji:"🏭" },
+    { code:"med",    label:"醫療",        emoji:"⚕️" },
+    { code:"def",    label:"國防",        emoji:"🛡️" },
+    { code:"marine", label:"海事/船舶",   emoji:"⛵" },
+    { code:"elec",   label:"消費電子",    emoji:"📱" },
+    { code:"other",  label:"其他",        emoji:"📦" },
+  ];
+
+  // ===== 區域 → 國家(層級結構) =====
+  const REGIONS = [
+    { code:"tw",  label:"台灣",  countries:[
+      { code:"TW", label:"台灣" },
+    ]},
+    { code:"ea",  label:"東亞",  countries:[
+      { code:"JP", label:"日本" }, { code:"KR", label:"韓國" },
+      { code:"CN", label:"中國" }, { code:"HK", label:"香港" },
+    ]},
+    { code:"sea", label:"東南亞", countries:[
+      { code:"TH", label:"泰國" }, { code:"VN", label:"越南" },
+      { code:"SG", label:"新加坡" }, { code:"MY", label:"馬來西亞" },
+      { code:"ID", label:"印尼" }, { code:"PH", label:"菲律賓" },
+    ]},
+    { code:"sa",  label:"南亞",   countries:[
+      { code:"IN", label:"印度" },
+    ]},
+    { code:"na",  label:"北美",   countries:[
+      { code:"US", label:"美國" }, { code:"CA", label:"加拿大" },
+      { code:"MX", label:"墨西哥" },
+    ]},
+    { code:"eu",  label:"歐洲",   countries:[
+      { code:"DE", label:"德國" }, { code:"UK", label:"英國" },
+      { code:"FR", label:"法國" }, { code:"IT", label:"義大利" },
+      { code:"ES", label:"西班牙" }, { code:"NL", label:"荷蘭" },
+      { code:"SE", label:"瑞典" }, { code:"CH", label:"瑞士" },
+    ]},
+    { code:"oc",  label:"大洋洲", countries:[
+      { code:"AU", label:"澳洲" }, { code:"NZ", label:"紐西蘭" },
+    ]},
+    { code:"me",  label:"中東",   countries:[
+      { code:"AE", label:"阿聯" }, { code:"SA", label:"沙烏地" },
+      { code:"IL", label:"以色列" }, { code:"TR", label:"土耳其" },
+    ]},
+    { code:"la",  label:"拉美",   countries:[
+      { code:"BR", label:"巴西" }, { code:"AR", label:"阿根廷" },
+      { code:"CL", label:"智利" },
+    ]},
+    { code:"af",  label:"非洲",   countries:[
+      { code:"ZA", label:"南非" },
+    ]},
+    { code:"other",label:"其他",  countries:[
+      { code:"_", label:"未分類" },
+    ]},
+  ];
+
+  function findIndustry(code){ return INDUSTRY.find(x=>x.code===code) || INDUSTRY[INDUSTRY.length-1]; }
+  function findRegion(code){ return REGIONS.find(x=>x.code===code); }
+  function findCountry(rcode, ccode){
+    const r = findRegion(rcode);
+    return r ? (r.countries.find(c=>c.code===ccode) || r.countries[0]) : null;
+  }
+  function industryChipHtml(code){
+    if(!code) return '<span style="color:var(--text-muted);font-size:11px;">—</span>';
+    const i = findIndustry(code);
+    return `<span class="ind-chip"><span class="em">${i.emoji}</span>${i.label}</span>`;
+  }
+  function regionChipHtml(rcode, ccode){
+    if(!rcode) return '<span style="color:var(--text-muted);font-size:11px;">—</span>';
+    const r = findRegion(rcode);
+    if(!r) return '<span style="color:var(--text-muted);font-size:11px;">—</span>';
+    const c = ccode ? r.countries.find(x=>x.code===ccode) : null;
+    return `<span class="region-chip">${r.label}${c ? `<span class="country">${c.code}</span>` : ''}</span>`;
+  }
+
+  // 新增 modal 的下拉:第一次需初始化
+  function initContactSelects(){
+    const ncInd = $("ncIndustry");
+    if(ncInd && !ncInd.dataset.inited){
+      ncInd.innerHTML = '<option value="">— 請選擇 —</option>' +
+        INDUSTRY.map(i=>`<option value="${i.code}">${i.emoji} ${i.label}</option>`).join("");
+      ncInd.dataset.inited = "1";
+    }
+    const ncReg = $("ncRegion");
+    if(ncReg && !ncReg.dataset.inited){
+      ncReg.innerHTML = '<option value="">— 選區域 —</option>' +
+        REGIONS.map(r=>`<option value="${r.code}">${r.label}</option>`).join("");
+      ncReg.addEventListener("change", refreshCountrySelect);
+      ncReg.dataset.inited = "1";
+    }
+    refreshCountrySelect();
+  }
+  function refreshCountrySelect(){
+    const reg = $("ncRegion").value;
+    const sel = $("ncCountry");
+    if(!reg){ sel.innerHTML = '<option value="">— 先選區域 —</option>'; sel.disabled = true; return; }
+    const r = findRegion(reg);
+    sel.disabled = false;
+    sel.innerHTML = r.countries.map(c=>`<option value="${c.code}">${c.label} (${c.code})</option>`).join("");
+  }
 
   let assistFilter = "all";
   let shipFilter   = "all";
   let shipMode     = "all";
-  let contactKind  = "all";
+  let contactKind     = "all";
+  let contactIndustry = "all";
+  let contactRegion   = "all";
 
   let uid = 1;
   const nextId = ()=>'i'+(uid++);
@@ -4056,9 +4241,9 @@
     const hint = $("contactsRoleHint");
     if(hint){
       hint.textContent = isExec
-        ? "您目前為總經理 ‧ 只讀檢視"
+        ? "您目前為總經理 ‧ 只讀檢視 ‧ 可依產業/區域篩選"
         : canWrite
-          ? "您可新建與編輯聯絡人"
+          ? "您可新建與編輯聯絡人 ‧ 支援產業別 + 區域國家分類"
           : "業助無聯絡簿存取權限";
     }
 
@@ -4066,13 +4251,41 @@
     $("cntCustomer").textContent = contacts.filter(c=>c.kind==="customer").length;
     $("cntSupplier").textContent = contacts.filter(c=>c.kind==="supplier").length;
 
+    // ----- 產業 + 區域 篩選列 渲染 -----
+    const indCounts = { all: contacts.length };
+    INDUSTRY.forEach(i => { indCounts[i.code] = contacts.filter(c => c.industry === i.code).length; });
+    const indFilters = $("contactsIndustryFilters");
+    if (indFilters) {
+      indFilters.innerHTML =
+        `<button class="filter-pill ${contactIndustry==='all'?'active':''}" data-contact-ind="all">全部<span class="count">${indCounts.all}</span></button>` +
+        INDUSTRY.filter(i => indCounts[i.code] > 0 || contactIndustry === i.code).map(i =>
+          `<button class="filter-pill ${contactIndustry===i.code?'active':''}" data-contact-ind="${i.code}">${i.emoji} ${i.label}<span class="count">${indCounts[i.code]||0}</span></button>`
+        ).join("");
+    }
+
+    const regCounts = { all: contacts.length };
+    REGIONS.forEach(r => { regCounts[r.code] = contacts.filter(c => c.region === r.code).length; });
+    const regFilters = $("contactsRegionFilters");
+    if (regFilters) {
+      regFilters.innerHTML =
+        `<button class="filter-pill ${contactRegion==='all'?'active':''}" data-contact-reg="all">全部<span class="count">${regCounts.all}</span></button>` +
+        REGIONS.filter(r => regCounts[r.code] > 0 || contactRegion === r.code).map(r =>
+          `<button class="filter-pill ${contactRegion===r.code?'active':''}" data-contact-reg="${r.code}">${r.label}<span class="count">${regCounts[r.code]||0}</span></button>`
+        ).join("");
+    }
+
+    // ----- 套用三維度篩選 -----
     let visible = contacts.slice();
-    if (contactKind !== "all") visible = visible.filter(c=>c.kind===contactKind);
+    if (contactKind     !== "all") visible = visible.filter(c => c.kind === contactKind);
+    if (contactIndustry !== "all") visible = visible.filter(c => c.industry === contactIndustry);
+    if (contactRegion   !== "all") visible = visible.filter(c => c.region === contactRegion);
 
     const body = $("contactsBody");
     if(!visible.length){
-      body.innerHTML = `<tr><td colspan="6" class="contacts-empty">
-        ${canWrite ? '尚無聯絡人 ‧ 點右上「+ 新增聯絡人」開始建檔' : '尚無聯絡人資料'}
+      body.innerHTML = `<tr><td colspan="8" class="contacts-empty">
+        ${contacts.length === 0
+          ? (canWrite ? '尚無聯絡人 ‧ 點右上「+ 新增聯絡人」開始建檔' : '尚無聯絡人資料')
+          : '依目前篩選條件無符合資料 ‧ 可清除篩選或選「全部」'}
       </td></tr>`;
       return;
     }
@@ -4080,6 +4293,8 @@
       const owner = personas[c.owner];
       return `<tr>
         <td><span class="kind-pill ${c.kind==='customer'?'kind-customer':'kind-supplier'}">${c.kind==='customer'?'客戶':'供應商'}</span></td>
+        <td>${industryChipHtml(c.industry)}</td>
+        <td>${regionChipHtml(c.region, c.country)}</td>
         <td><div style="font-weight:600;">${c.company}</div><div style="font-size:11px;color:var(--text-muted);">${c.person||'—'}</div></td>
         <td><div>${c.phone||'—'}</div><div style="font-size:11px;color:var(--text-muted);">${c.email||'—'}</div></td>
         <td style="font-size:12px;color:var(--text-sub);">${c.addr||'—'}</td>
@@ -4122,6 +4337,18 @@
     if(ck){
       contactKind = ck.dataset.contactKind;
       document.querySelectorAll("[data-contact-kind]").forEach(x=>x.classList.toggle("active", x===ck));
+      renderContacts(currentUserKey);
+      return;
+    }
+    const ci = e.target.closest("[data-contact-ind]");
+    if(ci){
+      contactIndustry = ci.dataset.contactInd;
+      renderContacts(currentUserKey);
+      return;
+    }
+    const cr = e.target.closest("[data-contact-reg]");
+    if(cr){
+      contactRegion = cr.dataset.contactReg;
       renderContacts(currentUserKey);
       return;
     }
@@ -4321,8 +4548,17 @@
 
   // ----- Modal: 新增聯絡人 -----
   const ncBackdrop = $("newContactBackdrop");
-  function openNewContact(){ ncBackdrop.dataset.open = "true"; }
-  function closeNewContact(){ ncBackdrop.dataset.open = "false"; ["ncCompany","ncPerson","ncPhone","ncEmail","ncAddr"].forEach(id=>$(id).value=""); }
+  function openNewContact(){
+    initContactSelects();
+    ncBackdrop.dataset.open = "true";
+  }
+  function closeNewContact(){
+    ncBackdrop.dataset.open = "false";
+    ["ncCompany","ncPerson","ncPhone","ncEmail","ncAddr"].forEach(id=>$(id).value="");
+    $("ncIndustry").value = "";
+    $("ncRegion").value = "";
+    refreshCountrySelect();
+  }
   $("newContactBtn").addEventListener("click", openNewContact);
   $("ncCancel").addEventListener("click", closeNewContact);
   $("ncSubmit").addEventListener("click", ()=>{
@@ -4331,12 +4567,15 @@
     contacts.push({
       id: nextId(),
       kind: $("ncKind").value,
+      industry: $("ncIndustry").value || null,
+      region:   $("ncRegion").value   || null,
+      country:  $("ncRegion").value ? $("ncCountry").value : null,
       company,
       person: $("ncPerson").value.trim(),
-      phone: $("ncPhone").value.trim(),
-      email: $("ncEmail").value.trim(),
-      addr: $("ncAddr").value.trim(),
-      owner: currentUserKey,
+      phone:  $("ncPhone").value.trim(),
+      email:  $("ncEmail").value.trim(),
+      addr:   $("ncAddr").value.trim(),
+      owner:  currentUserKey,
     });
     closeNewContact();
     renderContacts(currentUserKey);

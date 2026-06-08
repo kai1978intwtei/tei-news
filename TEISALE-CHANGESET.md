@@ -488,7 +488,86 @@ sales 數據(業務指揮鏈獨佔寫入):
 
 ---
 
-## 13. 未涵蓋(下一輪)
+## 13. 聯絡簿 ‧ 產業 + 區域國家分類(2026-06-08 擴充)
+
+**對應 migration:** `migrations/2026-06-08-teisale-contact-industry-region.sql`
+
+### 13.1 新增欄位
+
+```sql
+ALTER TABLE teisale.contact
+  ADD COLUMN industry text,   -- 產業代碼
+  ADD COLUMN region   text,   -- 區域代碼
+  ADD COLUMN country  text;   -- ISO-2 國家代碼
+```
+
+### 13.2 產業別字典(11 種)
+
+| code | label | 對應前端 emoji |
+|------|-------|--------------|
+| `aero`   | 航太         | ✈️ |
+| `auto`   | 汽車         | 🏎️ |
+| `moto`   | 重機         | 🏍️ |
+| `cycle`  | 自行車/運動   | 🚴 |
+| `ev`     | 電動車/能源   | 🔋 |
+| `ind`    | 工業/機械     | 🏭 |
+| `med`    | 醫療         | ⚕️ |
+| `def`    | 國防         | 🛡️ |
+| `marine` | 海事/船舶     | ⛵ |
+| `elec`   | 消費電子      | 📱 |
+| `other`  | 其他         | 📦 |
+
+### 13.3 區域 → 國家結構(層級 11 區 ‧ 30+ 國家)
+
+| region | label | 國家(ISO-2) |
+|--------|-------|------------|
+| `tw`  | 台灣   | TW |
+| `ea`  | 東亞   | JP, KR, CN, HK |
+| `sea` | 東南亞 | TH, VN, SG, MY, ID, PH |
+| `sa`  | 南亞   | IN |
+| `na`  | 北美   | US, CA, MX |
+| `eu`  | 歐洲   | DE, UK, FR, IT, ES, NL, SE, CH |
+| `oc`  | 大洋洲 | AU, NZ |
+| `me`  | 中東   | AE, SA, IL, TR |
+| `la`  | 拉美   | BR, AR, CL |
+| `af`  | 非洲   | ZA |
+| `other` | 其他 | _(未分類)_ |
+
+### 13.4 CHECK 約束 + 索引
+
+- `contact_industry_chk`:industry 必為白名單之一
+- `contact_region_chk`:region 必為白名單之一
+- 三個欄位各加 partial index(WHERE col IS NOT NULL)
+- 複合索引 `(industry, region)` 支援「同產業同區域客戶」查詢
+
+### 13.5 新增 view
+
+```sql
+teisale.v_contact_by_industry  -- 依產業彙整 客戶/供應商 計數
+teisale.v_contact_by_region    -- 依 region+country 彙整
+```
+
+### 13.6 v_company_overview 擴充
+
+新增 5 個欄位:
+- `contact_with_industry`(已分產業的聯絡人數)
+- `contact_with_region`(已分區域的聯絡人數)
+- `distinct_industries`(出現過的產業數,最多 11)
+- `distinct_regions`(出現過的區域數,最多 11)
+- `distinct_countries`(出現過的國家數)
+
+GM dashboard 可用這幾個欄位顯示「**聯絡簿分類覆蓋率**」與「**業務拓展廣度**」。
+
+### 13.7 前端 UI 變更摘要
+
+- 「新增聯絡人」modal 加 3 個下拉:產業、區域、國家(區域→國家連動)
+- 聯絡簿頁加篩選列:產業 pill row + 區域 pill row,自動顯示 count
+- 表格新增 2 欄:「產業」+「區域 / 國家」(以彩色 chip 呈現)
+- 多維度同時篩選:類型(客戶/供應商)+ 產業 + 區域
+
+---
+
+## 14. 未涵蓋(下一輪)
 
 以下功能本次原型 **未實作**,但 ProjFlow 可預先規劃 schema:
 
