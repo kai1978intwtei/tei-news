@@ -1,0 +1,6 @@
+# 排除非靜態網站需要的檔案
+.github/
+fetch_news.ps1
+.translate_cache.json
+.deepl_key
+*.log
