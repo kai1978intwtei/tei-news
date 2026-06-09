@@ -3090,8 +3090,9 @@ function Publish-ToGitHub {
             }
         }
 
-        $vercelUrl = "https://teisalessys.vercel.app/"
-        Write-Host "[發佈] 已上傳 → $vercelUrl" -ForegroundColor Green
+        $repoParts = $repo.Split('/')
+        $pagesUrl = "https://$($repoParts[0]).github.io/$($repoParts[1])/"
+        Write-Host "[發佈] 已上傳 → $pagesUrl" -ForegroundColor Green
     } catch {
         Write-Host "[發佈] 上傳失敗: $($_.Exception.Message)" -ForegroundColor Yellow
     }
@@ -3102,6 +3103,6 @@ function Publish-ToGitHub {
 # 本機 Task Scheduler 才是 10 分鐘準時更新的主力。
 Publish-ToGitHub -LocalFile $outFile
 # -OpenBrowser 旗標保留供未來測試用，但預設不開瀏覽器
-# 同仁請自行加入書籤：https://teisalessys.vercel.app/
+# 同仁請自行加入書籤：https://kai1978intwtei.github.io/tei-news/
 # 已開的分頁會每 30 分鐘自動 meta refresh
 # if ($OpenBrowser) { Start-Process $outFile }
