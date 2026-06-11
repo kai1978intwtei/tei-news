@@ -888,7 +888,7 @@ function openSearch(){
 
 /* ---- 18. 跨系統翻頁 / SSO ---- */
 function flipTo(sys){const u=profById(state.me);
-  const qs=new URLSearchParams({from:'ontime',u:u.id,email:(u.email||(u.en.toLowerCase().replace(/\s/g,'')+'@tei.com.tw')),name:u.name,enName:u.en,tutorialDone:'1'});
+  const qs=new URLSearchParams({from:'ontime',u:u.id,email:(u.email||(u.en.toLowerCase().replace(/\s/g,'')+'@'+COMPANY_DOMAIN)),name:u.name,enName:u.en,tutorialDone:'1'});
   location.href=`${SYS[sys]}?${qs.toString()}`;}
 function handleSSO(){const qp=new URLSearchParams(location.search);const from=qp.get('from');
   if(from&&['projflow','pmsys','rtm'].includes(from)){const u=qp.get('u'),email=qp.get('email');
