@@ -33,6 +33,7 @@ create table if not exists public.events (
   starts_at    timestamptz not null,
   ends_at      timestamptz not null,
   all_day      boolean not null default false,
+  color        text default '',                     -- 行程自訂顏色標籤（空=跟隨日曆色）
   location     text default '',
   url          text default '',
   notes        text default '',
@@ -54,7 +55,7 @@ create table if not exists public.calendar_feed (
   calendar_id text not null references public.calendars(id) on delete cascade,
   user_id     uuid not null references public.profiles(id),
   kind        text not null check (kind in ('act','msg')),     -- act=系統活動, msg=聊天訊息
-  action      text check (action in ('create','edit','delete','invite')),
+  action      text check (action in ('create','edit','delete','invite','comment')),
   target      text,
   body        text,
   cross_id    text,                                            -- 跨系統穩定 ID（三邊已讀/回覆對齊）
@@ -75,6 +76,17 @@ create table if not exists public.keep (
   created_at  timestamptz not null default now()
 );
 create index if not exists keep_cal_idx on public.keep(calendar_id);
+
+-- ---- 行程留言（每個事件底下的對話串，TimeTree 行程留言）----
+create table if not exists public.event_comments (
+  id         text primary key,
+  event_id   text not null references public.events(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id),
+  text       text not null,
+  cross_id   text,                                  -- 跨系統穩定 ID
+  created_at timestamptz not null default now()
+);
+create index if not exists ecmt_event_idx on public.event_comments(event_id);
 
 -- ---- 推播訂閱（Web Push / VAPID）----
 create table if not exists public.push_subscriptions (
@@ -108,6 +120,7 @@ alter table public.calendar_members enable row level security;
 alter table public.events           enable row level security;
 alter table public.calendar_feed    enable row level security;
 alter table public.keep             enable row level security;
+alter table public.event_comments   enable row level security;
 
 create or replace function public.is_member(cal text)
 returns boolean language sql security definer stable as $$
@@ -135,6 +148,10 @@ create policy feed_write on public.calendar_feed for insert with check (public.i
 
 create policy keep_read  on public.keep for select using (public.is_member(calendar_id));
 create policy keep_write on public.keep for all using (public.can_write(calendar_id)) with check (public.can_write(calendar_id));
+
+create policy ecmt_read  on public.event_comments for select
+  using (exists(select 1 from public.events e where e.id = event_id and public.is_member(e.calendar_id)));
+create policy ecmt_write on public.event_comments for insert with check (user_id = auth.uid());
 
 -- realtime：即時多人同步
 -- alter publication supabase_realtime add table public.events, public.calendar_feed, public.keep;

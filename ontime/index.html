@@ -86,7 +86,23 @@
   .chip{font-size:10.5px;line-height:1.35;font-weight:600;color:#fff;border-radius:4px;padding:1px 4px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .chip.allday{font-weight:700;}
+  .chip.span{margin-left:-3px;margin-right:-3px;border-radius:0;}
+  .chip.span.s{border-radius:4px 0 0 4px;margin-left:0;}
+  .chip.span.e{border-radius:0 4px 4px 0;margin-right:0;}
+  .chip.span.s.e{border-radius:4px;}
+  .holi{font-size:9px;color:#C2410C;font-weight:600;text-align:center;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .day.holiday .dnum{color:#C2410C;}
   .more{font-size:10px;color:var(--text-muted);font-weight:600;text-align:center;}
+  /* event comments (per-event chat thread) */
+  .ecmt-wrap{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
+  .ecmt-wrap h4{font-size:13px;font-weight:700;color:var(--text-sub);margin-bottom:12px;}
+  .ecmt-input{display:flex;gap:8px;margin-top:10px;}
+  .ecmt-input input{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:21px;background:var(--surface-soft);}
+  .ecmt-input button{width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:none;display:grid;place-items:center;}
+  .ecmt-input button:disabled{opacity:.4;}
+  .clr-pick{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+  .clr-dot{width:30px;height:30px;border-radius:50%;border:3px solid transparent;}
+  .clr-dot.none{display:grid;place-items:center;font-size:13px;color:var(--text-muted);background:var(--surface-soft);border:1px dashed var(--border-strong);}
 
   /* ===== Agenda ===== */
   .agenda{padding:10px 14px 24px;}
@@ -375,6 +391,13 @@ const dispName=(p)=>p.en||p.name;
 /* ---- 4. 資料層 ---- */
 const LS_KEY='ontime.data.v1';
 const PAL=['#E8740C','#2563EB','#10B981','#7C3AED','#EAB308','#DB2777','#0891B2','#64748B'];
+/* 台灣國定假日（內建清單，日期請每年校對）。key=YYYY-MM-DD */
+const HOLIDAYS={
+  '2026-01-01':'元旦','2026-02-16':'除夕','2026-02-17':'春節','2026-02-18':'春節','2026-02-19':'春節','2026-02-20':'春節',
+  '2026-02-28':'和平紀念日','2026-04-04':'兒童節','2026-04-06':'清明節','2026-05-01':'勞動節',
+  '2026-06-19':'端午節','2026-09-25':'中秋節','2026-10-10':'國慶日',
+};
+function holName(ds){return HOLIDAYS[ds]||'';}
 function seed(){
   const me=PROFILES[0].id;
   const cals=[
@@ -386,7 +409,7 @@ function seed(){
   const events=[
     { id:'e1', calendarId:'cal_company', title:'全員月會', start:D(0,9,0), end:D(0,10,30), allDay:false, location:'大會議室', url:'', notes:'各部門進度回報', repeat:'monthly', alerts:[30,10], createdBy:PROFILES[0].id, attendees:PROFILES.map(p=>p.id), attendance:{} },
     { id:'e2', calendarId:'cal_sales', title:'Hyperion 報價討論', start:D(0,14,0), end:D(0,15,0), allDay:false, location:'線上 Teams', url:'https://teams.microsoft.com', notes:'碳纖維單體車身報價', repeat:'none', alerts:[15], createdBy:PROFILES[1].id, attendees:[PROFILES[1].id,PROFILES[2].id], attendance:{} },
-    { id:'e3', calendarId:'cal_company', title:'端午連假', start:D(1,0,0), end:D(1,23,59), allDay:true, location:'', url:'', notes:'公司放假', repeat:'none', alerts:[], createdBy:PROFILES[0].id, attendees:[], attendance:{} },
+    { id:'e3', calendarId:'cal_company', title:'公司旅遊', start:D(1,0,0), end:D(3,23,59), allDay:true, location:'宜蘭', url:'', notes:'三天兩夜員工旅遊', repeat:'none', alerts:[], color:'#7C3AED', createdBy:PROFILES[0].id, attendees:[], attendance:{} },
     { id:'e4', calendarId:'cal_sales', title:'拜訪 Apex Cycling', start:D(2,11,0), end:D(2,12,0), allDay:false, location:'台中', url:'', notes:'2027 環法車架競標', repeat:'none', alerts:[60], createdBy:PROFILES[2].id, attendees:[PROFILES[2].id], attendance:{} },
     { id:'e5', calendarId:'cal_me', title:'牙醫回診', start:D(3,18,30), end:D(3,19,0), allDay:false, location:'', url:'', notes:'', repeat:'none', alerts:[120], createdBy:me, attendees:[me], attendance:{} },
     { id:'e6', calendarId:'cal_sales', title:'週會', start:D(7,9,30), end:D(7,10,0), allDay:false, location:'業務區', url:'', notes:'', repeat:'weekly', alerts:[15], createdBy:PROFILES[1].id, attendees:[], attendance:{} },
@@ -400,10 +423,14 @@ function seed(){
     { id:'k1', calendarId:'cal_company', type:'memo', title:'公司 Wi-Fi', body:'SSID：TEi-Office\n密碼：見行政公告', url:'', userId:PROFILES[0].id, ts:Date.now()-86400e3, pinned:true },
     { id:'k2', calendarId:'cal_sales', type:'link', title:'報價單範本', body:'最新版報價 Excel 範本', url:'https://example.com/quote-template', userId:PROFILES[1].id, ts:Date.now()-43200e3, pinned:false },
   ];
-  return { cals, events, feed, keep, seenFeed:{} };
+  const comments=[
+    { id:'cm1', eventId:'e1', userId:PROFILES[1].id, text:'我會帶上季業績圖表', ts:Date.now()-3600e3 },
+    { id:'cm2', eventId:'e1', userId:PROFILES[0].id, text:'好，麻煩準時 🙏', ts:Date.now()-1800e3 },
+  ];
+  return { cals, events, feed, keep, comments, seenFeed:{} };
 }
 let DATA=loadData();
-function loadData(){ try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(_){ } const s=seed();persist(s);return s; }
+function loadData(){ try{const r=localStorage.getItem(LS_KEY);if(r){const d=JSON.parse(r);if(!d.comments)d.comments=[];return d;}}catch(_){ } const s=seed();persist(s);return s; }
 function persist(d){ try{localStorage.setItem(LS_KEY,JSON.stringify(d||DATA));}catch(_){ } }
 async function sbSync(t,row){ if(!SB)return; try{await SB.from(t).upsert(row);}catch(e){console.warn('sbSync',t,e.message);} }
 
@@ -427,6 +454,12 @@ function contextCals(){ // 受頂部切換器影響
 const WD=['日','一','二','三','四','五','六'];
 function relTime(ts){const s=Math.floor((Date.now()-ts)/1000);
   if(s<60)return '剛剛';if(s<3600)return Math.floor(s/60)+' 分前';if(s<86400)return Math.floor(s/3600)+' 小時前';return Math.floor(s/86400)+' 天前';}
+function cmtCount(eid){return (DATA.comments||[]).filter(c=>c.eventId===eid).length;}
+function addComment(eid,text){const ev=DATA.events.find(x=>x.id===eid);
+  const c={id:'cm'+Date.now(),eventId:eid,userId:state.me,text,ts:Date.now()};
+  (DATA.comments=DATA.comments||[]).push(c);
+  if(ev)pushAct(ev.calendarId,'comment',ev.title,`在「${ev.title}」留言：${text.length>20?text.slice(0,20)+'…':text}`);
+  persist();sbSync('event_comments',c);return c;}
 
 /* 重複展開：判斷某事件是否發生在 dateStr */
 function occursOn(ev,dateStr){
@@ -484,18 +517,19 @@ function renderMonth(){
   let h='<div class="weekhead">'+WD.map((w,i)=>`<div class="${i===0||i===6?'we':''}">${w}</div>`).join('')+'</div><div class="month">';
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=ymd(d);
     const out=d.getMonth()!==m,today=sameYmd(d,new Date()),we=d.getDay()===0||d.getDay()===6,sel=ds===state.selDate;
+    const holi=holName(ds);
     const evs=eventsOn(ds);let chips='';
-    evs.slice(0,3).forEach(e=>{const cal=calById(e.calendarId);
-      chips+=`<div class="chip ${e.allDay?'allday':''}" style="background:${cal.color}">${e.allDay?'':fmtTime(e.start)+' '}${esc(e.title)}</div>`;});
+    evs.slice(0,3).forEach(e=>chips+=monthChip(e,ds));
     if(evs.length>3)chips+=`<div class="more">+${evs.length-3}</div>`;
-    h+=`<div class="day ${out?'out':''} ${today?'today':''} ${we?'we':''} ${sel?'sel':''}" data-d="${ds}"><div class="dnum">${d.getDate()}</div>${chips}</div>`;}
+    h+=`<div class="day ${out?'out':''} ${today?'today':''} ${we?'we':''} ${sel?'sel':''} ${holi?'holiday':''}" data-d="${ds}"><div class="dnum">${d.getDate()}</div>${holi?`<div class="holi">${esc(holi)}</div>`:''}${chips}</div>`;}
   h+='</div>'+renderDayList(state.selDate,true);
   return h;
 }
 function renderDayList(dateStr,compact){
   const evs=eventsOn(dateStr);const d=new Date(dateStr+'T00:00:00');const today=dateStr===ymd(new Date());
   let h=`<div class="agenda" ${compact?'style="padding-top:4px"':''}>`;
-  h+=`<div class="agenda-date ${today?'today':''}"><span class="d">${d.getDate()}</span><span class="wd">${d.getMonth()+1}月 ‧ 週${WD[d.getDay()]}${today?' ‧ 今天':''}</span></div>`;
+  const holi=holName(dateStr);
+  h+=`<div class="agenda-date ${today?'today':''}"><span class="d">${d.getDate()}</span><span class="wd">${d.getMonth()+1}月 ‧ 週${WD[d.getDay()]}${today?' ‧ 今天':''}${holi?` ‧ <b style="color:#C2410C">${esc(holi)}</b>`:''}</span></div>`;
   if(!evs.length)h+=`<div class="empty"><div class="big">🗓️</div>這天沒有行程<br><span style="font-size:12px">點右下 ＋ 新增</span></div>`;
   evs.forEach(e=>h+=evCard(e,dateStr));h+='</div>';return h;
 }
@@ -507,9 +541,15 @@ function renderWeek(){
     evs.forEach(e=>h+=evCard(e,ds));h+='</div>';}
   h+='</div>';return h;
 }
+function evColor(e){return e.color||calById(e.calendarId).color;}
+function monthChip(e,ds){const color=evColor(e);
+  const sd=ymd(e.start),ed=ymd(e.end);const multi=sd!==ed&&(!e.repeat||e.repeat==='none');
+  if(multi){const isS=ds===sd,isE=ds===ed;
+    return `<div class="chip span ${isS?'s':''} ${isE?'e':''}" style="background:${color}">${isS?esc(e.title):'&nbsp;'}</div>`;}
+  return `<div class="chip ${e.allDay?'allday':''}" style="background:${color}">${e.allDay?'':fmtTime(e.start)+' '}${esc(e.title)}</div>`;}
 function evCard(e,dateStr){const cal=calById(e.calendarId);const rep=e.repeat&&e.repeat!=='none';
   return `<div class="ev" data-ev="${e.id}" data-on="${dateStr||''}">
-    <div class="bar" style="background:${cal.color}"></div>
+    <div class="bar" style="background:${evColor(e)}"></div>
     <div class="ev-main"><div class="ev-title">${esc(e.title)}${rep?' 🔁':''}</div>
       <div class="ev-meta"><span class="cal"><i style="background:${cal.color}"></i>${esc(cal.name)}</span>
       ${e.location?`<span>📍 ${esc(e.location)}</span>`:''}${e.attendees&&e.attendees.length?`<span>👥 ${e.attendees.length}</span>`:''}</div></div>
@@ -554,13 +594,35 @@ function openEventDetail(eid){
       <button data-go="going" class="${my==='going'?'on':''}">✅ 參加</button>
       <button data-go="maybe" class="${my==='maybe'?'on':''}">❔ 未定</button>
       <button data-go="no" class="${my==='no'?'on':''}">❌ 不參加</button>
+    </div>
+    <div class="ecmt-wrap">
+      <h4>💬 留言（${cmtCount(e.id)}）</h4>
+      <div id="ecmtList"></div>
+      <div class="ecmt-input"><input id="ecmtIn" placeholder="對這個行程留言…" maxlength="500" /><button id="ecmtSend" disabled>↑</button></div>
     </div>`;
   setBody(body);
   document.getElementById('sheetBody').querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
     e.attendance=e.attendance||{}; e.attendance[state.me]=b.dataset.go;
     if(!e.attendees.includes(state.me))e.attendees.push(state.me);
     persist();sbSync('events',e);openEventDetail(eid);toast('已更新出席狀態');}));
+  renderEventComments(e.id);
+  const ein=document.getElementById('ecmtIn'),esnd=document.getElementById('ecmtSend');
+  ein.addEventListener('input',()=>esnd.disabled=!ein.value.trim());
+  const sendCmt=()=>{const t=ein.value.trim();if(!t)return;addComment(e.id,t);ein.value='';esnd.disabled=true;
+    renderEventComments(e.id);document.querySelector('.ecmt-wrap h4').textContent=`💬 留言（${cmtCount(e.id)}）`;};
+  esnd.addEventListener('click',sendCmt);
+  ein.addEventListener('keydown',ev=>{if(ev.key==='Enter')sendCmt();});
   openSheet();
+}
+
+function renderEventComments(eid){
+  const list=document.getElementById('ecmtList');if(!list)return;
+  const cs=(DATA.comments||[]).filter(c=>c.eventId===eid).sort((a,b)=>a.ts-b.ts);
+  list.innerHTML=cs.length?cs.map(c=>{const p=profById(c.userId);const mine=c.userId===state.me;
+    return `<div class="msg ${mine?'mine':''}"><div class="c-av">${p.emoji}</div><div class="c-body">
+      <div class="c-top"><span class="c-name">${esc(dispName(p))}</span><span class="c-time">${relTime(c.ts)}</span></div>
+      <div class="bubble">${esc(c.text)}</div></div></div>`;}).join('')
+    :`<div style="font-size:13px;color:var(--text-muted);padding:2px 0 6px">還沒有留言，留下第一則吧。</div>`;
 }
 
 /* ---- 11. 新增 / 編輯 ---- */
@@ -583,6 +645,10 @@ function openEventEdit(eid){
   setBody(`
     <div class="field"><input type="text" id="fTitle" value="${esc(draft.title)}" placeholder="行程標題" style="font-size:17px;font-weight:600" /></div>
     <div class="field"><label>日曆</label><div class="calpick" id="fCalPick">${calOpts}</div></div>
+    <div class="field"><label>顏色標籤</label><div class="clr-pick" id="fClr">
+      <button type="button" class="clr-dot none" data-c="" style="${!draft.color?'border-color:var(--accent);color:var(--accent)':''}">無</button>
+      ${PAL.map(c=>`<button type="button" class="clr-dot" data-c="${c}" style="background:${c};border-color:${draft.color===c?'#0F172A':'transparent'}"></button>`).join('')}
+    </div></div>
     <div class="toggle-row"><span class="lab">整天</span><div class="sw ${draft.allDay?'on':''}" id="fAllDay"></div></div>
     <div class="row2"><div class="field"><label>開始</label><input type="date" id="fSDate" value="${draft.sDate}" /></div>
       <div class="field" id="fSTimeWrap"><label>&nbsp;</label><input type="time" id="fSTime" value="${draft.sTime}" /></div></div>
@@ -597,6 +663,10 @@ function openEventEdit(eid){
   // calendar pick
   document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(b=>b.addEventListener('click',()=>{
     document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.calendarId=b.dataset.cal;}));
+  // color label
+  const clrWrap=document.getElementById('fClr');
+  clrWrap.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click',()=>{draft.color=b.dataset.c||'';
+    clrWrap.querySelectorAll('.clr-dot').forEach(x=>{if(x.classList.contains('none')){x.style.borderColor=draft.color?'':'var(--accent)';x.style.color=draft.color?'var(--text-muted)':'var(--accent)';}else x.style.borderColor=(x.dataset.c===draft.color)?'#0F172A':'transparent';});}));
   // all day
   const allSw=document.getElementById('fAllDay');
   const syncAll=()=>{const on=allSw.classList.contains('on');document.getElementById('fSTimeWrap').style.display=on?'none':'';document.getElementById('fETimeWrap').style.display=on?'none':'';};
@@ -619,7 +689,7 @@ function saveEvent(editing,draft){
   const sTime=allDay?'00:00':document.getElementById('fSTime').value,eTime=allDay?'23:59':document.getElementById('fETime').value;
   const start=new Date(`${sDate}T${sTime}`).toISOString();let end=new Date(`${eDate}T${eTime}`).toISOString();
   if(new Date(end)<new Date(start))end=start;
-  const obj={ id:editing?editing.id:'e'+Date.now(), calendarId:draft.calendarId, title, start, end, allDay,
+  const obj={ id:editing?editing.id:'e'+Date.now(), calendarId:draft.calendarId, title, start, end, allDay, color:draft.color||'',
     location:document.getElementById('fLoc').value.trim(), url:document.getElementById('fUrl').value.trim(),
     notes:document.getElementById('fNotes').value.trim(), repeat:document.getElementById('fRepeat').value,
     repeatUntil:editing?editing.repeatUntil||'':'', alerts:draft.alerts.slice(),
@@ -630,6 +700,7 @@ function saveEvent(editing,draft){
   closeSheet();state.selDate=ymd(start);state.tab='calendar';render();toast(editing?'已更新':'已新增 ✓');
 }
 function deleteEvent(id){const ev=DATA.events.find(e=>e.id===id);DATA.events=DATA.events.filter(e=>e.id!==id);
+  DATA.comments=(DATA.comments||[]).filter(c=>c.eventId!==id);
   if(ev)pushAct(ev.calendarId,'delete',ev.title,`刪除了行程「${ev.title}」`);persist();if(SB)SB.from('events').delete().eq('id',id);}
 
 /* ---- 12. Keep ---- */
@@ -693,7 +764,7 @@ function pushAct(calId,action,target,text){
 function renderFeed(el){
   const cals=contextCals();const calIds=new Set(cals.map(c=>c.id));
   let items=DATA.feed.filter(f=>calIds.has(f.calendarId)).sort((a,b)=>a.ts-b.ts);
-  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕'};
+  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕',comment:'💬'};
   let h='<div class="feed-list">';
   if(!items.length)h+='<div class="empty"><div class="big">💬</div>還沒有動態與對話</div>';
   let lastDay='';
