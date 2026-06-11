@@ -272,21 +272,13 @@
   .auth-title{font-size:27px;font-weight:700;letter-spacing:-0.02em;}
   .auth-title span{color:var(--accent);}
   .auth-sub{font-size:13.5px;color:var(--text-muted);margin-top:6px;line-height:1.5;}
-  .auth-form{margin-top:26px;text-align:left;}
-  .auth-form label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:7px;}
-  .email-wrap{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:13px;background:var(--surface);overflow:hidden;transition:.15s;}
-  .email-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
-  .email-wrap input{flex:1;border:none;background:none;padding:14px 12px;font-size:16px;outline:none;min-width:0;}
-  .email-wrap .suffix{padding:0 13px;font-size:14px;font-weight:600;color:var(--text-muted);white-space:nowrap;}
-  .auth-btn{width:100%;padding:15px;border-radius:13px;background:var(--accent);color:#fff;font-size:15.5px;font-weight:700;margin-top:16px;box-shadow:0 6px 16px rgba(232,116,12,.32);transition:.15s;}
-  .auth-btn:active{transform:scale(.99);}
-  .auth-btn:disabled{opacity:.5;box-shadow:none;}
-  .otp-wrap{display:flex;gap:8px;justify-content:center;margin:8px 0 4px;}
-  .otp-wrap input{width:44px;height:54px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);}
-  .otp-wrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
-  .auth-back{font-size:13px;color:var(--text-sub);font-weight:600;margin-top:18px;display:inline-block;}
-  .auth-note{font-size:12px;color:var(--text-muted);margin-top:22px;line-height:1.6;}
-  .auth-err{font-size:13px;color:var(--danger);font-weight:600;margin-top:12px;min-height:18px;}
+  .auth-people{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .auth-person{display:flex;align-items:center;gap:11px;padding:13px 12px;border:1px solid var(--border);border-radius:14px;
+    background:var(--surface);box-shadow:var(--shadow-sm);text-align:left;transition:.15s;}
+  .auth-person:active{transform:scale(.98);background:var(--surface-soft);}
+  .auth-person .ap-av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:var(--accent-soft);border:1px solid var(--accent-border);flex:none;}
+  .auth-person .ap-name{font-size:14px;font-weight:700;line-height:1.2;}
+  .auth-person .ap-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
   .auth-foot{position:absolute;bottom:calc(20px + var(--safe-bottom));font-size:11.5px;color:var(--text-dim);}
 </style>
 </head>
@@ -295,31 +287,8 @@
   <div class="auth-card">
     <img class="auth-logo" src="icon.svg" alt="" />
     <div class="auth-title">On<span>Time</span></div>
-    <div class="auth-sub">TEi Composites 公司共享行事曆<br>請用公司 email 登入</div>
-
-    <!-- 步驟 1：email -->
-    <div class="auth-form" id="authStep1">
-      <label>公司 Email</label>
-      <div class="email-wrap">
-        <input type="text" id="authEmail" inputmode="email" autocapitalize="off" autocorrect="off" placeholder="你的帳號" />
-        <span class="suffix">@teicomposite.com</span>
-      </div>
-      <div class="auth-err" id="authErr"></div>
-      <button class="auth-btn" id="authSend">發送驗證碼</button>
-      <div class="auth-note">僅限 <b>@teicomposite.com</b> 公司信箱。<br>非 TEi 同仁無法登入本系統。</div>
-    </div>
-
-    <!-- 步驟 2：OTP -->
-    <div class="auth-form" id="authStep2" style="display:none">
-      <label id="otpLabel">輸入寄到信箱的 6 位數驗證碼</label>
-      <div class="otp-wrap" id="otpWrap">
-        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
-        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
-      </div>
-      <div class="auth-err" id="otpErr"></div>
-      <button class="auth-btn" id="authVerify">驗證並登入</button>
-      <span class="auth-back" id="authBack">‹ 換個 email</span>
-    </div>
+    <div class="auth-sub">TEi Composites 公司共享行事曆<br>點你的名字即可開始</div>
+    <div class="auth-people" id="authPeople"></div>
   </div>
   <div class="auth-foot">OnTime · TEi Composites © 2026</div>
 </div>
@@ -778,8 +747,8 @@ function renderMore(el){
     <div class="who" id="whoSwitch">${PROFILES.map(p=>`<button class="${p.id===state.me?'on':''}" data-uid="${p.id}">${p.emoji} ${esc(dispName(p))}</button>`).join('')}</div>
     <div class="grp-label" style="margin-top:18px">帳號</div>
     <div class="set-group">
-      <div class="set-row"><span class="s-ic">📧</span>登入帳號<span class="s-arrow">${esc(me.email||'')}</span></div>
-      <div class="set-row" id="mLogout" style="color:var(--danger)"><span class="s-ic">↩︎</span>登出<span class="s-arrow"></span></div>
+      <div class="set-row"><span class="s-ic">🙋</span>目前身份<span class="s-arrow">${me.emoji} ${esc(dispName(me))}</span></div>
+      <div class="set-row" id="mLogout"><span class="s-ic">🔄</span>切換使用者<span class="s-arrow">›</span></div>
     </div>
     <div class="hint" style="margin-top:14px">資料模式：${SB?'☁️ Supabase 雲端同步':'💾 本機原型（localStorage）'}。<br>OnTime · TEi Composites 共享行事曆。</div>
   </div>`;
@@ -948,60 +917,30 @@ bodyEl.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0]
 bodyEl.addEventListener('touchend',e=>{if(state.tab!=='calendar')return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
   if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8)moveCursor(dx<0?1:-1);},{passive:true});
 
-/* ---- 23. 公司 email 認證（取代 TimeTree 的 Apple/Google 登入）----
-   原型：email 須為 @teicomposite.com 且對應到 profiles；OTP 為示範（任意 6 碼）。
-   正式：SB.auth.signInWithOtp({email}) 寄驗證信，SB.auth.verifyOtp() 驗證；
-        以 RLS + auth.uid() 控管，僅公司網域帳號可登入。 */
+/* ---- 23. 進入（方便優先：點名字即可開始，免 email、免密碼）----
+   身份僅用來標示「誰建立/留言」與共享權限；記住後下次直接進。
+   從姊妹系統 SSO 翻頁進來會自動帶身份、跳過此畫面。 */
 const SESSION_KEY='ontime.session';
 function setSession(uid){try{localStorage.setItem(SESSION_KEY,uid);}catch(_){ }}
 function clearSession(){try{localStorage.removeItem(SESSION_KEY);}catch(_){ }}
 function restoreSession(){try{const uid=localStorage.getItem(SESSION_KEY);
   if(uid&&PROFILES.some(p=>p.id===uid)){state.me=uid;return true;}}catch(_){ }return false;}
 
-let pendingUser=null;
-function showAuth(){document.getElementById('auth').classList.remove('hide');
-  document.getElementById('authStep1').style.display='';document.getElementById('authStep2').style.display='none';
-  setTimeout(()=>document.getElementById('authEmail').focus(),200);}
+function showAuth(){
+  const auth=document.getElementById('auth');auth.classList.remove('hide');
+  document.getElementById('authPeople').innerHTML=PROFILES.map(p=>
+    `<button class="auth-person" data-uid="${p.id}"><span class="ap-av">${p.emoji}</span>
+      <span><span class="ap-name">${esc(dispName(p))}</span><span class="ap-sub">${esc(p.title)}</span></span></button>`).join('');
+  auth.querySelectorAll('[data-uid]').forEach(b=>b.addEventListener('click',()=>{
+    const p=profById(b.dataset.uid);state.me=p.id;setSession(p.id);enterApp();
+    setTimeout(()=>toast(`歡迎，${dispName(p)} 🎉`),300);}));
+}
 function enterApp(){document.getElementById('auth').classList.add('hide');render();
   if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
   if('Notification'in window&&Notification.permission==='granted')rescheduleAll();
   const a=new URLSearchParams(location.search).get('action');
   if(a==='new-event')setTimeout(()=>openEventEdit(null),300);
   if(a==='feed')setTimeout(()=>setTab('feed'),200);}
-
-(function bindAuth(){
-  const emailIn=document.getElementById('authEmail'),err=document.getElementById('authErr');
-  const otpErr=document.getElementById('otpErr');
-  const otps=[...document.getElementById('otpWrap').querySelectorAll('input')];
-  function step1(){
-    const local=emailIn.value.trim().toLowerCase().replace(/@.*/,'');
-    if(!local){err.textContent='請輸入公司帳號';return;}
-    const email=local+'@'+COMPANY_DOMAIN;
-    const p=PROFILES.find(x=>x.email&&x.email.toLowerCase()===email);
-    if(!p){err.textContent='查無此公司帳號（原型僅含示範同仁：kai / june / sunny / stanley / kate / keira）';return;}
-    err.textContent='';pendingUser=p;
-    if(SB){ SB.auth.signInWithOtp({email}).catch(()=>{}); } // 正式：寄出驗證碼
-    document.getElementById('authStep1').style.display='none';
-    document.getElementById('authStep2').style.display='';
-    document.getElementById('otpLabel').innerHTML=`驗證碼已寄至 <b>${esc(email)}</b>`;
-    otps.forEach(o=>o.value='');setTimeout(()=>otps[0].focus(),100);
-  }
-  function verify(){
-    const code=otps.map(o=>o.value).join('');
-    if(code.length<6){otpErr.textContent='請輸入完整 6 位數驗證碼';return;}
-    // 原型：接受任意 6 碼。正式：await SB.auth.verifyOtp({email,token:code,type:'email'})
-    otpErr.textContent='';
-    state.me=pendingUser.id;setSession(pendingUser.id);
-    enterApp();setTimeout(()=>toast(`歡迎，${dispName(pendingUser)} 🎉`),300);
-  }
-  document.getElementById('authSend').addEventListener('click',step1);
-  emailIn.addEventListener('keydown',e=>{if(e.key==='Enter')step1();});
-  document.getElementById('authVerify').addEventListener('click',verify);
-  document.getElementById('authBack').addEventListener('click',()=>{
-    document.getElementById('authStep1').style.display='';document.getElementById('authStep2').style.display='none';emailIn.focus();});
-  otps.forEach((o,i)=>{o.addEventListener('input',()=>{if(o.value&&i<5)otps[i+1].focus();if(otps.every(x=>x.value))verify();});
-    o.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!o.value&&i>0)otps[i-1].focus();});});
-})();
 function logout(){clearSession();closeSheet();state.me=PROFILES[0].id;state.tab='calendar';showAuth();}
 
 /* ---- 24. 啟動 ---- */
