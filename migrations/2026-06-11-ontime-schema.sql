@@ -55,7 +55,8 @@ create table if not exists public.calendar_feed (
   calendar_id text not null references public.calendars(id) on delete cascade,
   user_id     uuid not null references public.profiles(id),
   kind        text not null check (kind in ('act','msg')),     -- act=系統活動, msg=聊天訊息
-  action      text check (action in ('create','edit','delete','invite','comment')),
+  action      text check (action in ('create','edit','delete','invite','comment','mention')),
+  target_user uuid references public.profiles(id),         -- @提及對象
   target      text,
   body        text,
   cross_id    text,                                            -- 跨系統穩定 ID（三邊已讀/回覆對齊）

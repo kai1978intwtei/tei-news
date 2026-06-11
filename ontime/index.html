@@ -469,6 +469,11 @@ function contextCals(){ // 受頂部切換器影響
   const c=calById(state.activeCal); return c?[c]:[];
 }
 const WD=['日','一','二','三','四','五','六'];
+/* 使用者偏好（週起始日等） */
+const PREFS_KEY='ontime.prefs';
+let PREFS=(()=>{try{return JSON.parse(localStorage.getItem(PREFS_KEY))||{};}catch(_){return {};}})();
+function savePrefs(){try{localStorage.setItem(PREFS_KEY,JSON.stringify(PREFS));}catch(_){ }}
+const WS=()=>PREFS.weekStart===1?1:0; // 0=週日起 1=週一起
 function relTime(ts){const s=Math.floor((Date.now()-ts)/1000);
   if(s<60)return '剛剛';if(s<3600)return Math.floor(s/60)+' 分前';if(s<86400)return Math.floor(s/3600)+' 小時前';return Math.floor(s/86400)+' 天前';}
 function cmtCount(eid){return (DATA.comments||[]).filter(c=>c.eventId===eid).length;}
@@ -476,6 +481,7 @@ function addComment(eid,text){const ev=DATA.events.find(x=>x.id===eid);
   const c={id:'cm'+Date.now(),eventId:eid,userId:state.me,text,ts:Date.now()};
   (DATA.comments=DATA.comments||[]).push(c);
   if(ev)pushAct(ev.calendarId,'comment',ev.title,`在「${ev.title}」留言：${text.length>20?text.slice(0,20)+'…':text}`);
+  if(ev)detectMentions(text,ev.calendarId,`「${ev.title}」的留言`);
   persist();sbSync('event_comments',c);return c;}
 
 /* 重複展開：判斷某事件是否發生在 dateStr */
@@ -539,11 +545,13 @@ function renderTop(){
 }
 
 /* ---- 8. 月檢視 ---- */
-function weekStart(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.setHours(0,0,0,0);return x;}
+function weekStart(d){const x=new Date(d);x.setDate(x.getDate()-((x.getDay()-WS()+7)%7));x.setHours(0,0,0,0);return x;}
 function renderMonth(){
   const c=state.cursor,y=c.getFullYear(),m=c.getMonth();
-  const first=new Date(y,m,1);const start=new Date(first);start.setDate(1-first.getDay());
-  let h='<div class="weekhead">'+WD.map((w,i)=>`<div class="${i===0||i===6?'we':''}">${w}</div>`).join('')+'</div><div class="month">';
+  const first=new Date(y,m,1);const start=new Date(first);start.setDate(1-((first.getDay()-WS()+7)%7));
+  let h='<div class="weekhead">';
+  for(let i=0;i<7;i++){const wd=(WS()+i)%7;h+=`<div class="${wd===0||wd===6?'we':''}">${WD[wd]}</div>`;}
+  h+='</div><div class="month">';
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=ymd(d);
     const out=d.getMonth()!==m,today=sameYmd(d,new Date()),we=d.getDay()===0||d.getDay()===6,sel=ds===state.selDate;
     const holi=holName(ds);
@@ -631,6 +639,7 @@ function openEventDetail(eid){
       <button data-go="maybe" class="${my==='maybe'?'on':''}">❔ 未定</button>
       <button data-go="no" class="${my==='no'?'on':''}">❌ 不參加</button>
     </div>
+    ${canEdit(cal)?'<button class="flipbtn" id="evCopy"><span>📋 複製此行程</span><span class="arr">›</span></button>':''}
     <div class="ecmt-wrap">
       <h4>💬 留言（${cmtCount(e.id)}）</h4>
       <div id="ecmtList"></div>
@@ -641,6 +650,8 @@ function openEventDetail(eid){
     e.attendance=e.attendance||{}; e.attendance[state.me]=b.dataset.go;
     if(!e.attendees.includes(state.me))e.attendees.push(state.me);
     persist();sbSync('events',e);openEventDetail(eid);toast('已更新出席狀態');}));
+  const cpBtn=document.getElementById('evCopy');
+  if(cpBtn)cpBtn.addEventListener('click',()=>openEventEdit(null,e.id));
   renderEventComments(e.id);
   const ein=document.getElementById('ecmtIn'),esnd=document.getElementById('ecmtSend');
   ein.addEventListener('input',()=>esnd.disabled=!ein.value.trim());
@@ -664,17 +675,20 @@ function renderEventComments(eid){
 /* ---- 11. 新增 / 編輯 ---- */
 function alertLabel(v){return v===0?'準時':v<60?v+' 分鐘前':v<1440?(v/60)+' 小時前':(v/1440)+' 天前';}
 const ALERT_OPTS=[0,5,10,15,30,60,120,1440];
-function openEventEdit(eid){
+function openEventEdit(eid,copyId){
   const editing=eid?DATA.events.find(x=>x.id===eid):null;
+  const copySrc=!editing&&copyId?DATA.events.find(x=>x.id===copyId):null;
   const editable=myCals().filter(c=>canEdit(c));
   if(!editable.length){toast('你沒有可編輯的日曆');return;}
   const defCal=(state.activeCal!=='all'&&editable.find(c=>c.id===state.activeCal))||editable.find(c=>!state.hidden.has(c.id))||editable[0];
-  const e=editing?JSON.parse(JSON.stringify(editing)):{ id:null, calendarId:defCal.id, title:'',
+  const e=editing?JSON.parse(JSON.stringify(editing))
+    :copySrc?{...JSON.parse(JSON.stringify(copySrc)),id:null,createdBy:state.me,attendance:{}}
+    :{ id:null, calendarId:defCal.id, title:'',
     start:state.selDate+'T09:00', end:state.selDate+'T10:00', allDay:false, location:'', url:'', notes:'',
     repeat:'none', repeatUntil:'', alerts:[30], createdBy:state.me, attendees:[state.me], attendance:{} };
   const draft={...e, sDate:ymd(e.start), sTime:e.allDay?'09:00':fmtTime(e.start), eDate:ymd(e.end), eTime:e.allDay?'10:00':fmtTime(e.end),
     alerts:[...(e.alerts||[])], attendees:[...(e.attendees||[])] };
-  setSheet(editing?'編輯行程':'新增行程','儲存',()=>saveEvent(editing,draft));
+  setSheet(editing?'編輯行程':(copySrc?'複製行程':'新增行程'),'儲存',()=>saveEvent(editing,draft));
   document.getElementById('sheetLeft').textContent='取消';
   const calOpts=editable.map(c=>`<button type="button" class="calchip ${c.id===draft.calendarId?'on':''}" style="color:${c.color}" data-cal="${c.id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`).join('');
   const repOpts=[['none','不重複'],['daily','每日'],['weekly','每週'],['monthly','每月'],['yearly','每年']].map(([v,l])=>`<option value="${v}" ${draft.repeat===v?'selected':''}>${l}</option>`).join('');
@@ -808,6 +822,86 @@ function pushAct(calId,action,target,text){
   DATA.feed.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),calendarId:calId,ts:Date.now(),userId:state.me,kind:'act',action,target,text});
   if(DATA.feed.length>500)DATA.feed.splice(0,DATA.feed.length-500);persist();
 }
+/* @提及：訊息/留言中出現 @英文名 或 @中文名 → 發通知 */
+function detectMentions(text,calId,ctx){
+  PROFILES.forEach(p=>{ if(p.id===state.me)return;
+    if(text.includes('@'+p.en)||text.includes('@'+p.name)){
+      DATA.feed.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),calendarId:calId,ts:Date.now(),
+        userId:state.me,kind:'act',action:'mention',targetUser:p.id,text:`在${ctx}提及了 ${dispName(p)}`});}});
+}
+
+/* ---- iCalendar (.ics) 匯入 / 匯出：TimeTree 轉移與備份 ---- */
+function parseICS(text){
+  const lines=text.replace(/\r/g,'').replace(/\n[ \t]/g,'').split('\n');
+  const out=[];let cur=null;
+  const pDate=(v,isEnd)=>{
+    if(/^\d{8}$/.test(v)){const y=+v.slice(0,4),mo=+v.slice(4,6),d=+v.slice(6,8);
+      const dt=new Date(y,mo-1,d);if(isEnd)dt.setDate(dt.getDate()-1); // DTEND 整天為「次日」需減一
+      return {iso:new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),isEnd?23:0,isEnd?59:0).toISOString(),allDay:true};}
+    const m=v.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z)?$/);if(!m)return null;
+    const dt=m[7]?new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0)))
+                 :new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));
+    return {iso:dt.toISOString(),allDay:false};};
+  for(const ln of lines){
+    if(ln==='BEGIN:VEVENT'){cur={title:'',location:'',notes:'',repeat:'none',allDay:false};continue;}
+    if(ln==='END:VEVENT'){if(cur&&cur.title&&cur.start){if(!cur.end)cur.end=cur.start;out.push(cur);}cur=null;continue;}
+    if(!cur)continue;
+    const ci=ln.indexOf(':');if(ci<0)continue;
+    const key=ln.slice(0,ci).split(';')[0].toUpperCase();const val=ln.slice(ci+1);
+    if(key==='SUMMARY')cur.title=val.replace(/\\,/g,',').replace(/\\n/g,' ');
+    else if(key==='LOCATION')cur.location=val.replace(/\\,/g,',');
+    else if(key==='DESCRIPTION')cur.notes=val.replace(/\\n/g,'\n').replace(/\\,/g,',');
+    else if(key==='DTSTART'){const d=pDate(val,false);if(d){cur.start=d.iso;cur.allDay=d.allDay;}}
+    else if(key==='DTEND'){const d=pDate(val,cur.allDay);if(d)cur.end=d.iso;}
+    else if(key==='RRULE'){const f=(val.match(/FREQ=(\w+)/)||[])[1];
+      cur.repeat={DAILY:'daily',WEEKLY:'weekly',MONTHLY:'monthly',YEARLY:'yearly'}[f]||'none';}
+  }
+  return out;
+}
+function openIcsImport(){
+  const cals=myCals().filter(c=>canEdit(c));if(!cals.length){toast('沒有可編輯的日曆');return;}
+  let target=cals[0].id;
+  setSheet('匯入行程（.ics）','',null);document.getElementById('sheetLeft').textContent='關閉';
+  setBody(`<div class="hint">支援標準 iCalendar (.ics)。TimeTree 轉移路徑：TimeTree → 串接 Google 日曆 → Google 匯出 .ics → 在此匯入。Outlook / Apple 行事曆匯出檔也通用。</div>
+    <div class="field" style="margin-top:14px"><label>匯入到日曆</label><div class="calpick" id="iCal">
+      ${cals.map(c=>`<button type="button" class="calchip ${c.id===target?'on':''}" style="color:${c.color}" data-cal="${c.id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`).join('')}</div></div>
+    <button class="primary" id="iPick">選擇 .ics 檔案</button>`);
+  document.getElementById('iCal').querySelectorAll('[data-cal]').forEach(b=>b.addEventListener('click',()=>{
+    document.getElementById('iCal').querySelectorAll('[data-cal]').forEach(x=>x.classList.remove('on'));b.classList.add('on');target=b.dataset.cal;}));
+  document.getElementById('iPick').addEventListener('click',()=>{
+    const inp=document.createElement('input');inp.type='file';inp.accept='.ics,text/calendar';
+    inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();
+      r.onload=()=>{try{
+        const evs=parseICS(String(r.result));
+        if(!evs.length){toast('檔案中沒有可匯入的行程');return;}
+        evs.forEach(ev=>DATA.events.push({...ev,id:'e'+Date.now()+Math.random().toString(36).slice(2,6),
+          calendarId:target,createdBy:state.me,attendees:[],attendance:{},alerts:[],color:'',url:'',repeatUntil:''}));
+        pushAct(target,'create','匯入',`匯入了 ${evs.length} 筆行程（.ics）`);
+        persist();closeSheet();render();toast(`已匯入 ${evs.length} 筆行程 ✓`);
+      }catch(err){toast('解析失敗：'+err.message);}};
+      r.readAsText(f);};
+    inp.click();});
+  openSheet();
+}
+function exportICS(){
+  const ids=new Set(myCals().map(c=>c.id));
+  const fmt=(iso,allDay,end)=>{const d=new Date(iso);
+    if(allDay){const x=new Date(d);if(end)x.setDate(x.getDate()+1);
+      return `${x.getFullYear()}${String(x.getMonth()+1).padStart(2,'0')}${String(x.getDate()).padStart(2,'0')}`;}
+    return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');};
+  let s='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//TEi Composites//OnTime//ZH\r\n';
+  DATA.events.filter(e=>ids.has(e.calendarId)).forEach(e=>{
+    s+='BEGIN:VEVENT\r\nUID:'+e.id+'@ontime\r\nSUMMARY:'+String(e.title).replace(/,/g,'\\,')+'\r\n';
+    s+=(e.allDay?'DTSTART;VALUE=DATE:':'DTSTART:')+fmt(e.start,e.allDay,false)+'\r\n';
+    s+=(e.allDay?'DTEND;VALUE=DATE:':'DTEND:')+fmt(e.end,e.allDay,true)+'\r\n';
+    if(e.location)s+='LOCATION:'+String(e.location).replace(/,/g,'\\,')+'\r\n';
+    if(e.notes)s+='DESCRIPTION:'+String(e.notes).replace(/\n/g,'\\n')+'\r\n';
+    if(e.repeat&&e.repeat!=='none')s+='RRULE:FREQ='+({daily:'DAILY',weekly:'WEEKLY',monthly:'MONTHLY',yearly:'YEARLY'})[e.repeat]+'\r\n';
+    s+='END:VEVENT\r\n';});
+  s+='END:VCALENDAR\r\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'text/calendar'}));
+  a.download='ontime.ics';a.click();toast('已匯出 ontime.ics ✓');
+}
 /* 訊息分頁：純聊天（kind:'msg'），依頂部切換器的日曆 */
 function renderFeed(el){
   const cals=contextCals();const calIds=new Set(cals.map(c=>c.id));
@@ -833,6 +927,7 @@ function renderFeed(el){
     inp.addEventListener('input',()=>snd.disabled=!inp.value.trim());
     const send=()=>{const t=inp.value.trim();if(!t)return;
       DATA.feed.push({id:'f'+Date.now(),calendarId:calForChat.id,ts:Date.now(),userId:state.me,kind:'msg',text:t});
+      detectMentions(t,calForChat.id,`「${calForChat.name}」的訊息`);
       persist();inp.value='';snd.disabled=true;renderFeed(el);};
     snd.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
     setTimeout(()=>inp.focus(),100);}
@@ -842,7 +937,7 @@ function renderFeed(el){
 function openNotifications(){
   setSheet('通知','',null);document.getElementById('sheetLeft').textContent='關閉';
   const myCalIds=new Set(myCals().map(c=>c.id));
-  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕',comment:'💬'};
+  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕',comment:'💬',mention:'🙋'};
   const acts=DATA.feed.filter(f=>f.kind==='act'&&myCalIds.has(f.calendarId)).sort((a,b)=>b.ts-a.ts).slice(0,100);
   let h='<div style="padding:4px 0">';
   if(!acts.length)h+='<div class="empty"><div class="big">🔔</div>目前沒有通知</div>';
@@ -871,6 +966,12 @@ function renderMore(el){
       <div class="set-row" id="mNotif"><span class="s-ic">🔔</span>推播提醒<span class="s-arrow">${notif==='granted'?'<span class="badge-soft">已開啟</span>':notif==='denied'?'已封鎖':'開啟 ›'}</span></div>
       <div class="set-row" id="mInstall"><span class="s-ic">📲</span>加入主畫面（安裝 App）<span class="s-arrow">›</span></div>
     </div>
+    <div class="grp-label">設定與資料</div>
+    <div class="set-group">
+      <div class="set-row" id="mWeekStart"><span class="s-ic">📆</span>週起始日<span class="s-arrow"><span class="badge-soft">週${WS()?'一':'日'}</span></span></div>
+      <div class="set-row" id="mImport"><span class="s-ic">📥</span>匯入行程（TimeTree / .ics）<span class="s-arrow">›</span></div>
+      <div class="set-row" id="mExport"><span class="s-ic">📤</span>匯出行程（.ics 備份）<span class="s-arrow">›</span></div>
+    </div>
     <div class="grp-label">切換系統（同身份免登入）</div>
     <button class="flipbtn" data-flip="projflow"><span>🔁 翻頁去 ProjFlow</span><span class="arr">›</span></button>
     <button class="flipbtn" data-flip="pmsys"><span>🔁 翻頁去 PMSYS</span><span class="arr">›</span></button>
@@ -889,6 +990,9 @@ function renderMore(el){
   document.getElementById('mNewCal').addEventListener('click',()=>openCalEdit(null));
   document.getElementById('mNotif').addEventListener('click',enableNotifications);
   document.getElementById('mInstall').addEventListener('click',promptInstall);
+  document.getElementById('mWeekStart').addEventListener('click',()=>{PREFS.weekStart=WS()?0:1;savePrefs();render();toast('週起始日已改為：週'+(WS()?'一':'日'));});
+  document.getElementById('mImport').addEventListener('click',openIcsImport);
+  document.getElementById('mExport').addEventListener('click',exportICS);
   el.querySelectorAll('[data-flip]').forEach(b=>b.addEventListener('click',()=>flipTo(b.dataset.flip)));
   el.querySelectorAll('[data-uid]').forEach(b=>b.addEventListener('click',()=>{state.me=b.dataset.uid;render();toast('已切換為 '+dispName(profById(state.me)));}));
 }
