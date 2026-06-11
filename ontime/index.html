@@ -121,6 +121,20 @@
   .ev .ev-meta .cal{display:inline-flex;align-items:center;gap:4px;}
   .ev .ev-meta .cal i{width:7px;height:7px;border-radius:50%;}
   .ev .ev-time{font-size:12.5px;font-weight:600;color:var(--text-sub);text-align:right;flex:none;line-height:1.4;}
+  .ev-people{display:flex;align-items:center;margin-top:8px;}
+  .mini-av{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:var(--accent-soft);border:1.5px solid var(--surface);margin-left:-5px;box-shadow:var(--shadow-sm);}
+  .mini-av:first-child{margin-left:0;}
+  .mini-more{font-size:11px;color:var(--text-muted);font-weight:600;margin-left:6px;}
+  .mempick{display:flex;gap:8px;flex-wrap:wrap;}
+  .memchip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 6px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface-soft);font-size:13px;font-weight:600;color:var(--text-sub);}
+  .memchip .mc-av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:14px;background:#fff;border:1px solid var(--border);}
+  .memchip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-dark);}
+  .person-bar{display:flex;align-items:center;gap:8px;margin-top:10px;background:var(--accent-soft);border:1px solid var(--accent-border);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--accent-dark);}
+  .person-bar .pb-x{margin-left:auto;font-size:16px;color:var(--accent-dark);line-height:1;}
+  .att-list{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
+  .att-li{display:flex;align-items:center;gap:9px;font-size:14px;}
+  .att-li .ali-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:var(--accent-soft);border:1px solid var(--accent-border);flex:none;}
+  .att-li .ali-st{margin-left:auto;font-size:12.5px;font-weight:700;}
   .empty{text-align:center;color:var(--text-muted);padding:54px 20px;}
   .empty .big{font-size:34px;margin-bottom:8px;}
 
@@ -331,6 +345,7 @@
       <button data-v="week">週</button>
       <button data-v="day">日</button>
     </div>
+    <div class="person-bar" id="personBar" style="display:none"></div>
   </header>
 
   <main class="body" id="bodyView"></main>
@@ -438,7 +453,7 @@ async function sbSync(t,row){ if(!SB)return; try{await SB.from(t).upsert(row);}c
 
 /* ---- 5. 狀態 ---- */
 const state={ tab:'calendar', view:'month', cursor:new Date(), selDate:ymd(new Date()),
-  me:PROFILES[0].id, activeCal:'all', hidden:new Set() };
+  me:PROFILES[0].id, activeCal:'all', hidden:new Set(), person:null };
 
 /* ---- 6. 工具 ---- */
 function ymd(d){const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;}
@@ -480,9 +495,11 @@ function occursOn(ev,dateStr){
   if(ev.repeat==='yearly') return start.getMonth()===cur.getMonth() && start.getDate()===cur.getDate();
   return false;
 }
+function inPerson(e){ if(!state.person)return true;
+  return e.createdBy===state.person || (e.attendees&&e.attendees.includes(state.person)); }
 function eventsOn(dateStr){
   const vis=new Set(contextCals().map(c=>c.id));
-  return DATA.events.filter(e=>vis.has(e.calendarId)&&occursOn(e,dateStr))
+  return DATA.events.filter(e=>vis.has(e.calendarId)&&inPerson(e)&&occursOn(e,dateStr))
     .sort((a,b)=>(a.allDay?0:1)-(b.allDay?0:1)||fmtTime(a.start).localeCompare(fmtTime(b.start)));
 }
 
@@ -510,6 +527,12 @@ function renderTop(){
   const myCalIds=new Set(myCals().map(c=>c.id));
   const newNotif=DATA.feed.filter(f=>f.kind==='act'&&myCalIds.has(f.calendarId)&&f.userId!==state.me&&f.ts>(DATA.seenNotif||0)).length;
   const nb=document.getElementById('notifBadge'); if(newNotif>0){nb.style.display='';nb.textContent=newNotif>99?'99+':newNotif;} else nb.style.display='none';
+  // 成員篩選列
+  const pbar=document.getElementById('personBar');
+  if(showCal&&state.person){const p=profById(state.person);
+    pbar.style.display='';pbar.innerHTML=`<span>${p.emoji} 只看 ${esc(dispName(p))} 的行程</span><span class="pb-x" id="pbClear">✕</span>`;
+    document.getElementById('pbClear').onclick=()=>{state.person=null;render();};}
+  else pbar.style.display='none';
   // tabs active
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===state.tab));
   document.getElementById('fab').classList.toggle('hide', !(state.tab==='calendar'||state.tab==='keep'));
@@ -553,12 +576,18 @@ function monthChip(e,ds){const color=evColor(e);
   if(multi){const isS=ds===sd,isE=ds===ed;
     return `<div class="chip span ${isS?'s':''} ${isE?'e':''}" style="background:${color}">${isS?esc(e.title):'&nbsp;'}</div>`;}
   return `<div class="chip ${e.allDay?'allday':''}" style="background:${color}">${e.allDay?'':fmtTime(e.start)+' '}${esc(e.title)}</div>`;}
+function evPeopleIds(e){return [e.createdBy,...(e.attendees||[])].filter((v,i,a)=>v&&a.indexOf(v)===i);}
+function evAvatars(e){const ids=evPeopleIds(e);if(!ids.length)return '';
+  const shown=ids.slice(0,5).map(id=>{const p=profById(id);return `<span class="mini-av" title="${esc(dispName(p))}">${p.emoji}</span>`;}).join('');
+  const names=ids.slice(0,3).map(id=>dispName(profById(id))).join('、')+(ids.length>3?` 等 ${ids.length} 人`:'');
+  return `<div class="ev-people">${shown}<span class="mini-more">${esc(names)}</span></div>`;}
 function evCard(e,dateStr){const cal=calById(e.calendarId);const rep=e.repeat&&e.repeat!=='none';
   return `<div class="ev" data-ev="${e.id}" data-on="${dateStr||''}">
     <div class="bar" style="background:${evColor(e)}"></div>
     <div class="ev-main"><div class="ev-title">${esc(e.title)}${rep?' 🔁':''}</div>
       <div class="ev-meta"><span class="cal"><i style="background:${cal.color}"></i>${esc(cal.name)}</span>
-      ${e.location?`<span>📍 ${esc(e.location)}</span>`:''}${e.attendees&&e.attendees.length?`<span>👥 ${e.attendees.length}</span>`:''}</div></div>
+      ${e.location?`<span>📍 ${esc(e.location)}</span>`:''}</div>
+      ${evAvatars(e)}</div>
     <div class="ev-time">${e.allDay?'整天':fmtTime(e.start)+'<br>'+fmtTime(e.end)}</div></div>`;}
 
 /* ---- 9. 分頁切換 ---- */
@@ -583,9 +612,10 @@ function openEventDetail(eid){
   setSheet('行程',canEdit(cal)?'編輯':'',()=>{if(canEdit(cal))openEventEdit(eid);});
   document.getElementById('sheetLeft').textContent='關閉';
   const d=new Date(e.start);
-  const att=e.attendees.map(id=>{const p=profById(id);const st=e.attendance&&e.attendance[id];
-    const b=st==='going'?'✅':st==='maybe'?'❔':st==='no'?'❌':'';
-    return `<div class="att-av" title="${esc(dispName(p))}">${p.emoji}${b?`<span class="badge">${b}</span>`:''}</div>`;}).join('');
+  const stMap={going:'<span style="color:var(--ok)">✅ 參加</span>',maybe:'<span style="color:var(--warning)">❔ 未定</span>',no:'<span style="color:var(--danger)">❌ 不參加</span>'};
+  const attIds=[e.createdBy,...(e.attendees||[])].filter((v,i,a)=>v&&a.indexOf(v)===i);
+  const att=attIds.map(id=>{const p=profById(id);const st=e.attendance&&e.attendance[id];
+    return `<div class="att-li"><span class="ali-av">${p.emoji}</span><span>${esc(dispName(p))}${id===e.createdBy?'　<span style="font-size:11px;color:var(--text-muted)">建立者</span>':''}</span><span class="ali-st">${st?stMap[st]:'<span style="color:var(--text-muted)">未回覆</span>'}</span></div>`;}).join('');
   const repLabel={none:'',daily:'每日',weekly:'每週',monthly:'每月',yearly:'每年'}[e.repeat||'none'];
   const my=e.attendance&&e.attendance[state.me];
   let body=`
@@ -595,7 +625,7 @@ function openEventDetail(eid){
     ${e.location?`<div class="det-line"><span class="ic">📍</span><div>${esc(e.location)}</div></div>`:''}
     ${e.url?`<div class="det-line"><span class="ic">🔗</span><div><a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.url)}</a></div></div>`:''}
     ${e.notes?`<div class="det-line"><span class="ic">📝</span><div style="white-space:pre-wrap">${esc(e.notes)}</div></div>`:''}
-    ${att?`<div class="det-line"><span class="ic">👥</span><div class="attendees">${att}</div></div>`:''}
+    <div class="det-line"><span class="ic">👥</span><div style="flex:1"><div class="dl-sub" style="margin-bottom:8px">參與成員（${attIds.length}）</div><div class="att-list">${att}</div></div></div>
     <div class="going-bar">
       <button data-go="going" class="${my==='going'?'on':''}">✅ 參加</button>
       <button data-go="maybe" class="${my==='maybe'?'on':''}">❔ 未定</button>
@@ -643,7 +673,7 @@ function openEventEdit(eid){
     start:state.selDate+'T09:00', end:state.selDate+'T10:00', allDay:false, location:'', url:'', notes:'',
     repeat:'none', repeatUntil:'', alerts:[30], createdBy:state.me, attendees:[state.me], attendance:{} };
   const draft={...e, sDate:ymd(e.start), sTime:e.allDay?'09:00':fmtTime(e.start), eDate:ymd(e.end), eTime:e.allDay?'10:00':fmtTime(e.end),
-    alerts:[...(e.alerts||[])] };
+    alerts:[...(e.alerts||[])], attendees:[...(e.attendees||[])] };
   setSheet(editing?'編輯行程':'新增行程','儲存',()=>saveEvent(editing,draft));
   document.getElementById('sheetLeft').textContent='取消';
   const calOpts=editable.map(c=>`<button type="button" class="calchip ${c.id===draft.calendarId?'on':''}" style="color:${c.color}" data-cal="${c.id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`).join('');
@@ -651,6 +681,7 @@ function openEventEdit(eid){
   setBody(`
     <div class="field"><input type="text" id="fTitle" value="${esc(draft.title)}" placeholder="行程標題" style="font-size:17px;font-weight:600" /></div>
     <div class="field"><label>日曆</label><div class="calpick" id="fCalPick">${calOpts}</div></div>
+    <div class="field"><label>參與成員（點頭像加入 / 移除）</label><div class="mempick" id="fMem"></div></div>
     <div class="field"><label>顏色標籤</label><div class="clr-pick" id="fClr">
       <button type="button" class="clr-dot none" data-c="" style="${!draft.color?'border-color:var(--accent);color:var(--accent)':''}">無</button>
       ${PAL.map(c=>`<button type="button" class="clr-dot" data-c="${c}" style="background:${c};border-color:${draft.color===c?'#0F172A':'transparent'}"></button>`).join('')}
@@ -666,9 +697,19 @@ function openEventEdit(eid){
     <div class="field"><label>網址</label><input type="url" id="fUrl" value="${esc(draft.url)}" placeholder="https://" /></div>
     <div class="field"><label>備註</label><textarea id="fNotes" placeholder="補充說明…">${esc(draft.notes)}</textarea></div>
     ${editing?'<button class="ghost-danger" id="fDelete">刪除此行程</button>':''}`);
+  // members
+  function drawMembers(){const wrap=document.getElementById('fMem');const cal=calById(draft.calendarId);
+    const mem=cal?cal.members:[];
+    wrap.innerHTML=mem.map(m=>{const p=profById(m.userId);const on=draft.attendees.includes(m.userId);
+      return `<button type="button" class="memchip ${on?'on':''}" data-mem="${m.userId}"><span class="mc-av">${p.emoji}</span>${esc(dispName(p))}</button>`;}).join('')
+      ||'<div style="font-size:13px;color:var(--text-muted)">此日曆沒有其他成員</div>';
+    wrap.querySelectorAll('[data-mem]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.mem;
+      const i=draft.attendees.indexOf(id);if(i>=0)draft.attendees.splice(i,1);else draft.attendees.push(id);b.classList.toggle('on');}));}
   // calendar pick
   document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(b=>b.addEventListener('click',()=>{
-    document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.calendarId=b.dataset.cal;}));
+    document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.calendarId=b.dataset.cal;
+    const cal=calById(draft.calendarId);draft.attendees=draft.attendees.filter(id=>cal.members.some(m=>m.userId===id));drawMembers();}));
+  drawMembers();
   // color label
   const clrWrap=document.getElementById('fClr');
   clrWrap.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click',()=>{draft.color=b.dataset.c||'';
@@ -699,7 +740,7 @@ function saveEvent(editing,draft){
     location:document.getElementById('fLoc').value.trim(), url:document.getElementById('fUrl').value.trim(),
     notes:document.getElementById('fNotes').value.trim(), repeat:document.getElementById('fRepeat').value,
     repeatUntil:editing?editing.repeatUntil||'':'', alerts:draft.alerts.slice(),
-    createdBy:editing?editing.createdBy:state.me, attendees:editing?editing.attendees:[state.me], attendance:editing?editing.attendance||{}:{} };
+    createdBy:editing?editing.createdBy:state.me, attendees:(draft.attendees||[]).slice(), attendance:editing?editing.attendance||{}:{} };
   if(editing){const i=DATA.events.findIndex(x=>x.id===editing.id);DATA.events[i]=obj;pushAct(obj.calendarId,'edit',title,`更新了行程「${title}」`);}
   else{DATA.events.push(obj);pushAct(obj.calendarId,'create',title,`新增了行程「${title}」`);}
   persist();sbSync('events',obj);scheduleReminders(obj);
@@ -862,11 +903,18 @@ function openCalSwitch(){
     h+=`<div class="cal-item"><div class="swatch" style="background:${c.color}" data-pick="${c.id}"></div>
       <div class="ci-main" data-pick="${c.id}"><div class="ci-name">${esc(c.name)}</div><div class="ci-sub">${c.members.length} 位成員 ‧ <span class="role-tag role-${myRole(c)}">${roleLabel(myRole(c))}</span></div></div>
       ${state.activeCal===c.id?'<span style="color:var(--accent);font-size:18px">✓</span>':`<div class="eye ${hidden?'off':''}" data-eye="${c.id}">${hidden?'🚫':'👁️'}</div>`}</div>`;});
+  // 依成員檢視
+  const memIds=[...new Set([].concat(...myCals().map(c=>c.members.map(m=>m.userId))))];
+  h+=`<div class="grp-label" style="margin-top:16px">依成員檢視行程</div>
+    <div class="who"><button class="${!state.person?'on':''}" data-person="">👥 全部成員</button>
+      ${memIds.map(id=>{const p=profById(id);return `<button class="${state.person===id?'on':''}" data-person="${id}">${p.emoji} ${esc(dispName(p))}</button>`;}).join('')}</div>`;
   setBody(h);
   document.getElementById('sheetBody').querySelectorAll('[data-pick]').forEach(el=>el.addEventListener('click',()=>{
     state.activeCal=el.dataset.pick;closeSheet();render();}));
   document.getElementById('sheetBody').querySelectorAll('[data-eye]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();
     const id=el.dataset.eye;if(state.hidden.has(id))state.hidden.delete(id);else state.hidden.add(id);openCalSwitch();render();}));
+  document.getElementById('sheetBody').querySelectorAll('[data-person]').forEach(el=>el.addEventListener('click',()=>{
+    state.person=el.dataset.person||null;closeSheet();render();}));
   openSheet();
 }
 
