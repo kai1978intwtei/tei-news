@@ -52,8 +52,9 @@
   .calswitch .cs-name{font-weight:700;font-size:15px;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .calswitch .cs-chev{color:var(--text-muted);font-size:11px;margin-left:auto;flex:none;}
   .icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--text-sub);
-    background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:.15s;font-size:18px;flex:none;}
+    background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:.15s;font-size:18px;flex:none;position:relative;}
   .icon-btn:active{transform:scale(.94);}
+  .nbadge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center;border:2px solid var(--bg-0);}
 
   .monthnav{display:flex;align-items:center;gap:6px;margin-top:10px;}
   .monthnav .title{font-size:20px;font-weight:700;letter-spacing:-0.02em;flex:1;}
@@ -318,6 +319,7 @@
         <span class="cs-chev">▼</span>
       </button>
       <button class="icon-btn" id="btnSearch" title="搜尋">🔍</button>
+      <button class="icon-btn" id="btnNotif" title="通知">🔔<span class="nbadge" id="notifBadge" style="display:none">0</span></button>
     </div>
     <div class="monthnav" id="monthnav">
       <div class="title" id="navTitle">2026 年 <b>6 月</b></div>
@@ -337,7 +339,7 @@
   <nav class="tabbar" id="tabbar">
     <button class="tab on" data-tab="calendar"><span class="ti">📅</span>月曆</button>
     <button class="tab" data-tab="keep"><span class="ti">📌</span>Keep</button>
-    <button class="tab" data-tab="feed"><span class="ti">💬</span>動態<span class="tdot count" id="feedBadge" style="display:none">0</span></button>
+    <button class="tab" data-tab="feed"><span class="ti">💬</span>訊息<span class="tdot count" id="feedBadge" style="display:none">0</span></button>
     <button class="tab" data-tab="more"><span class="ti">⋯</span>更多</button>
   </nav>
 </div>
@@ -500,10 +502,14 @@ function renderTop(){
   else if(state.view==='week'){const ws=weekStart(c);const we=new Date(ws);we.setDate(we.getDate()+6);
     document.getElementById('navTitle').innerHTML=`${ws.getMonth()+1}/${ws.getDate()} – <b>${we.getMonth()+1}/${we.getDate()}</b>`;}
   else document.getElementById('navTitle').innerHTML=`${c.getMonth()+1} 月 <b>${c.getDate()} 日</b> 週${WD[c.getDay()]}`;
-  // feed badge
-  let unseen=0; contextCals().forEach(cal=>{ const items=DATA.feed.filter(f=>f.calendarId===cal.id);
-    const seen=(DATA.seenFeed&&DATA.seenFeed[cal.id])||0; unseen+=Math.max(0,items.length-seen); });
+  // 訊息分頁徽章（只算聊天 msg）
+  let unseen=0; contextCals().forEach(cal=>{ const msgs=DATA.feed.filter(f=>f.kind==='msg'&&f.calendarId===cal.id);
+    const seen=(DATA.seenFeed&&DATA.seenFeed[cal.id])||0; unseen+=Math.max(0,msgs.length-seen); });
   const fb=document.getElementById('feedBadge'); if(unseen>0){fb.style.display='';fb.textContent=unseen>99?'99+':unseen;} else fb.style.display='none';
+  // 通知鈴鐺徽章（系統活動，別人發的、未讀）
+  const myCalIds=new Set(myCals().map(c=>c.id));
+  const newNotif=DATA.feed.filter(f=>f.kind==='act'&&myCalIds.has(f.calendarId)&&f.userId!==state.me&&f.ts>(DATA.seenNotif||0)).length;
+  const nb=document.getElementById('notifBadge'); if(newNotif>0){nb.style.display='';nb.textContent=newNotif>99?'99+':newNotif;} else nb.style.display='none';
   // tabs active
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===state.tab));
   document.getElementById('fab').classList.toggle('hide', !(state.tab==='calendar'||state.tab==='keep'));
@@ -761,31 +767,27 @@ function pushAct(calId,action,target,text){
   DATA.feed.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),calendarId:calId,ts:Date.now(),userId:state.me,kind:'act',action,target,text});
   if(DATA.feed.length>500)DATA.feed.splice(0,DATA.feed.length-500);persist();
 }
+/* 訊息分頁：純聊天（kind:'msg'），依頂部切換器的日曆 */
 function renderFeed(el){
   const cals=contextCals();const calIds=new Set(cals.map(c=>c.id));
-  let items=DATA.feed.filter(f=>calIds.has(f.calendarId)).sort((a,b)=>a.ts-b.ts);
-  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕',comment:'💬'};
+  let items=DATA.feed.filter(f=>f.kind==='msg'&&calIds.has(f.calendarId)).sort((a,b)=>a.ts-b.ts);
   let h='<div class="feed-list">';
-  if(!items.length)h+='<div class="empty"><div class="big">💬</div>還沒有動態與對話</div>';
+  if(!items.length)h+='<div class="empty"><div class="big">💬</div>還沒有訊息<br><span style="font-size:12px">在下方輸入框跟日曆成員聊天</span></div>';
   let lastDay='';
   items.forEach(f=>{const day=ymd(f.ts);if(day!==lastDay){lastDay=day;const dd=new Date(f.ts);
       h+=`<div class="feed-divider">${dd.getMonth()+1}月${dd.getDate()}日</div>`;}
-    const p=profById(f.userId);
-    if(f.kind==='msg'){const mine=f.userId===state.me;
-      h+=`<div class="msg ${mine?'mine':''}"><div class="c-av">${p.emoji}</div><div class="c-body">
-        <div class="c-top"><span class="c-name">${esc(dispName(p))}</span><span class="c-time">${fmtTime(f.ts)}</span></div>
-        <div class="bubble">${esc(f.text)}</div></div></div>`;
-    } else {
-      h+=`<div class="feed-act"><div class="fa-ic">${ic[f.action]||'🔔'}</div><div><div class="fa-text"><b>${esc(dispName(p))}</b> ${esc(f.text)}</div><div class="fa-time">${relTime(f.ts)}</div></div></div>`;}
-  });
+    const p=profById(f.userId);const mine=f.userId===state.me;
+    h+=`<div class="msg ${mine?'mine':''}"><div class="c-av">${p.emoji}</div><div class="c-body">
+      <div class="c-top"><span class="c-name">${esc(dispName(p))}</span><span class="c-time">${fmtTime(f.ts)}</span></div>
+      <div class="bubble">${esc(f.text)}</div></div></div>`;});
   h+='</div>';
   const canChat=cals.length===1; // 單一日曆才聊天
   const calForChat=cals.length===1?cals[0]:null;
   h+=`<div class="chatbar">${canChat?`<input id="chatInput" placeholder="傳訊息到「${esc(calForChat.name)}」…" maxlength="800" /><button id="chatSend" disabled>↑</button>`:`<div style="font-size:12.5px;color:var(--text-muted);padding:8px 4px;text-align:center;width:100%">切到單一日曆即可聊天（頂部切換器）</div>`}</div>`;
   el.innerHTML=h;
   el.scrollTop=el.scrollHeight;
-  // mark seen
-  DATA.seenFeed=DATA.seenFeed||{};cals.forEach(c=>{DATA.seenFeed[c.id]=DATA.feed.filter(f=>f.calendarId===c.id).length;});persist();renderTop();
+  // 標記訊息已讀（只算 msg）
+  DATA.seenFeed=DATA.seenFeed||{};cals.forEach(c=>{DATA.seenFeed[c.id]=DATA.feed.filter(f=>f.kind==='msg'&&f.calendarId===c.id).length;});persist();renderTop();
   if(canChat){const inp=document.getElementById('chatInput'),snd=document.getElementById('chatSend');
     inp.addEventListener('input',()=>snd.disabled=!inp.value.trim());
     const send=()=>{const t=inp.value.trim();if(!t)return;
@@ -793,6 +795,24 @@ function renderFeed(el){
       persist();inp.value='';snd.disabled=true;renderFeed(el);};
     snd.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
     setTimeout(()=>inp.focus(),100);}
+}
+
+/* 通知收件匣：跨我所有日曆的系統活動（kind:'act'），最新在上 */
+function openNotifications(){
+  setSheet('通知','',null);document.getElementById('sheetLeft').textContent='關閉';
+  const myCalIds=new Set(myCals().map(c=>c.id));
+  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕',comment:'💬'};
+  const acts=DATA.feed.filter(f=>f.kind==='act'&&myCalIds.has(f.calendarId)).sort((a,b)=>b.ts-a.ts).slice(0,100);
+  let h='<div style="padding:4px 0">';
+  if(!acts.length)h+='<div class="empty"><div class="big">🔔</div>目前沒有通知</div>';
+  acts.forEach(f=>{const p=profById(f.userId);const cal=calById(f.calendarId);const isNew=f.ts>(DATA.seenNotif||0)&&f.userId!==state.me;
+    h+=`<div class="feed-act" style="border-bottom:1px solid var(--border);padding:12px 2px;${isNew?'background:var(--accent-soft);margin:0 -16px;padding-left:16px;padding-right:16px':''}">
+      <div class="fa-ic">${ic[f.action]||'🔔'}</div><div><div class="fa-text"><b>${esc(dispName(p))}</b> ${esc(f.text)}</div>
+      <div class="fa-time">${cal?esc(cal.name)+' ‧ ':''}${relTime(f.ts)}</div></div></div>`;});
+  h+='</div>';
+  setBody(h);
+  DATA.seenNotif=Date.now();persist();renderTop();
+  openSheet();
 }
 
 /* ---- 14. 更多 ---- */
@@ -977,6 +997,7 @@ document.getElementById('navNext').addEventListener('click',()=>moveCursor(1));
 document.getElementById('btnToday').addEventListener('click',()=>{state.cursor=new Date();state.selDate=ymd(new Date());render();});
 document.getElementById('fab').addEventListener('click',()=>{state.tab==='keep'?openKeepEdit(null):openEventEdit(null);});
 document.getElementById('btnSearch').addEventListener('click',openSearch);
+document.getElementById('btnNotif').addEventListener('click',openNotifications);
 document.getElementById('calSwitch').addEventListener('click',openCalSwitch);
 document.getElementById('scrim').addEventListener('click',closeSheet);
 function moveCursor(dir){const c=state.cursor;
