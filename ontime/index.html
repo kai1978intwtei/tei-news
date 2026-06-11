@@ -607,7 +607,13 @@ function renderBody(){
     if(state.view==='month')el.innerHTML=renderMonth();
     else if(state.view==='week')el.innerHTML=renderWeek();
     else el.innerHTML=renderDayList(state.selDate,false);
-    el.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>{state.selDate=d.dataset.d;render();}));
+    el.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>{
+      const same=state.selDate===d.dataset.d; state.selDate=d.dataset.d; render();
+      const ag=el.querySelector('.agenda');
+      if(ag) ag.scrollIntoView({behavior:'smooth',block:'start'});
+      // 連點兩下同一天 → 跳到日檢視
+      if(same){state.view='day';document.getElementById('viewSwitch').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v==='day'));render();}
+    }));
     el.querySelectorAll('.ev').forEach(c=>c.addEventListener('click',()=>openEventDetail(c.dataset.ev)));
   } else if(state.tab==='keep') renderKeep(el);
   else if(state.tab==='feed') renderFeed(el);
