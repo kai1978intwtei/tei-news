@@ -1,5 +1,5 @@
-/* TEiTime service worker — offline app shell + push reminders */
-const CACHE = 'teitime-v1';
+/* OnTime service worker — offline app shell + push reminders */
+const CACHE = 'ontime-v1';
 const SHELL = [
   './',
   './index.html',
@@ -35,11 +35,11 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('message', (e) => {
   const d = e.data || {};
   if (d.type === 'reminder') {
-    self.registration.showNotification(d.title || 'TEiTime 提醒', {
+    self.registration.showNotification(d.title || 'OnTime 提醒', {
       body: d.body || '',
       icon: './icon.svg',
       badge: './icon.svg',
-      tag: d.tag || 'teitime-reminder',
+      tag: d.tag || 'ontime-reminder',
       data: { url: d.url || './' }
     });
   }
@@ -50,7 +50,7 @@ self.addEventListener('push', (e) => {
   let payload = {};
   try { payload = e.data ? e.data.json() : {}; } catch (_) { payload = { body: e.data && e.data.text() }; }
   e.waitUntil(
-    self.registration.showNotification(payload.title || 'TEiTime', {
+    self.registration.showNotification(payload.title || 'OnTime', {
       body: payload.body || '',
       icon: './icon.svg',
       badge: './icon.svg',

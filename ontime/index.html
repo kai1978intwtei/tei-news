@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>OnTime ‧ 共享行事曆</title>
+<meta name="theme-color" content="#E8740C" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="OnTime" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://pm-system-mauve.vercel.app" />
+<link rel="preconnect" href="https://kai1978intwtei.github.io" />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg-0:#FBFBFD; --bg-1:#F2F4F8; --surface:#FFFFFF; --surface-soft:#F8FAFC;
+    --border:#E6E9F0; --border-strong:#CBD3DE;
+    --text:#0F172A; --text-sub:#475569; --text-muted:#94A3B8; --text-dim:#CBD5E1;
+    --accent:#E8740C; --accent-soft:#FFF7ED; --accent-border:#FED7AA; --accent-dark:#C2410C;
+    --ok:#10B981; --warning:#F59E0B; --danger:#DC2626; --info:#2563EB;
+    --font-sans:"Inter Tight","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
+    --shadow-md:0 1px 3px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05);
+    --shadow-lg:0 4px 6px rgba(15,23,42,0.03), 0 12px 24px rgba(15,23,42,0.08);
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+    --tabbar-h:62px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:var(--font-sans);color:var(--text);background:var(--bg-1);min-height:100vh;
+    letter-spacing:0.005em;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  input,select,textarea{font-family:inherit;font-size:16px;}
+
+  .app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg-0);
+    display:flex;flex-direction:column;box-shadow:var(--shadow-lg);position:relative;}
+
+  /* ===== Top bar ===== */
+  .topbar{position:sticky;top:0;z-index:30;background:rgba(251,251,253,0.9);
+    backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border);
+    padding:calc(var(--safe-top) + 9px) 12px 9px;}
+  .topbar-row{display:flex;align-items:center;gap:8px;}
+  .calswitch{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:7px 10px;border-radius:11px;
+    background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
+  .calswitch .cs-dot{width:12px;height:12px;border-radius:50%;flex:none;}
+  .calswitch .cs-name{font-weight:700;font-size:15px;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .calswitch .cs-chev{color:var(--text-muted);font-size:11px;margin-left:auto;flex:none;}
+  .icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--text-sub);
+    background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:.15s;font-size:18px;flex:none;}
+  .icon-btn:active{transform:scale(.94);}
+
+  .monthnav{display:flex;align-items:center;gap:6px;margin-top:10px;}
+  .monthnav .title{font-size:20px;font-weight:700;letter-spacing:-0.02em;flex:1;}
+  .monthnav .title b{color:var(--accent);}
+  .nav-pill{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm);overflow:hidden;}
+  .nav-pill button{width:32px;height:32px;display:grid;place-items:center;color:var(--text-sub);font-size:16px;}
+  .nav-pill button:active{background:var(--bg-1);}
+  .today-btn{padding:0 12px;height:32px;border-radius:10px;background:var(--surface);border:1px solid var(--border);
+    box-shadow:var(--shadow-sm);font-size:13px;font-weight:600;color:var(--text-sub);}
+  .viewswitch{display:flex;gap:4px;margin-top:10px;background:var(--bg-1);border:1px solid var(--border);border-radius:11px;padding:4px;}
+  .viewswitch button{flex:1;height:30px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text-muted);transition:.15s;}
+  .viewswitch button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);}
+
+  /* ===== Body ===== */
+  .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--tabbar-h) + var(--safe-bottom));}
+
+  /* ===== Month grid ===== */
+  .weekhead{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 6px 4px;}
+  .weekhead div{text-align:center;font-size:11px;font-weight:600;color:var(--text-muted);}
+  .weekhead div.we{color:#C2410C;}
+  .month{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .day{background:var(--surface);min-height:74px;padding:4px 3px;display:flex;flex-direction:column;gap:2px;position:relative;}
+  .day.out{background:var(--surface-soft);}
+  .day .dnum{font-size:12px;font-weight:600;color:var(--text-sub);text-align:center;width:22px;height:22px;line-height:22px;margin:0 auto;border-radius:50%;}
+  .day.out .dnum{color:var(--text-dim);}
+  .day.today .dnum{background:var(--accent);color:#fff;}
+  .day.we .dnum{color:#C2410C;}
+  .day.sel{box-shadow:inset 0 0 0 2px var(--accent);z-index:1;}
+  .chip{font-size:10.5px;line-height:1.35;font-weight:600;color:#fff;border-radius:4px;padding:1px 4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chip.allday{font-weight:700;}
+  .more{font-size:10px;color:var(--text-muted);font-weight:600;text-align:center;}
+
+  /* ===== Agenda ===== */
+  .agenda{padding:10px 14px 24px;}
+  .agenda-day{margin-bottom:4px;}
+  .agenda-date{display:flex;align-items:baseline;gap:8px;padding:12px 2px 6px;position:sticky;top:0;background:var(--bg-0);z-index:2;}
+  .agenda-date .d{font-size:22px;font-weight:700;letter-spacing:-0.02em;}
+  .agenda-date .wd{font-size:12px;font-weight:600;color:var(--text-muted);}
+  .agenda-date.today .d{color:var(--accent);}
+  .ev{display:flex;gap:11px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow-sm);margin-bottom:8px;transition:.15s;}
+  .ev:active{transform:scale(.99);background:var(--surface-soft);}
+  .ev .bar{width:4px;border-radius:3px;flex:none;}
+  .ev .ev-main{flex:1;min-width:0;}
+  .ev .ev-title{font-size:15px;font-weight:600;}
+  .ev .ev-meta{font-size:12.5px;color:var(--text-muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .ev .ev-meta .cal{display:inline-flex;align-items:center;gap:4px;}
+  .ev .ev-meta .cal i{width:7px;height:7px;border-radius:50%;}
+  .ev .ev-time{font-size:12.5px;font-weight:600;color:var(--text-sub);text-align:right;flex:none;line-height:1.4;}
+  .empty{text-align:center;color:var(--text-muted);padding:54px 20px;}
+  .empty .big{font-size:34px;margin-bottom:8px;}
+
+  /* ===== FAB ===== */
+  .fab{position:fixed;left:50%;transform:translateX(calc(-50% + 220px));bottom:calc(var(--tabbar-h) + 14px + var(--safe-bottom));
+    width:56px;height:56px;border-radius:18px;background:var(--accent);color:#fff;font-size:27px;display:grid;place-items:center;
+    box-shadow:0 8px 20px rgba(232,116,12,.42);z-index:26;transition:.15s;}
+  .fab:active{transform:translateX(calc(-50% + 220px)) scale(.92);}
+  @media(max-width:560px){.fab{left:auto;right:16px;transform:none;}.fab:active{transform:scale(.92);}}
+  .fab.hide{display:none;}
+
+  /* ===== Bottom tab bar ===== */
+  .tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:560px;z-index:25;
+    height:calc(var(--tabbar-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);
+    background:rgba(255,255,255,0.94);backdrop-filter:saturate(180%) blur(12px);border-top:1px solid var(--border);
+    display:flex;}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-muted);font-size:10.5px;font-weight:600;position:relative;}
+  .tab .ti{font-size:21px;line-height:1;}
+  .tab.on{color:var(--accent);}
+  .tab .tdot{position:absolute;top:8px;right:calc(50% - 18px);min-width:8px;height:8px;border-radius:5px;background:var(--danger);border:2px solid #fff;}
+  .tab .tdot.count{padding:0 4px;color:#fff;font-size:9px;line-height:8px;font-weight:700;height:14px;border-radius:7px;top:5px;}
+
+  /* ===== Sheet ===== */
+  .scrim{position:fixed;inset:0;background:rgba(15,23,42,.42);backdrop-filter:blur(2px);z-index:40;opacity:0;pointer-events:none;transition:.2s;}
+  .scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:560px;
+    background:var(--surface);border-radius:22px 22px 0 0;z-index:41;transition:transform .26s cubic-bezier(.32,.72,0,1);
+    max-height:93vh;display:flex;flex-direction:column;padding-bottom:var(--safe-bottom);}
+  .sheet.on{transform:translateX(-50%) translateY(0);}
+  .sheet .grab{width:38px;height:4px;border-radius:3px;background:var(--border-strong);margin:9px auto 2px;}
+  .sheet-head{display:flex;align-items:center;gap:10px;padding:8px 16px 12px;border-bottom:1px solid var(--border);}
+  .sheet-head .h-title{flex:1;font-size:17px;font-weight:700;}
+  .sheet-head button.txt{font-size:14px;font-weight:600;color:var(--accent);padding:6px 4px;}
+  .sheet-head button.txt.muted{color:var(--text-muted);}
+  .sheet-body{overflow-y:auto;padding:14px 16px 24px;-webkit-overflow-scrolling:touch;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:6px;}
+  .field input[type=text],.field textarea,.field input[type=date],.field input[type=time],.field input[type=email],.field input[type=url],.field select{
+    width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-soft);color:var(--text);transition:.15s;}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-soft);}
+  .field textarea{resize:none;min-height:64px;line-height:1.5;}
+  .row2{display:flex;gap:10px;}.row2>*{flex:1;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+  .toggle-row .lab{font-size:14px;font-weight:600;}
+  .sw{width:46px;height:28px;border-radius:16px;background:var(--border-strong);position:relative;transition:.2s;flex:none;}
+  .sw.on{background:var(--accent);}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:var(--shadow-sm);}
+  .sw.on::after{left:21px;}
+  .calpick{display:flex;gap:8px;flex-wrap:wrap;}
+  .calchip{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-soft);font-size:13px;font-weight:600;color:var(--text-sub);}
+  .calchip i{width:11px;height:11px;border-radius:50%;}
+  .calchip.on{border-color:currentColor;background:#fff;}
+  .primary{width:100%;padding:14px;border-radius:13px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;box-shadow:0 4px 12px rgba(232,116,12,.3);transition:.15s;margin-top:6px;}
+  .primary:active{transform:scale(.99);}
+  .ghost-danger{width:100%;padding:13px;border-radius:12px;color:var(--danger);font-weight:600;font-size:14px;margin-top:10px;border:1px solid #FECACA;}
+  .alert-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .alert-row select{flex:1;}
+  .alert-row .rm{width:38px;height:42px;display:grid;place-items:center;color:var(--text-muted);font-size:18px;border:1px solid var(--border);border-radius:11px;}
+  .add-link{font-size:13px;font-weight:600;color:var(--accent);padding:8px 2px;display:inline-flex;align-items:center;gap:5px;}
+
+  /* lists */
+  .cal-item{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--border);}
+  .cal-item .swatch{width:16px;height:16px;border-radius:5px;flex:none;}
+  .cal-item .ci-main{flex:1;min-width:0;}
+  .cal-item .ci-name{font-size:15px;font-weight:600;}
+  .cal-item .ci-sub{font-size:12px;color:var(--text-muted);margin-top:1px;}
+  .cal-item .eye{font-size:18px;color:var(--text-muted);width:34px;height:34px;display:grid;place-items:center;}
+  .cal-item .eye.off{opacity:.3;}
+  .role-tag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;}
+  .role-owner{background:#FEF3C7;color:#B45309;}.role-editor{background:#DBEAFE;color:#1D4ED8;}.role-viewer{background:#F1F5F9;color:#64748B;}
+  .member{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--border);}
+  .member .m-av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:19px;background:var(--accent-soft);border:1px solid var(--accent-border);flex:none;}
+  .member .m-main{flex:1;min-width:0;}
+  .member .m-name{font-size:14px;font-weight:600;}
+  .member .m-sub{font-size:12px;color:var(--text-muted);}
+  .member select{padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--surface-soft);font-size:13px;font-weight:600;color:var(--text-sub);width:auto;}
+
+  /* event detail */
+  .det-cal{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:8px;}
+  .det-cal i{width:9px;height:9px;border-radius:50%;}
+  .det-title{font-size:21px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;}
+  .det-head{padding:4px 0 14px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+  .det-line{display:flex;gap:11px;align-items:flex-start;padding:9px 0;font-size:14px;}
+  .det-line .ic{width:20px;text-align:center;color:var(--text-muted);flex:none;}
+  .det-line .dl-sub{font-size:12px;color:var(--text-muted);}
+  .det-line a{color:var(--info);word-break:break-all;}
+  .attendees{display:flex;margin-top:2px;}
+  .att-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:var(--accent-soft);border:2px solid var(--surface);margin-left:-7px;position:relative;}
+  .att-av:first-child{margin-left:0;}
+  .att-av .badge{position:absolute;bottom:-2px;right:-3px;font-size:9px;background:#fff;border-radius:50%;}
+  .going-bar{display:flex;gap:8px;margin:12px 0 4px;}
+  .going-bar button{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:11px;background:var(--surface-soft);font-size:13px;font-weight:600;color:var(--text-sub);display:flex;align-items:center;justify-content:center;gap:5px;}
+  .going-bar button.on{border-color:var(--accent);background:#fff;color:var(--accent);}
+
+  /* feed / chat */
+  .feed-list{padding:12px 14px;display:flex;flex-direction:column;}
+  .feed-act{display:flex;gap:10px;padding:10px 2px;align-items:flex-start;}
+  .feed-act .fa-ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px;flex:none;background:var(--bg-1);}
+  .feed-act .fa-text{font-size:13px;line-height:1.45;color:var(--text-sub);}
+  .feed-act .fa-text b{color:var(--text);font-weight:700;}
+  .feed-act .fa-time{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .msg{display:flex;gap:9px;margin:8px 0;}
+  .msg .c-av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:16px;background:var(--accent-soft);border:1px solid var(--accent-border);flex:none;}
+  .msg .c-body{flex:1;min-width:0;}
+  .msg .c-top{display:flex;align-items:baseline;gap:7px;}
+  .msg .c-name{font-size:12.5px;font-weight:700;}
+  .msg .c-time{font-size:11px;color:var(--text-muted);}
+  .msg .bubble{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:14px;line-height:1.45;margin-top:3px;color:var(--text);white-space:pre-wrap;word-break:break-word;box-shadow:var(--shadow-sm);}
+  .msg.mine{flex-direction:row-reverse;}
+  .msg.mine .c-top{flex-direction:row-reverse;}
+  .msg.mine .bubble{background:var(--accent-soft);border-color:var(--accent-border);border-radius:14px 4px 14px 14px;}
+  .msg.mine .c-body{text-align:right;}
+  .chatbar{position:sticky;bottom:0;display:flex;gap:8px;padding:10px 12px calc(10px + var(--safe-bottom));background:var(--bg-0);border-top:1px solid var(--border);}
+  .chatbar input{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:22px;background:var(--surface);}
+  .chatbar button{width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:none;display:grid;place-items:center;}
+  .chatbar button:disabled{opacity:.4;}
+  .feed-divider{text-align:center;font-size:11px;color:var(--text-muted);font-weight:600;margin:10px 0;position:relative;}
+
+  /* keep */
+  .keep-grid{padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+  .keep-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-sm);padding:13px 14px;position:relative;}
+  .keep-card .k-type{font-size:11px;font-weight:700;color:var(--accent-dark);background:var(--accent-soft);border:1px solid var(--accent-border);border-radius:6px;padding:1px 7px;display:inline-block;margin-bottom:7px;}
+  .keep-card .k-title{font-size:15px;font-weight:700;}
+  .keep-card .k-body{font-size:13.5px;color:var(--text-sub);line-height:1.5;margin-top:4px;white-space:pre-wrap;word-break:break-word;}
+  .keep-card .k-link{font-size:13px;color:var(--info);margin-top:6px;display:inline-block;word-break:break-all;}
+  .keep-card .k-foot{font-size:11px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:6px;}
+  .keep-card .k-pin{position:absolute;top:11px;right:11px;font-size:16px;color:var(--text-dim);}
+  .keep-card .k-pin.on{color:var(--accent);}
+
+  /* profile / more */
+  .prof-card{display:flex;align-items:center;gap:13px;padding:16px;background:var(--surface-soft);border:1px solid var(--border);border-radius:15px;margin-bottom:16px;}
+  .prof-card .p-av{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:var(--accent-soft);border:1px solid var(--accent-border);}
+  .prof-card .p-name{font-size:17px;font-weight:700;}
+  .prof-card .p-sub{font-size:13px;color:var(--text-muted);margin-top:2px;}
+  .more-body{padding:16px 16px calc(var(--tabbar-h) + 24px);}
+  .set-group{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+  .set-row{display:flex;align-items:center;gap:12px;padding:14px 14px;border-bottom:1px solid var(--border);font-size:15px;font-weight:500;}
+  .set-row:last-child{border-bottom:none;}
+  .set-row .s-ic{width:22px;text-align:center;color:var(--text-muted);}
+  .set-row .s-arrow{margin-left:auto;color:var(--text-dim);font-size:13px;}
+  .grp-label{font-size:12px;font-weight:700;color:var(--text-muted);margin:4px 4px 6px;}
+  .who{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .who button{padding:10px;border:1px solid var(--border);border-radius:11px;background:var(--surface-soft);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .who button.on{border-color:var(--accent);background:#fff;color:var(--accent);}
+  .flipbtn{display:flex;align-items:center;justify-content:space-between;gap:9px;width:100%;padding:14px;border-radius:13px;background:var(--surface);border:1px solid var(--border);font-size:14px;font-weight:600;margin-top:8px;color:var(--text-sub);}
+  .flipbtn:active{background:var(--bg-1);}
+  .flipbtn .arr{color:var(--accent);font-weight:700;}
+  .badge-soft{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark);border:1px solid var(--accent-border);}
+  .hint{font-size:12px;color:var(--text-muted);line-height:1.5;background:var(--surface-soft);border:1px solid var(--border);border-radius:11px;padding:11px 12px;margin-top:8px;}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar-h) + 24px + var(--safe-bottom));z-index:60;
+    background:#0F172A;color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;transition:.25s;pointer-events:none;max-width:90%;text-align:center;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  .search-result{display:flex;gap:11px;padding:12px 4px;border-bottom:1px solid var(--border);}
+  .search-result .sr-bar{width:4px;border-radius:3px;flex:none;}
+  .search-result .sr-title{font-size:14px;font-weight:600;}
+  .search-result .sr-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+
+  /* ===== Auth (公司 email 登入) ===== */
+  .auth{position:fixed;inset:0;z-index:80;background:linear-gradient(180deg,#FFF7ED 0%,var(--bg-0) 38%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+  .auth.hide{display:none;}
+  .auth-card{width:100%;max-width:380px;text-align:center;}
+  .auth-logo{width:74px;height:74px;border-radius:21px;margin:0 auto 16px;box-shadow:var(--shadow-lg);}
+  .auth-title{font-size:27px;font-weight:700;letter-spacing:-0.02em;}
+  .auth-title span{color:var(--accent);}
+  .auth-sub{font-size:13.5px;color:var(--text-muted);margin-top:6px;line-height:1.5;}
+  .auth-form{margin-top:26px;text-align:left;}
+  .auth-form label{font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:7px;}
+  .email-wrap{display:flex;align-items:center;border:1.5px solid var(--border);border-radius:13px;background:var(--surface);overflow:hidden;transition:.15s;}
+  .email-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .email-wrap input{flex:1;border:none;background:none;padding:14px 12px;font-size:16px;outline:none;min-width:0;}
+  .email-wrap .suffix{padding:0 13px;font-size:14px;font-weight:600;color:var(--text-muted);white-space:nowrap;}
+  .auth-btn{width:100%;padding:15px;border-radius:13px;background:var(--accent);color:#fff;font-size:15.5px;font-weight:700;margin-top:16px;box-shadow:0 6px 16px rgba(232,116,12,.32);transition:.15s;}
+  .auth-btn:active{transform:scale(.99);}
+  .auth-btn:disabled{opacity:.5;box-shadow:none;}
+  .otp-wrap{display:flex;gap:8px;justify-content:center;margin:8px 0 4px;}
+  .otp-wrap input{width:44px;height:54px;text-align:center;font-size:24px;font-weight:700;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);}
+  .otp-wrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .auth-back{font-size:13px;color:var(--text-sub);font-weight:600;margin-top:18px;display:inline-block;}
+  .auth-note{font-size:12px;color:var(--text-muted);margin-top:22px;line-height:1.6;}
+  .auth-err{font-size:13px;color:var(--danger);font-weight:600;margin-top:12px;min-height:18px;}
+  .auth-foot{position:absolute;bottom:calc(20px + var(--safe-bottom));font-size:11.5px;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div class="auth" id="auth">
+  <div class="auth-card">
+    <img class="auth-logo" src="icon.svg" alt="" />
+    <div class="auth-title">On<span>Time</span></div>
+    <div class="auth-sub">TEi Composites 公司共享行事曆<br>請用公司 email 登入</div>
+
+    <!-- 步驟 1：email -->
+    <div class="auth-form" id="authStep1">
+      <label>公司 Email</label>
+      <div class="email-wrap">
+        <input type="text" id="authEmail" inputmode="email" autocapitalize="off" autocorrect="off" placeholder="你的帳號" />
+        <span class="suffix">@teicomposite.com</span>
+      </div>
+      <div class="auth-err" id="authErr"></div>
+      <button class="auth-btn" id="authSend">發送驗證碼</button>
+      <div class="auth-note">僅限 <b>@teicomposite.com</b> 公司信箱。<br>非 TEi 同仁無法登入本系統。</div>
+    </div>
+
+    <!-- 步驟 2：OTP -->
+    <div class="auth-form" id="authStep2" style="display:none">
+      <label id="otpLabel">輸入寄到信箱的 6 位數驗證碼</label>
+      <div class="otp-wrap" id="otpWrap">
+        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
+      </div>
+      <div class="auth-err" id="otpErr"></div>
+      <button class="auth-btn" id="authVerify">驗證並登入</button>
+      <span class="auth-back" id="authBack">‹ 換個 email</span>
+    </div>
+  </div>
+  <div class="auth-foot">OnTime · TEi Composites © 2026</div>
+</div>
+
+<div class="app" id="app">
+  <header class="topbar" id="topbar">
+    <div class="topbar-row">
+      <button class="calswitch" id="calSwitch">
+        <span class="cs-dot" id="csDot" style="background:linear-gradient(135deg,#E8740C,#2563EB)"></span>
+        <span class="cs-name" id="csName">全部日曆</span>
+        <span class="cs-chev">▼</span>
+      </button>
+      <button class="icon-btn" id="btnSearch" title="搜尋">🔍</button>
+    </div>
+    <div class="monthnav" id="monthnav">
+      <div class="title" id="navTitle">2026 年 <b>6 月</b></div>
+      <button class="today-btn" id="btnToday">今天</button>
+      <div class="nav-pill"><button id="navPrev">‹</button><button id="navNext">›</button></div>
+    </div>
+    <div class="viewswitch" id="viewSwitch">
+      <button data-v="month" class="on">月</button>
+      <button data-v="week">週</button>
+      <button data-v="day">日</button>
+    </div>
+  </header>
+
+  <main class="body" id="bodyView"></main>
+  <button class="fab" id="fab" title="新增行程">＋</button>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab on" data-tab="calendar"><span class="ti">📅</span>月曆</button>
+    <button class="tab" data-tab="keep"><span class="ti">📌</span>Keep</button>
+    <button class="tab" data-tab="feed"><span class="ti">💬</span>動態<span class="tdot count" id="feedBadge" style="display:none">0</span></button>
+    <button class="tab" data-tab="more"><span class="ti">⋯</span>更多</button>
+  </nav>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <button class="txt muted" id="sheetLeft">取消</button>
+    <div class="h-title" id="sheetTitle"></div>
+    <button class="txt" id="sheetRight"></button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* =========================================================================
+   OnTime ‧ 共享行事曆 — TEi Composites 內部姊妹系統（PMSYS / ProjFlow / RTM）
+   TimeTree 1:1 資訊架構：底部分頁（月曆 / Keep / 動態 / 更多）＋ 頂部日曆切換。
+   資料層：填 Supabase 金鑰 → 雲端同步；留空 → 本機 localStorage 原型。
+   ========================================================================= */
+
+/* ---- 1. Supabase ---- */
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+const SB = (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+/* ---- 2. 姊妹系統 SSO ---- */
+const SYS = {
+  pmsys:'https://kai1978intwtei.github.io/tei-news/teipmsys/',
+  projflow:'https://pm-system-mauve.vercel.app/dashboard',
+  rtm:'https://rtm-rtm-app-app.vercel.app/index.html',
+};
+
+/* ---- 3. profiles（真實 UUID）。公司一律用 @teicomposite.com email 認證 ---- */
+const COMPANY_DOMAIN = 'teicomposite.com';
+const PROFILES = [
+  { id:'e34d9730-6b29-48f8-9177-22f180a6b0bf', name:'曾凱熙', en:'Kai',      emoji:'🦁', title:'總經理', unit:'總事業管理部 GMO', role:'admin', dept:'exec',  email:'kai@teicomposite.com' },
+  { id:'a1fb80e7-c110-4819-a7a8-a5d94cca5f81', name:'蔡欣沛', en:'June Tsai', emoji:'🦙', title:'業務經理', unit:'業務開發課 SD', role:'sales', dept:'sales', email:'june@teicomposite.com' },
+  { id:'132b6856-0327-4718-89a4-dd4f7b2b4e24', name:'張詠欣', en:'Sunny',     emoji:'🦉', title:'課長',   unit:'業務開發課 SD', role:'sales', dept:'sales', email:'sunny@teicomposite.com' },
+  { id:'580e08f6-5809-4570-8444-12640262b218', name:'謝旭昇', en:'Stanley',   emoji:'🐉', title:'副課長', unit:'業務開發課 SD', role:'sales', dept:'sales', email:'stanley@teicomposite.com' },
+  { id:'08604487-15dd-472a-9e53-db044170a19a', name:'郭人慈', en:'Kate Kuo',  emoji:'🦥', title:'業務',   unit:'業務開發課 SD', role:'sales', dept:'sales', email:'kate@teicomposite.com' },
+  { id:'aeaab52b-6d06-43c6-b7bc-aaa8222d2400', name:'黃家芸', en:'Keira Huang',emoji:'🕷️',title:'業務',  unit:'業務開發課 SD', role:'sales', dept:'sales', email:'keira@teicomposite.com' },
+];
+const profById=(id)=>PROFILES.find(p=>p.id===id)||PROFILES[0];
+const dispName=(p)=>p.en||p.name;
+
+/* ---- 4. 資料層 ---- */
+const LS_KEY='ontime.data.v1';
+const PAL=['#E8740C','#2563EB','#10B981','#7C3AED','#EAB308','#DB2777','#0891B2','#64748B'];
+function seed(){
+  const me=PROFILES[0].id;
+  const cals=[
+    { id:'cal_company', name:'公司行事曆', color:'#E8740C', ownerId:PROFILES[0].id, members:PROFILES.map(p=>({userId:p.id,role:p.id===me?'owner':'editor'})) },
+    { id:'cal_sales',   name:'業務開發課 SD', color:'#2563EB', ownerId:PROFILES[1].id, members:[1,2,3,4,5,0].map(i=>({userId:PROFILES[i].id,role:i===1?'owner':'editor'})) },
+    { id:'cal_me',      name:'我的私人行程', color:'#10B981', ownerId:me, members:[{userId:me,role:'owner'}] },
+  ];
+  const D=(off,h,m)=>{const d=new Date();d.setDate(d.getDate()+off);d.setHours(h,m,0,0);return d.toISOString();};
+  const events=[
+    { id:'e1', calendarId:'cal_company', title:'全員月會', start:D(0,9,0), end:D(0,10,30), allDay:false, location:'大會議室', url:'', notes:'各部門進度回報', repeat:'monthly', alerts:[30,10], createdBy:PROFILES[0].id, attendees:PROFILES.map(p=>p.id), attendance:{} },
+    { id:'e2', calendarId:'cal_sales', title:'Hyperion 報價討論', start:D(0,14,0), end:D(0,15,0), allDay:false, location:'線上 Teams', url:'https://teams.microsoft.com', notes:'碳纖維單體車身報價', repeat:'none', alerts:[15], createdBy:PROFILES[1].id, attendees:[PROFILES[1].id,PROFILES[2].id], attendance:{} },
+    { id:'e3', calendarId:'cal_company', title:'端午連假', start:D(1,0,0), end:D(1,23,59), allDay:true, location:'', url:'', notes:'公司放假', repeat:'none', alerts:[], createdBy:PROFILES[0].id, attendees:[], attendance:{} },
+    { id:'e4', calendarId:'cal_sales', title:'拜訪 Apex Cycling', start:D(2,11,0), end:D(2,12,0), allDay:false, location:'台中', url:'', notes:'2027 環法車架競標', repeat:'none', alerts:[60], createdBy:PROFILES[2].id, attendees:[PROFILES[2].id], attendance:{} },
+    { id:'e5', calendarId:'cal_me', title:'牙醫回診', start:D(3,18,30), end:D(3,19,0), allDay:false, location:'', url:'', notes:'', repeat:'none', alerts:[120], createdBy:me, attendees:[me], attendance:{} },
+    { id:'e6', calendarId:'cal_sales', title:'週會', start:D(7,9,30), end:D(7,10,0), allDay:false, location:'業務區', url:'', notes:'', repeat:'weekly', alerts:[15], createdBy:PROFILES[1].id, attendees:[], attendance:{} },
+  ];
+  const feed=[
+    { id:'f1', calendarId:'cal_company', ts:Date.now()-3600e3, userId:PROFILES[1].id, kind:'msg', text:'月會我會帶上季業績圖表' },
+    { id:'f2', calendarId:'cal_company', ts:Date.now()-3400e3, userId:PROFILES[0].id, kind:'msg', text:'好，麻煩準時 🙏' },
+    { id:'f3', calendarId:'cal_sales', ts:Date.now()-7200e3, userId:PROFILES[2].id, kind:'act', action:'create', target:'拜訪 Apex Cycling', text:'新增了行程「拜訪 Apex Cycling」' },
+  ];
+  const keep=[
+    { id:'k1', calendarId:'cal_company', type:'memo', title:'公司 Wi-Fi', body:'SSID：TEi-Office\n密碼：見行政公告', url:'', userId:PROFILES[0].id, ts:Date.now()-86400e3, pinned:true },
+    { id:'k2', calendarId:'cal_sales', type:'link', title:'報價單範本', body:'最新版報價 Excel 範本', url:'https://example.com/quote-template', userId:PROFILES[1].id, ts:Date.now()-43200e3, pinned:false },
+  ];
+  return { cals, events, feed, keep, seenFeed:{} };
+}
+let DATA=loadData();
+function loadData(){ try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(_){ } const s=seed();persist(s);return s; }
+function persist(d){ try{localStorage.setItem(LS_KEY,JSON.stringify(d||DATA));}catch(_){ } }
+async function sbSync(t,row){ if(!SB)return; try{await SB.from(t).upsert(row);}catch(e){console.warn('sbSync',t,e.message);} }
+
+/* ---- 5. 狀態 ---- */
+const state={ tab:'calendar', view:'month', cursor:new Date(), selDate:ymd(new Date()),
+  me:PROFILES[0].id, activeCal:'all', hidden:new Set() };
+
+/* ---- 6. 工具 ---- */
+function ymd(d){const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;}
+function sameYmd(a,b){return ymd(a)===ymd(b);}
+function fmtTime(iso){const d=new Date(iso);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+function fmtRange(ev){return ev.allDay?'整天':`${fmtTime(ev.start)} – ${fmtTime(ev.end)}`;}
+function calById(id){return DATA.cals.find(c=>c.id===id);}
+function myRole(cal){const m=cal.members.find(x=>x.userId===state.me);return m?m.role:null;}
+function canEdit(cal){const r=myRole(cal);return r==='owner'||r==='editor';}
+function myCals(){return DATA.cals.filter(c=>c.members.some(m=>m.userId===state.me));}
+function contextCals(){ // 受頂部切換器影響
+  if(state.activeCal==='all') return myCals().filter(c=>!state.hidden.has(c.id));
+  const c=calById(state.activeCal); return c?[c]:[];
+}
+const WD=['日','一','二','三','四','五','六'];
+function relTime(ts){const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return '剛剛';if(s<3600)return Math.floor(s/60)+' 分前';if(s<86400)return Math.floor(s/3600)+' 小時前';return Math.floor(s/86400)+' 天前';}
+
+/* 重複展開：判斷某事件是否發生在 dateStr */
+function occursOn(ev,dateStr){
+  const sd=ymd(ev.start), ed=ymd(ev.end);
+  const span=(ds)=>{ // 多日事件涵蓋
+    const dayMs=86400000; const len=Math.round((new Date(ed)-new Date(sd))/dayMs);
+    for(let i=0;i<=len;i++){const d=new Date(ds);d.setDate(d.getDate()+i);if(ymd(d)===dateStr)return true;}return false;
+  };
+  if(!ev.repeat||ev.repeat==='none') return dateStr>=sd && dateStr<=ed;
+  if(dateStr<sd) return false;
+  const start=new Date(sd+'T00:00:00'), cur=new Date(dateStr+'T00:00:00');
+  if(ev.repeatUntil && dateStr>ev.repeatUntil) return false;
+  if(ev.repeat==='daily') return true;
+  if(ev.repeat==='weekly') return start.getDay()===cur.getDay();
+  if(ev.repeat==='monthly') return start.getDate()===cur.getDate();
+  if(ev.repeat==='yearly') return start.getMonth()===cur.getMonth() && start.getDate()===cur.getDate();
+  return false;
+}
+function eventsOn(dateStr){
+  const vis=new Set(contextCals().map(c=>c.id));
+  return DATA.events.filter(e=>vis.has(e.calendarId)&&occursOn(e,dateStr))
+    .sort((a,b)=>(a.allDay?0:1)-(b.allDay?0:1)||fmtTime(a.start).localeCompare(fmtTime(b.start)));
+}
+
+/* ---- 7. 頂部 ---- */
+function renderTop(){
+  const showCal = state.tab==='calendar';
+  document.getElementById('monthnav').style.display=showCal?'':'none';
+  document.getElementById('viewSwitch').style.display=showCal?'':'none';
+  document.getElementById('btnSearch').style.display=showCal?'':'none';
+  // calendar switcher label
+  if(state.activeCal==='all'){ document.getElementById('csName').textContent='全部日曆';
+    document.getElementById('csDot').style.background='linear-gradient(135deg,#E8740C,#2563EB)'; }
+  else { const c=calById(state.activeCal); document.getElementById('csName').textContent=c?c.name:'全部日曆';
+    document.getElementById('csDot').style.background=c?c.color:'#E8740C'; }
+  const c=state.cursor;
+  if(state.view==='month') document.getElementById('navTitle').innerHTML=`${c.getFullYear()} 年 <b>${c.getMonth()+1} 月</b>`;
+  else if(state.view==='week'){const ws=weekStart(c);const we=new Date(ws);we.setDate(we.getDate()+6);
+    document.getElementById('navTitle').innerHTML=`${ws.getMonth()+1}/${ws.getDate()} – <b>${we.getMonth()+1}/${we.getDate()}</b>`;}
+  else document.getElementById('navTitle').innerHTML=`${c.getMonth()+1} 月 <b>${c.getDate()} 日</b> 週${WD[c.getDay()]}`;
+  // feed badge
+  let unseen=0; contextCals().forEach(cal=>{ const items=DATA.feed.filter(f=>f.calendarId===cal.id);
+    const seen=(DATA.seenFeed&&DATA.seenFeed[cal.id])||0; unseen+=Math.max(0,items.length-seen); });
+  const fb=document.getElementById('feedBadge'); if(unseen>0){fb.style.display='';fb.textContent=unseen>99?'99+':unseen;} else fb.style.display='none';
+  // tabs active
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===state.tab));
+  document.getElementById('fab').classList.toggle('hide', !(state.tab==='calendar'||state.tab==='keep'));
+}
+
+/* ---- 8. 月檢視 ---- */
+function weekStart(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.setHours(0,0,0,0);return x;}
+function renderMonth(){
+  const c=state.cursor,y=c.getFullYear(),m=c.getMonth();
+  const first=new Date(y,m,1);const start=new Date(first);start.setDate(1-first.getDay());
+  let h='<div class="weekhead">'+WD.map((w,i)=>`<div class="${i===0||i===6?'we':''}">${w}</div>`).join('')+'</div><div class="month">';
+  for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=ymd(d);
+    const out=d.getMonth()!==m,today=sameYmd(d,new Date()),we=d.getDay()===0||d.getDay()===6,sel=ds===state.selDate;
+    const evs=eventsOn(ds);let chips='';
+    evs.slice(0,3).forEach(e=>{const cal=calById(e.calendarId);
+      chips+=`<div class="chip ${e.allDay?'allday':''}" style="background:${cal.color}">${e.allDay?'':fmtTime(e.start)+' '}${esc(e.title)}</div>`;});
+    if(evs.length>3)chips+=`<div class="more">+${evs.length-3}</div>`;
+    h+=`<div class="day ${out?'out':''} ${today?'today':''} ${we?'we':''} ${sel?'sel':''}" data-d="${ds}"><div class="dnum">${d.getDate()}</div>${chips}</div>`;}
+  h+='</div>'+renderDayList(state.selDate,true);
+  return h;
+}
+function renderDayList(dateStr,compact){
+  const evs=eventsOn(dateStr);const d=new Date(dateStr+'T00:00:00');const today=dateStr===ymd(new Date());
+  let h=`<div class="agenda" ${compact?'style="padding-top:4px"':''}>`;
+  h+=`<div class="agenda-date ${today?'today':''}"><span class="d">${d.getDate()}</span><span class="wd">${d.getMonth()+1}月 ‧ 週${WD[d.getDay()]}${today?' ‧ 今天':''}</span></div>`;
+  if(!evs.length)h+=`<div class="empty"><div class="big">🗓️</div>這天沒有行程<br><span style="font-size:12px">點右下 ＋ 新增</span></div>`;
+  evs.forEach(e=>h+=evCard(e,dateStr));h+='</div>';return h;
+}
+function renderWeek(){
+  const ws=weekStart(state.cursor);let h='<div class="agenda">';
+  for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);const ds=ymd(d);const evs=eventsOn(ds);const today=ds===ymd(new Date());
+    h+=`<div class="agenda-day"><div class="agenda-date ${today?'today':''}"><span class="d">${d.getDate()}</span><span class="wd">週${WD[d.getDay()]}${today?' ‧ 今天':''}</span></div>`;
+    if(!evs.length)h+=`<div style="font-size:13px;color:var(--text-dim);padding:2px 2px 10px">—</div>`;
+    evs.forEach(e=>h+=evCard(e,ds));h+='</div>';}
+  h+='</div>';return h;
+}
+function evCard(e,dateStr){const cal=calById(e.calendarId);const rep=e.repeat&&e.repeat!=='none';
+  return `<div class="ev" data-ev="${e.id}" data-on="${dateStr||''}">
+    <div class="bar" style="background:${cal.color}"></div>
+    <div class="ev-main"><div class="ev-title">${esc(e.title)}${rep?' 🔁':''}</div>
+      <div class="ev-meta"><span class="cal"><i style="background:${cal.color}"></i>${esc(cal.name)}</span>
+      ${e.location?`<span>📍 ${esc(e.location)}</span>`:''}${e.attendees&&e.attendees.length?`<span>👥 ${e.attendees.length}</span>`:''}</div></div>
+    <div class="ev-time">${e.allDay?'整天':fmtTime(e.start)+'<br>'+fmtTime(e.end)}</div></div>`;}
+
+/* ---- 9. 分頁切換 ---- */
+function setTab(tab){ state.tab=tab; closeSheet(); render(); document.getElementById('bodyView').scrollTop=0; }
+function render(){ renderTop(); renderBody(); }
+function renderBody(){
+  const el=document.getElementById('bodyView');
+  if(state.tab==='calendar'){
+    if(state.view==='month')el.innerHTML=renderMonth();
+    else if(state.view==='week')el.innerHTML=renderWeek();
+    else el.innerHTML=renderDayList(state.selDate,false);
+    el.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>{state.selDate=d.dataset.d;render();}));
+    el.querySelectorAll('.ev').forEach(c=>c.addEventListener('click',()=>openEventDetail(c.dataset.ev)));
+  } else if(state.tab==='keep') renderKeep(el);
+  else if(state.tab==='feed') renderFeed(el);
+  else renderMore(el);
+}
+
+/* ---- 10. 事件詳情 ---- */
+function openEventDetail(eid){
+  const e=DATA.events.find(x=>x.id===eid);if(!e)return;const cal=calById(e.calendarId);
+  setSheet('行程',canEdit(cal)?'編輯':'',()=>{if(canEdit(cal))openEventEdit(eid);});
+  document.getElementById('sheetLeft').textContent='關閉';
+  const d=new Date(e.start);
+  const att=e.attendees.map(id=>{const p=profById(id);const st=e.attendance&&e.attendance[id];
+    const b=st==='going'?'✅':st==='maybe'?'❔':st==='no'?'❌':'';
+    return `<div class="att-av" title="${esc(dispName(p))}">${p.emoji}${b?`<span class="badge">${b}</span>`:''}</div>`;}).join('');
+  const repLabel={none:'',daily:'每日',weekly:'每週',monthly:'每月',yearly:'每年'}[e.repeat||'none'];
+  const my=e.attendance&&e.attendance[state.me];
+  let body=`
+    <div class="det-head"><div class="det-cal"><i style="background:${cal.color}"></i>${esc(cal.name)}</div><div class="det-title">${esc(e.title)}</div></div>
+    <div class="det-line"><span class="ic">🕑</span><div><div>${d.getMonth()+1} 月 ${d.getDate()} 日（週${WD[d.getDay()]}）</div><div class="dl-sub">${fmtRange(e)}${repLabel?' ‧ '+repLabel+'重複':''}</div></div></div>
+    ${e.alerts&&e.alerts.length?`<div class="det-line"><span class="ic">🔔</span><div>${e.alerts.map(alertLabel).join('、')}</div></div>`:''}
+    ${e.location?`<div class="det-line"><span class="ic">📍</span><div>${esc(e.location)}</div></div>`:''}
+    ${e.url?`<div class="det-line"><span class="ic">🔗</span><div><a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.url)}</a></div></div>`:''}
+    ${e.notes?`<div class="det-line"><span class="ic">📝</span><div style="white-space:pre-wrap">${esc(e.notes)}</div></div>`:''}
+    ${att?`<div class="det-line"><span class="ic">👥</span><div class="attendees">${att}</div></div>`:''}
+    <div class="going-bar">
+      <button data-go="going" class="${my==='going'?'on':''}">✅ 參加</button>
+      <button data-go="maybe" class="${my==='maybe'?'on':''}">❔ 未定</button>
+      <button data-go="no" class="${my==='no'?'on':''}">❌ 不參加</button>
+    </div>`;
+  setBody(body);
+  document.getElementById('sheetBody').querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+    e.attendance=e.attendance||{}; e.attendance[state.me]=b.dataset.go;
+    if(!e.attendees.includes(state.me))e.attendees.push(state.me);
+    persist();sbSync('events',e);openEventDetail(eid);toast('已更新出席狀態');}));
+  openSheet();
+}
+
+/* ---- 11. 新增 / 編輯 ---- */
+function alertLabel(v){return v===0?'準時':v<60?v+' 分鐘前':v<1440?(v/60)+' 小時前':(v/1440)+' 天前';}
+const ALERT_OPTS=[0,5,10,15,30,60,120,1440];
+function openEventEdit(eid){
+  const editing=eid?DATA.events.find(x=>x.id===eid):null;
+  const editable=myCals().filter(c=>canEdit(c));
+  if(!editable.length){toast('你沒有可編輯的日曆');return;}
+  const defCal=(state.activeCal!=='all'&&editable.find(c=>c.id===state.activeCal))||editable.find(c=>!state.hidden.has(c.id))||editable[0];
+  const e=editing?JSON.parse(JSON.stringify(editing)):{ id:null, calendarId:defCal.id, title:'',
+    start:state.selDate+'T09:00', end:state.selDate+'T10:00', allDay:false, location:'', url:'', notes:'',
+    repeat:'none', repeatUntil:'', alerts:[30], createdBy:state.me, attendees:[state.me], attendance:{} };
+  const draft={...e, sDate:ymd(e.start), sTime:e.allDay?'09:00':fmtTime(e.start), eDate:ymd(e.end), eTime:e.allDay?'10:00':fmtTime(e.end),
+    alerts:[...(e.alerts||[])] };
+  setSheet(editing?'編輯行程':'新增行程','儲存',()=>saveEvent(editing,draft));
+  document.getElementById('sheetLeft').textContent='取消';
+  const calOpts=editable.map(c=>`<button type="button" class="calchip ${c.id===draft.calendarId?'on':''}" style="color:${c.color}" data-cal="${c.id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`).join('');
+  const repOpts=[['none','不重複'],['daily','每日'],['weekly','每週'],['monthly','每月'],['yearly','每年']].map(([v,l])=>`<option value="${v}" ${draft.repeat===v?'selected':''}>${l}</option>`).join('');
+  setBody(`
+    <div class="field"><input type="text" id="fTitle" value="${esc(draft.title)}" placeholder="行程標題" style="font-size:17px;font-weight:600" /></div>
+    <div class="field"><label>日曆</label><div class="calpick" id="fCalPick">${calOpts}</div></div>
+    <div class="toggle-row"><span class="lab">整天</span><div class="sw ${draft.allDay?'on':''}" id="fAllDay"></div></div>
+    <div class="row2"><div class="field"><label>開始</label><input type="date" id="fSDate" value="${draft.sDate}" /></div>
+      <div class="field" id="fSTimeWrap"><label>&nbsp;</label><input type="time" id="fSTime" value="${draft.sTime}" /></div></div>
+    <div class="row2"><div class="field"><label>結束</label><input type="date" id="fEDate" value="${draft.eDate}" /></div>
+      <div class="field" id="fETimeWrap"><label>&nbsp;</label><input type="time" id="fETime" value="${draft.eTime}" /></div></div>
+    <div class="field"><label>重複</label><select id="fRepeat">${repOpts}</select></div>
+    <div class="field"><label>提醒</label><div id="fAlerts"></div><button type="button" class="add-link" id="fAddAlert">＋ 新增提醒</button></div>
+    <div class="field"><label>地點</label><input type="text" id="fLoc" value="${esc(draft.location)}" placeholder="會議室 / 地址" /></div>
+    <div class="field"><label>網址</label><input type="url" id="fUrl" value="${esc(draft.url)}" placeholder="https://" /></div>
+    <div class="field"><label>備註</label><textarea id="fNotes" placeholder="補充說明…">${esc(draft.notes)}</textarea></div>
+    ${editing?'<button class="ghost-danger" id="fDelete">刪除此行程</button>':''}`);
+  // calendar pick
+  document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(b=>b.addEventListener('click',()=>{
+    document.getElementById('fCalPick').querySelectorAll('.calchip').forEach(x=>x.classList.remove('on'));b.classList.add('on');draft.calendarId=b.dataset.cal;}));
+  // all day
+  const allSw=document.getElementById('fAllDay');
+  const syncAll=()=>{const on=allSw.classList.contains('on');document.getElementById('fSTimeWrap').style.display=on?'none':'';document.getElementById('fETimeWrap').style.display=on?'none':'';};
+  allSw.addEventListener('click',()=>{allSw.classList.toggle('on');syncAll();});syncAll();
+  // alerts
+  function drawAlerts(){const wrap=document.getElementById('fAlerts');
+    wrap.innerHTML=draft.alerts.map((a,i)=>`<div class="alert-row"><select data-ai="${i}">${ALERT_OPTS.map(v=>`<option value="${v}" ${v===a?'selected':''}>${alertLabel(v)}</option>`).join('')}</select><button type="button" class="rm" data-rm="${i}">✕</button></div>`).join('')
+      ||'<div style="font-size:13px;color:var(--text-muted);padding:2px 0 6px">無提醒</div>';
+    wrap.querySelectorAll('[data-ai]').forEach(s=>s.addEventListener('change',()=>draft.alerts[+s.dataset.ai]=+s.value));
+    wrap.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{draft.alerts.splice(+b.dataset.rm,1);drawAlerts();}));}
+  drawAlerts();
+  document.getElementById('fAddAlert').addEventListener('click',()=>{draft.alerts.push(15);drawAlerts();});
+  if(editing)document.getElementById('fDelete').addEventListener('click',()=>{deleteEvent(editing.id);closeSheet();render();toast('已刪除');});
+  openSheet();
+}
+function saveEvent(editing,draft){
+  const title=document.getElementById('fTitle').value.trim();if(!title){toast('請輸入標題');return;}
+  const allDay=document.getElementById('fAllDay').classList.contains('on');
+  const sDate=document.getElementById('fSDate').value,eDate=document.getElementById('fEDate').value;
+  const sTime=allDay?'00:00':document.getElementById('fSTime').value,eTime=allDay?'23:59':document.getElementById('fETime').value;
+  const start=new Date(`${sDate}T${sTime}`).toISOString();let end=new Date(`${eDate}T${eTime}`).toISOString();
+  if(new Date(end)<new Date(start))end=start;
+  const obj={ id:editing?editing.id:'e'+Date.now(), calendarId:draft.calendarId, title, start, end, allDay,
+    location:document.getElementById('fLoc').value.trim(), url:document.getElementById('fUrl').value.trim(),
+    notes:document.getElementById('fNotes').value.trim(), repeat:document.getElementById('fRepeat').value,
+    repeatUntil:editing?editing.repeatUntil||'':'', alerts:draft.alerts.slice(),
+    createdBy:editing?editing.createdBy:state.me, attendees:editing?editing.attendees:[state.me], attendance:editing?editing.attendance||{}:{} };
+  if(editing){const i=DATA.events.findIndex(x=>x.id===editing.id);DATA.events[i]=obj;pushAct(obj.calendarId,'edit',title,`更新了行程「${title}」`);}
+  else{DATA.events.push(obj);pushAct(obj.calendarId,'create',title,`新增了行程「${title}」`);}
+  persist();sbSync('events',obj);scheduleReminders(obj);
+  closeSheet();state.selDate=ymd(start);state.tab='calendar';render();toast(editing?'已更新':'已新增 ✓');
+}
+function deleteEvent(id){const ev=DATA.events.find(e=>e.id===id);DATA.events=DATA.events.filter(e=>e.id!==id);
+  if(ev)pushAct(ev.calendarId,'delete',ev.title,`刪除了行程「${ev.title}」`);persist();if(SB)SB.from('events').delete().eq('id',id);}
+
+/* ---- 12. Keep ---- */
+function renderKeep(el){
+  const cals=contextCals();const calIds=new Set(cals.map(c=>c.id));
+  let items=DATA.keep.filter(k=>calIds.has(k.calendarId)).sort((a,b)=>(b.pinned-a.pinned)||(b.ts-a.ts));
+  let h='<div class="keep-grid">';
+  if(!items.length)h+='<div class="empty"><div class="big">📌</div>還沒有 Keep<br><span style="font-size:12px">把要共享的備忘、連結釘在這裡</span></div>';
+  items.forEach(k=>{const p=profById(k.userId);const cal=calById(k.calendarId);
+    h+=`<div class="keep-card" data-keep="${k.id}"><span class="k-pin ${k.pinned?'on':''}" data-pin="${k.id}">📌</span>
+      <span class="k-type">${k.type==='link'?'🔗 連結':'📝 備忘'}</span>
+      <div class="k-title">${esc(k.title)}</div>
+      ${k.body?`<div class="k-body">${esc(k.body)}</div>`:''}
+      ${k.url?`<a class="k-link" href="${esc(k.url)}" target="_blank" rel="noopener">${esc(k.url)}</a>`:''}
+      <div class="k-foot"><i style="width:7px;height:7px;border-radius:50%;background:${cal.color};display:inline-block"></i>${esc(cal.name)} ‧ ${p.emoji} ${esc(dispName(p))} ‧ ${relTime(k.ts)}</div></div>`;});
+  h+='</div>';el.innerHTML=h;
+  el.querySelectorAll('[data-pin]').forEach(b=>b.addEventListener('click',ev=>{ev.stopPropagation();
+    const k=DATA.keep.find(x=>x.id===b.dataset.pin);k.pinned=!k.pinned;persist();render();}));
+  el.querySelectorAll('[data-keep]').forEach(c=>c.addEventListener('click',()=>openKeepEdit(c.dataset.keep)));
+}
+function openKeepEdit(kid){
+  const editing=kid?DATA.keep.find(k=>k.id===kid):null;
+  const cals=myCals().filter(c=>canEdit(c));if(!cals.length){toast('沒有可編輯的日曆');return;}
+  const defCal=(state.activeCal!=='all'&&cals.find(c=>c.id===state.activeCal))||cals[0];
+  const k=editing||{id:null,calendarId:defCal.id,type:'memo',title:'',body:'',url:'',userId:state.me};
+  setSheet(editing?'編輯 Keep':'新增 Keep','儲存',()=>saveKeep(editing,k));
+  document.getElementById('sheetLeft').textContent='取消';
+  const calOpts=cals.map(c=>`<button type="button" class="calchip ${c.id===k.calendarId?'on':''}" style="color:${c.color}" data-cal="${c.id}"><i style="background:${c.color}"></i>${esc(c.name)}</button>`).join('');
+  setBody(`
+    <div class="field"><label>類型</label><div class="calpick" id="kType">
+      <button type="button" class="calchip ${k.type==='memo'?'on':''}" data-t="memo" style="color:var(--accent)">📝 備忘</button>
+      <button type="button" class="calchip ${k.type==='link'?'on':''}" data-t="link" style="color:var(--info)">🔗 連結</button></div></div>
+    <div class="field"><label>日曆</label><div class="calpick" id="kCal">${calOpts}</div></div>
+    <div class="field"><label>標題</label><input type="text" id="kTitle" value="${esc(k.title)}" placeholder="標題" /></div>
+    <div class="field" id="kUrlWrap" style="${k.type==='link'?'':'display:none'}"><label>連結網址</label><input type="url" id="kUrl" value="${esc(k.url)}" placeholder="https://" /></div>
+    <div class="field"><label>內容</label><textarea id="kBody" placeholder="備忘內容…">${esc(k.body)}</textarea></div>
+    ${editing?'<button class="ghost-danger" id="kDel">刪除</button>':''}`);
+  let type=k.type;
+  document.getElementById('kType').querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>{
+    type=b.dataset.t;document.getElementById('kType').querySelectorAll('[data-t]').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    document.getElementById('kUrlWrap').style.display=type==='link'?'':'none';k.type=type;}));
+  document.getElementById('kCal').querySelectorAll('[data-cal]').forEach(b=>b.addEventListener('click',()=>{
+    document.getElementById('kCal').querySelectorAll('[data-cal]').forEach(x=>x.classList.remove('on'));b.classList.add('on');k.calendarId=b.dataset.cal;}));
+  if(editing)document.getElementById('kDel').addEventListener('click',()=>{DATA.keep=DATA.keep.filter(x=>x.id!==editing.id);persist();closeSheet();render();toast('已刪除');});
+  openSheet();
+}
+function saveKeep(editing,k){
+  const title=document.getElementById('kTitle').value.trim();if(!title){toast('請輸入標題');return;}
+  const obj={ id:editing?editing.id:'k'+Date.now(), calendarId:k.calendarId, type:k.type,
+    title, body:document.getElementById('kBody').value.trim(), url:k.type==='link'?document.getElementById('kUrl').value.trim():'',
+    userId:editing?editing.userId:state.me, ts:editing?editing.ts:Date.now(), pinned:editing?editing.pinned:false };
+  if(editing){const i=DATA.keep.findIndex(x=>x.id===editing.id);DATA.keep[i]=obj;}else DATA.keep.unshift(obj);
+  persist();sbSync('keep',obj);closeSheet();render();toast(editing?'已更新':'已新增 ✓');
+}
+
+/* ---- 13. 動態（活動 + 聊天）---- */
+function pushAct(calId,action,target,text){
+  DATA.feed.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,5),calendarId:calId,ts:Date.now(),userId:state.me,kind:'act',action,target,text});
+  if(DATA.feed.length>500)DATA.feed.splice(0,DATA.feed.length-500);persist();
+}
+function renderFeed(el){
+  const cals=contextCals();const calIds=new Set(cals.map(c=>c.id));
+  let items=DATA.feed.filter(f=>calIds.has(f.calendarId)).sort((a,b)=>a.ts-b.ts);
+  const ic={create:'🆕',edit:'✏️',delete:'🗑️',invite:'➕'};
+  let h='<div class="feed-list">';
+  if(!items.length)h+='<div class="empty"><div class="big">💬</div>還沒有動態與對話</div>';
+  let lastDay='';
+  items.forEach(f=>{const day=ymd(f.ts);if(day!==lastDay){lastDay=day;const dd=new Date(f.ts);
+      h+=`<div class="feed-divider">${dd.getMonth()+1}月${dd.getDate()}日</div>`;}
+    const p=profById(f.userId);
+    if(f.kind==='msg'){const mine=f.userId===state.me;
+      h+=`<div class="msg ${mine?'mine':''}"><div class="c-av">${p.emoji}</div><div class="c-body">
+        <div class="c-top"><span class="c-name">${esc(dispName(p))}</span><span class="c-time">${fmtTime(f.ts)}</span></div>
+        <div class="bubble">${esc(f.text)}</div></div></div>`;
+    } else {
+      h+=`<div class="feed-act"><div class="fa-ic">${ic[f.action]||'🔔'}</div><div><div class="fa-text"><b>${esc(dispName(p))}</b> ${esc(f.text)}</div><div class="fa-time">${relTime(f.ts)}</div></div></div>`;}
+  });
+  h+='</div>';
+  const canChat=cals.length===1; // 單一日曆才聊天
+  const calForChat=cals.length===1?cals[0]:null;
+  h+=`<div class="chatbar">${canChat?`<input id="chatInput" placeholder="傳訊息到「${esc(calForChat.name)}」…" maxlength="800" /><button id="chatSend" disabled>↑</button>`:`<div style="font-size:12.5px;color:var(--text-muted);padding:8px 4px;text-align:center;width:100%">切到單一日曆即可聊天（頂部切換器）</div>`}</div>`;
+  el.innerHTML=h;
+  el.scrollTop=el.scrollHeight;
+  // mark seen
+  DATA.seenFeed=DATA.seenFeed||{};cals.forEach(c=>{DATA.seenFeed[c.id]=DATA.feed.filter(f=>f.calendarId===c.id).length;});persist();renderTop();
+  if(canChat){const inp=document.getElementById('chatInput'),snd=document.getElementById('chatSend');
+    inp.addEventListener('input',()=>snd.disabled=!inp.value.trim());
+    const send=()=>{const t=inp.value.trim();if(!t)return;
+      DATA.feed.push({id:'f'+Date.now(),calendarId:calForChat.id,ts:Date.now(),userId:state.me,kind:'msg',text:t});
+      persist();inp.value='';snd.disabled=true;renderFeed(el);};
+    snd.addEventListener('click',send);inp.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+    setTimeout(()=>inp.focus(),100);}
+}
+
+/* ---- 14. 更多 ---- */
+function renderMore(el){
+  const me=profById(state.me);const notif=('Notification'in window)?Notification.permission:'unsupported';
+  el.innerHTML=`<div class="more-body">
+    <div class="prof-card"><div class="p-av">${me.emoji}</div><div><div class="p-name">${esc(me.name)}（${esc(me.en)}）</div><div class="p-sub">${esc(me.title)} ‧ ${esc(me.unit)}</div></div></div>
+    <div class="grp-label">日曆</div>
+    <div class="set-group">
+      <div class="set-row" id="mCals"><span class="s-ic">📚</span>管理日曆與成員<span class="s-arrow">${myCals().length} 本 ›</span></div>
+      <div class="set-row" id="mNewCal"><span class="s-ic">➕</span>建立新日曆<span class="s-arrow">›</span></div>
+    </div>
+    <div class="grp-label">通知</div>
+    <div class="set-group">
+      <div class="set-row" id="mNotif"><span class="s-ic">🔔</span>推播提醒<span class="s-arrow">${notif==='granted'?'<span class="badge-soft">已開啟</span>':notif==='denied'?'已封鎖':'開啟 ›'}</span></div>
+      <div class="set-row" id="mInstall"><span class="s-ic">📲</span>加入主畫面（安裝 App）<span class="s-arrow">›</span></div>
+    </div>
+    <div class="grp-label">切換系統（同身份免登入）</div>
+    <button class="flipbtn" data-flip="projflow"><span>🔁 翻頁去 ProjFlow</span><span class="arr">›</span></button>
+    <button class="flipbtn" data-flip="pmsys"><span>🔁 翻頁去 PMSYS</span><span class="arr">›</span></button>
+    <button class="flipbtn" data-flip="rtm"><span>🔁 翻頁去 RTM</span><span class="arr">›</span></button>
+    <div class="grp-label" style="margin-top:18px">試用：切換身份（demo）</div>
+    <div class="who" id="whoSwitch">${PROFILES.map(p=>`<button class="${p.id===state.me?'on':''}" data-uid="${p.id}">${p.emoji} ${esc(dispName(p))}</button>`).join('')}</div>
+    <div class="grp-label" style="margin-top:18px">帳號</div>
+    <div class="set-group">
+      <div class="set-row"><span class="s-ic">📧</span>登入帳號<span class="s-arrow">${esc(me.email||'')}</span></div>
+      <div class="set-row" id="mLogout" style="color:var(--danger)"><span class="s-ic">↩︎</span>登出<span class="s-arrow"></span></div>
+    </div>
+    <div class="hint" style="margin-top:14px">資料模式：${SB?'☁️ Supabase 雲端同步':'💾 本機原型（localStorage）'}。<br>OnTime · TEi Composites 共享行事曆。</div>
+  </div>`;
+  document.getElementById('mLogout').addEventListener('click',logout);
+  document.getElementById('mCals').addEventListener('click',openCalendars);
+  document.getElementById('mNewCal').addEventListener('click',()=>openCalEdit(null));
+  document.getElementById('mNotif').addEventListener('click',enableNotifications);
+  document.getElementById('mInstall').addEventListener('click',promptInstall);
+  el.querySelectorAll('[data-flip]').forEach(b=>b.addEventListener('click',()=>flipTo(b.dataset.flip)));
+  el.querySelectorAll('[data-uid]').forEach(b=>b.addEventListener('click',()=>{state.me=b.dataset.uid;render();toast('已切換為 '+dispName(profById(state.me)));}));
+}
+
+/* ---- 15. 日曆切換器 ---- */
+function openCalSwitch(){
+  setSheet('選擇日曆','管理',()=>{closeSheet();openCalendars();});
+  document.getElementById('sheetLeft').textContent='關閉';
+  let h=`<div class="cal-item" data-pick="all"><div class="swatch" style="background:linear-gradient(135deg,#E8740C,#2563EB)"></div>
+    <div class="ci-main"><div class="ci-name">全部日曆</div><div class="ci-sub">合併顯示所有日曆</div></div>${state.activeCal==='all'?'<span style="color:var(--accent);font-size:18px">✓</span>':''}</div>`;
+  myCals().forEach(c=>{const hidden=state.hidden.has(c.id);
+    h+=`<div class="cal-item"><div class="swatch" style="background:${c.color}" data-pick="${c.id}"></div>
+      <div class="ci-main" data-pick="${c.id}"><div class="ci-name">${esc(c.name)}</div><div class="ci-sub">${c.members.length} 位成員 ‧ <span class="role-tag role-${myRole(c)}">${roleLabel(myRole(c))}</span></div></div>
+      ${state.activeCal===c.id?'<span style="color:var(--accent);font-size:18px">✓</span>':`<div class="eye ${hidden?'off':''}" data-eye="${c.id}">${hidden?'🚫':'👁️'}</div>`}</div>`;});
+  setBody(h);
+  document.getElementById('sheetBody').querySelectorAll('[data-pick]').forEach(el=>el.addEventListener('click',()=>{
+    state.activeCal=el.dataset.pick;closeSheet();render();}));
+  document.getElementById('sheetBody').querySelectorAll('[data-eye]').forEach(el=>el.addEventListener('click',ev=>{ev.stopPropagation();
+    const id=el.dataset.eye;if(state.hidden.has(id))state.hidden.delete(id);else state.hidden.add(id);openCalSwitch();render();}));
+  openSheet();
+}
+
+/* ---- 16. 日曆與成員管理 ---- */
+function roleLabel(r){return r==='owner'?'擁有者':r==='editor'?'可編輯':'僅檢視';}
+function openCalendars(){
+  setSheet('日曆與成員','＋ 新日曆',()=>openCalEdit(null));
+  document.getElementById('sheetLeft').textContent='關閉';
+  let h='<div class="hint">點眼睛切換顯示；點名稱管理成員與權限。</div>';
+  myCals().forEach(c=>{const role=myRole(c);const hidden=state.hidden.has(c.id);
+    h+=`<div class="cal-item"><div class="swatch" style="background:${c.color}"></div>
+      <div class="ci-main" data-edit="${c.id}"><div class="ci-name">${esc(c.name)}</div><div class="ci-sub">${c.members.length} 位成員 ‧ <span class="role-tag role-${role}">${roleLabel(role)}</span></div></div>
+      <div class="eye ${hidden?'off':''}" data-eye="${c.id}">${hidden?'🚫':'👁️'}</div></div>`;});
+  setBody(h);
+  document.getElementById('sheetBody').querySelectorAll('[data-eye]').forEach(el=>el.addEventListener('click',()=>{
+    const id=el.dataset.eye;if(state.hidden.has(id))state.hidden.delete(id);else state.hidden.add(id);openCalendars();render();}));
+  document.getElementById('sheetBody').querySelectorAll('[data-edit]').forEach(el=>el.addEventListener('click',()=>openCalEdit(el.dataset.edit)));
+  openSheet();
+}
+function openCalEdit(cid){
+  const editing=cid?calById(cid):null;
+  const cal=editing||{id:'cal'+Date.now(),name:'',color:PAL[DATA.cals.length%PAL.length],ownerId:state.me,members:[{userId:state.me,role:'owner'}]};
+  const isOwner=!editing||myRole(cal)==='owner';
+  setSheet(editing?'日曆設定':'新增日曆',isOwner?'儲存':'',()=>{if(isOwner)saveCal(editing,cal);});
+  document.getElementById('sheetLeft').textContent=editing?'返回':'取消';
+  document.getElementById('sheetLeft').onclick=editing?()=>openCalendars():closeSheet;
+  const swatches=PAL.map(c=>`<button type="button" class="swatch-pick" data-c="${c}" style="width:30px;height:30px;border-radius:9px;background:${c};border:3px solid ${c===cal.color?'#0F172A':'transparent'}"></button>`).join('');
+  const mem=cal.members.map(m=>{const p=profById(m.userId);const owner=m.role==='owner';
+    return `<div class="member"><div class="m-av">${p.emoji}</div><div class="m-main"><div class="m-name">${esc(dispName(p))}</div><div class="m-sub">${esc(p.title)} ‧ ${esc(p.unit)}</div></div>
+      ${owner?'<span class="role-tag role-owner">擁有者</span>':(isOwner?`<select data-mem="${m.userId}"><option value="editor" ${m.role==='editor'?'selected':''}>可編輯</option><option value="viewer" ${m.role==='viewer'?'selected':''}>僅檢視</option><option value="__remove">移除</option></select>`:`<span class="role-tag role-${m.role}">${roleLabel(m.role)}</span>`)}</div>`;}).join('');
+  const candidates=PROFILES.filter(p=>!cal.members.some(m=>m.userId===p.id));
+  setBody(`
+    <div class="field"><label>名稱</label><input type="text" id="cName" value="${esc(cal.name)}" placeholder="例：研發部行事曆" ${isOwner?'':'disabled'} /></div>
+    <div class="field"><label>顏色</label><div style="display:flex;gap:8px;flex-wrap:wrap" id="cSwatch">${swatches}</div></div>
+    <div class="field"><label>成員與權限</label>${mem}</div>
+    ${isOwner&&candidates.length?`<div class="field"><label>邀請成員</label><div style="display:flex;gap:8px">
+      <select id="cInvite" style="flex:1"><option value="">選擇同事…</option>${candidates.map(p=>`<option value="${p.id}">${esc(dispName(p))} ‧ ${esc(p.title)}</option>`).join('')}</select>
+      <button class="primary" style="width:auto;padding:0 18px;margin:0" id="cInviteBtn">邀請</button></div></div>`:''}
+    ${editing&&isOwner&&cal.id!=='cal_company'?'<button class="ghost-danger" id="cDelete">刪除此日曆</button>':''}`);
+  document.getElementById('cSwatch').querySelectorAll('.swatch-pick').forEach(b=>b.addEventListener('click',()=>{
+    cal.color=b.dataset.c;document.getElementById('cSwatch').querySelectorAll('.swatch-pick').forEach(x=>x.style.border='3px solid transparent');b.style.border='3px solid #0F172A';}));
+  document.getElementById('sheetBody').querySelectorAll('[data-mem]').forEach(s=>s.addEventListener('change',()=>{
+    const uid=s.dataset.mem;if(s.value==='__remove')cal.members=cal.members.filter(m=>m.userId!==uid);else cal.members.find(x=>x.userId===uid).role=s.value;
+    persist();openCalEdit(editing?cid:cal.id);}));
+  const invBtn=document.getElementById('cInviteBtn');
+  if(invBtn)invBtn.addEventListener('click',()=>{const uid=document.getElementById('cInvite').value;if(!uid)return;
+    cal.members.push({userId:uid,role:'editor'});if(!editing&&!DATA.cals.some(c=>c.id===cal.id))DATA.cals.push(cal);
+    persist();pushAct(cal.id,'invite',cal.name,`邀請 ${dispName(profById(uid))} 加入「${cal.name}」`);toast('已邀請 '+dispName(profById(uid)));openCalEdit(cal.id);});
+  const del=document.getElementById('cDelete');
+  if(del)del.addEventListener('click',()=>{DATA.cals=DATA.cals.filter(c=>c.id!==cal.id);DATA.events=DATA.events.filter(e=>e.calendarId!==cal.id);
+    if(state.activeCal===cal.id)state.activeCal='all';persist();openCalendars();render();toast('已刪除日曆');});
+  openSheet();
+}
+function saveCal(editing,cal){
+  const name=document.getElementById('cName').value.trim();if(!name){toast('請輸入名稱');return;}
+  cal.name=name;
+  if(editing){const i=DATA.cals.findIndex(c=>c.id===editing.id);DATA.cals[i]=cal;}
+  else if(!DATA.cals.some(c=>c.id===cal.id))DATA.cals.push(cal);
+  persist();sbSync('calendars',{id:cal.id,name:cal.name,color:cal.color,ownerId:cal.ownerId});
+  closeSheet();render();toast(editing?'已更新':'已建立日曆 ✓');
+}
+
+/* ---- 17. 搜尋 ---- */
+function openSearch(){
+  setSheet('搜尋行程','',null);document.getElementById('sheetLeft').textContent='關閉';
+  setBody(`<div class="field"><input type="text" id="sq" placeholder="搜尋標題 / 地點 / 備註…" autofocus /></div><div id="sres"></div>`);
+  const q=document.getElementById('sq');const res=document.getElementById('sres');
+  const run=()=>{const t=q.value.trim().toLowerCase();if(!t){res.innerHTML='';return;}
+    const vis=new Set(myCals().map(c=>c.id));
+    const hits=DATA.events.filter(e=>vis.has(e.calendarId)&&((e.title+e.location+e.notes).toLowerCase().includes(t))).slice(0,40);
+    res.innerHTML=hits.length?hits.map(e=>{const cal=calById(e.calendarId);const d=new Date(e.start);
+      return `<div class="search-result" data-ev="${e.id}"><div class="sr-bar" style="background:${cal.color}"></div>
+        <div><div class="sr-title">${esc(e.title)}</div><div class="sr-sub">${d.getMonth()+1}/${d.getDate()} ${e.allDay?'整天':fmtTime(e.start)} ‧ ${esc(cal.name)}</div></div></div>`;}).join('')
+      :'<div class="empty"><div class="big">🔍</div>找不到符合的行程</div>';
+    res.querySelectorAll('[data-ev]').forEach(r=>r.addEventListener('click',()=>{const e=DATA.events.find(x=>x.id===r.dataset.ev);
+      state.tab='calendar';state.selDate=ymd(e.start);state.cursor=new Date(e.start);openEventDetail(e.id);render();}));};
+  q.addEventListener('input',run);openSheet();setTimeout(()=>q.focus(),120);
+}
+
+/* ---- 18. 跨系統翻頁 / SSO ---- */
+function flipTo(sys){const u=profById(state.me);
+  const qs=new URLSearchParams({from:'ontime',u:u.id,email:(u.email||(u.en.toLowerCase().replace(/\s/g,'')+'@tei.com.tw')),name:u.name,enName:u.en,tutorialDone:'1'});
+  location.href=`${SYS[sys]}?${qs.toString()}`;}
+function handleSSO(){const qp=new URLSearchParams(location.search);const from=qp.get('from');
+  if(from&&['projflow','pmsys','rtm'].includes(from)){const u=qp.get('u'),email=qp.get('email');
+    const p=PROFILES.find(x=>x.id===u)||PROFILES.find(x=>email&&x.email===email);
+    if(p){state.me=p.id;setSession(p.id);setTimeout(()=>toast(`歡迎，${dispName(p)}（來自 ${from}）`),600);}
+    history.replaceState(null,'',location.pathname);}}
+
+/* ---- 19. 提醒 ---- */
+async function enableNotifications(){if(!('Notification'in window)){toast('此裝置不支援通知');return;}
+  if(Notification.permission==='granted'){toast('通知已開啟');rescheduleAll();return;}
+  const r=await Notification.requestPermission();if(r==='granted'){toast('已開啟推播提醒 ✓');rescheduleAll();render();}else toast('未授權通知');}
+const timers=[];
+function rescheduleAll(){timers.forEach(t=>clearTimeout(t));timers.length=0;DATA.events.forEach(scheduleReminders);}
+function scheduleReminders(ev){
+  if(!ev.alerts||!ev.alerts.length||!('Notification'in window)||Notification.permission!=='granted')return;
+  ev.alerts.forEach(min=>{const fireAt=new Date(ev.start).getTime()-min*60000;const delay=fireAt-Date.now();
+    if(delay>0&&delay<24*3600*1000)timers.push(setTimeout(()=>notify(ev,min),delay));});}
+function notify(ev,min){const cal=calById(ev.calendarId);
+  const body=`${fmtRange(ev)}${ev.location?' ‧ '+ev.location:''}（${cal?cal.name:''}）`;
+  navigator.serviceWorker?.ready.then(reg=>reg.active?.postMessage({type:'reminder',title:'⏰ '+ev.title,body,tag:ev.id+min,url:location.pathname}))
+    .catch(()=>{try{new Notification('⏰ '+ev.title,{body,icon:'icon.svg'});}catch(_){}});}
+
+/* ---- 20. 安裝 ---- */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;});
+async function promptInstall(){if(deferredPrompt){deferredPrompt.prompt();const r=await deferredPrompt.userChoice;deferredPrompt=null;toast(r.outcome==='accepted'?'安裝中…':'已取消');}
+  else toast('iPhone：Safari 分享 → 加入主畫面；Android：選單 → 安裝應用程式');}
+
+/* ---- 21. Sheet ---- */
+function setSheet(title,rightLabel,onRight){document.getElementById('sheetTitle').textContent=title;
+  const r=document.getElementById('sheetRight');r.textContent=rightLabel||'';r.style.display=rightLabel?'':'none';r.onclick=onRight||null;
+  document.getElementById('sheetLeft').onclick=closeSheet;}
+function setBody(html){const b=document.getElementById('sheetBody');b.innerHTML=html;b.scrollTop=0;}
+function openSheet(){document.getElementById('scrim').classList.add('on');document.getElementById('sheet').classList.add('on');}
+function closeSheet(){document.getElementById('scrim').classList.remove('on');document.getElementById('sheet').classList.remove('on');}
+let toastT=null;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+/* ---- 22. 綁定 ---- */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setTab(t.dataset.tab)));
+document.getElementById('viewSwitch').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  document.getElementById('viewSwitch').querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');state.view=b.dataset.v;render();}));
+document.getElementById('navPrev').addEventListener('click',()=>moveCursor(-1));
+document.getElementById('navNext').addEventListener('click',()=>moveCursor(1));
+document.getElementById('btnToday').addEventListener('click',()=>{state.cursor=new Date();state.selDate=ymd(new Date());render();});
+document.getElementById('fab').addEventListener('click',()=>{state.tab==='keep'?openKeepEdit(null):openEventEdit(null);});
+document.getElementById('btnSearch').addEventListener('click',openSearch);
+document.getElementById('calSwitch').addEventListener('click',openCalSwitch);
+document.getElementById('scrim').addEventListener('click',closeSheet);
+function moveCursor(dir){const c=state.cursor;
+  if(state.view==='month')c.setMonth(c.getMonth()+dir);
+  else if(state.view==='week')c.setDate(c.getDate()+7*dir);
+  else{c.setDate(c.getDate()+dir);state.selDate=ymd(c);}render();}
+let tx=0,ty=0;const bodyEl=document.getElementById('bodyView');
+bodyEl.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+bodyEl.addEventListener('touchend',e=>{if(state.tab!=='calendar')return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8)moveCursor(dx<0?1:-1);},{passive:true});
+
+/* ---- 23. 公司 email 認證（取代 TimeTree 的 Apple/Google 登入）----
+   原型：email 須為 @teicomposite.com 且對應到 profiles；OTP 為示範（任意 6 碼）。
+   正式：SB.auth.signInWithOtp({email}) 寄驗證信，SB.auth.verifyOtp() 驗證；
+        以 RLS + auth.uid() 控管，僅公司網域帳號可登入。 */
+const SESSION_KEY='ontime.session';
+function setSession(uid){try{localStorage.setItem(SESSION_KEY,uid);}catch(_){ }}
+function clearSession(){try{localStorage.removeItem(SESSION_KEY);}catch(_){ }}
+function restoreSession(){try{const uid=localStorage.getItem(SESSION_KEY);
+  if(uid&&PROFILES.some(p=>p.id===uid)){state.me=uid;return true;}}catch(_){ }return false;}
+
+let pendingUser=null;
+function showAuth(){document.getElementById('auth').classList.remove('hide');
+  document.getElementById('authStep1').style.display='';document.getElementById('authStep2').style.display='none';
+  setTimeout(()=>document.getElementById('authEmail').focus(),200);}
+function enterApp(){document.getElementById('auth').classList.add('hide');render();
+  if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if('Notification'in window&&Notification.permission==='granted')rescheduleAll();
+  const a=new URLSearchParams(location.search).get('action');
+  if(a==='new-event')setTimeout(()=>openEventEdit(null),300);
+  if(a==='feed')setTimeout(()=>setTab('feed'),200);}
+
+(function bindAuth(){
+  const emailIn=document.getElementById('authEmail'),err=document.getElementById('authErr');
+  const otpErr=document.getElementById('otpErr');
+  const otps=[...document.getElementById('otpWrap').querySelectorAll('input')];
+  function step1(){
+    const local=emailIn.value.trim().toLowerCase().replace(/@.*/,'');
+    if(!local){err.textContent='請輸入公司帳號';return;}
+    const email=local+'@'+COMPANY_DOMAIN;
+    const p=PROFILES.find(x=>x.email&&x.email.toLowerCase()===email);
+    if(!p){err.textContent='查無此公司帳號（原型僅含示範同仁：kai / june / sunny / stanley / kate / keira）';return;}
+    err.textContent='';pendingUser=p;
+    if(SB){ SB.auth.signInWithOtp({email}).catch(()=>{}); } // 正式：寄出驗證碼
+    document.getElementById('authStep1').style.display='none';
+    document.getElementById('authStep2').style.display='';
+    document.getElementById('otpLabel').innerHTML=`驗證碼已寄至 <b>${esc(email)}</b>`;
+    otps.forEach(o=>o.value='');setTimeout(()=>otps[0].focus(),100);
+  }
+  function verify(){
+    const code=otps.map(o=>o.value).join('');
+    if(code.length<6){otpErr.textContent='請輸入完整 6 位數驗證碼';return;}
+    // 原型：接受任意 6 碼。正式：await SB.auth.verifyOtp({email,token:code,type:'email'})
+    otpErr.textContent='';
+    state.me=pendingUser.id;setSession(pendingUser.id);
+    enterApp();setTimeout(()=>toast(`歡迎，${dispName(pendingUser)} 🎉`),300);
+  }
+  document.getElementById('authSend').addEventListener('click',step1);
+  emailIn.addEventListener('keydown',e=>{if(e.key==='Enter')step1();});
+  document.getElementById('authVerify').addEventListener('click',verify);
+  document.getElementById('authBack').addEventListener('click',()=>{
+    document.getElementById('authStep1').style.display='';document.getElementById('authStep2').style.display='none';emailIn.focus();});
+  otps.forEach((o,i)=>{o.addEventListener('input',()=>{if(o.value&&i<5)otps[i+1].focus();if(otps.every(x=>x.value))verify();});
+    o.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!o.value&&i>0)otps[i-1].focus();});});
+})();
+function logout(){clearSession();closeSheet();state.me=PROFILES[0].id;state.tab='calendar';showAuth();}
+
+/* ---- 24. 啟動 ---- */
+handleSSO();
+if(restoreSession()) enterApp(); else showAuth();
+</script>
+</body>
+</html>
