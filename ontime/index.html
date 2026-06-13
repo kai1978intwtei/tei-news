@@ -73,20 +73,24 @@
 
   /* ===== Month grid ===== */
   .weekhead{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 6px 4px;}
-  .weekhead div{text-align:center;font-size:11px;font-weight:600;color:var(--text-muted);}
-  .weekhead div.we{color:#C2410C;}
+  .weekhead div{text-align:center;font-size:11px;font-weight:600;color:var(--text-sub);}
+  .weekhead div.sun{color:#E5484D;}
+  .weekhead div.sat{color:#3B82F6;}
   .month{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);
     border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
-  .day{background:var(--surface);min-height:74px;padding:4px 3px;display:flex;flex-direction:column;gap:2px;position:relative;}
+  .day{background:var(--surface);min-height:90px;padding:5px 3px 3px;display:flex;flex-direction:column;gap:2px;position:relative;}
   .day.out{background:var(--surface-soft);}
-  .day .dnum{font-size:12px;font-weight:600;color:var(--text-sub);text-align:center;width:22px;height:22px;line-height:22px;margin:0 auto;border-radius:50%;}
+  .day .dnum{font-size:13px;font-weight:600;color:var(--text-sub);text-align:center;width:22px;height:22px;line-height:22px;margin:0 auto;border-radius:50%;}
   .day.out .dnum{color:var(--text-dim);}
+  .day.sun .dnum{color:#E5484D;}
+  .day.sat .dnum{color:#3B82F6;}
   .day.today .dnum{background:var(--accent);color:#fff;}
-  .day.we .dnum{color:#C2410C;}
   .day.sel{box-shadow:inset 0 0 0 2px var(--accent);z-index:1;}
-  .chip{font-size:10.5px;line-height:1.35;font-weight:600;color:#fff;border-radius:4px;padding:1px 4px;
+  .lunar{font-size:9px;color:var(--text-muted);text-align:center;line-height:1;margin:-2px 0 2px;}
+  .day.out .lunar{color:var(--text-dim);}
+  .chip{font-size:11px;line-height:1.5;font-weight:600;border-radius:5px;padding:0 5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .chip.allday{font-weight:700;}
+  .chip.allday{font-weight:600;}
   .chip.span{margin-left:-3px;margin-right:-3px;border-radius:0;}
   .chip.span.s{border-radius:4px 0 0 4px;margin-left:0;}
   .chip.span.e{border-radius:0 4px 4px 0;margin-right:0;}
@@ -415,6 +419,44 @@ const HOLIDAYS={
   '2026-06-19':'端午節','2026-09-25':'中秋節','2026-10-10':'國慶日',
 };
 function holName(ds){return HOLIDAYS[ds]||'';}
+/* 農曆換算（1900–2049）。回傳 {m,d}=農曆月/日。 */
+const lunarInfo=[0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,
+0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+function lLeapMonth(y){return lunarInfo[y-1900]&0xf;}
+function lLeapDays(y){return lLeapMonth(y)?((lunarInfo[y-1900]&0x10000)?30:29):0;}
+function lMonthDays(y,m){return (lunarInfo[y-1900]&(0x10000>>m))?30:29;}
+function lYearDays(y){let s=348;for(let i=0x8000;i>0x8;i>>=1)s+=(lunarInfo[y-1900]&i)?1:0;return s+lLeapDays(y);}
+function solar2lunar(y,mo,d){
+  let offset=Math.round((Date.UTC(y,mo-1,d)-Date.UTC(1900,0,31))/86400000);
+  let i,temp=0;for(i=1900;i<1900+lunarInfo.length&&offset>0;i++){temp=lYearDays(i);offset-=temp;}
+  if(offset<0){offset+=temp;i--;}
+  const year=i;let leap=lLeapMonth(year),isLeap=false,m;
+  for(m=1;m<13&&offset>0;m++){
+    if(leap>0&&m===leap+1&&!isLeap){--m;isLeap=true;temp=lLeapDays(year);}
+    else temp=lMonthDays(year,m);
+    if(isLeap&&m===leap+1)isLeap=false;
+    offset-=temp;
+  }
+  if(offset===0&&leap>0&&m===leap+1){isLeap=!isLeap;if(!isLeap)++m;}
+  if(offset<0){offset+=temp;--m;}
+  return {m, d:offset+1};
+}
+const LDAY=['','初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+const LMON=['','正','二','三','四','五','六','七','八','九','十','冬','臘'];
+function lunarLabel(y,mo,d){const l=solar2lunar(y,mo,d);return l.d===1?LMON[l.m]+'月':LDAY[l.d];}
 function seed(){
   const me=PROFILES[0].id;
   const cals=[
@@ -550,15 +592,17 @@ function renderMonth(){
   const c=state.cursor,y=c.getFullYear(),m=c.getMonth();
   const first=new Date(y,m,1);const start=new Date(first);start.setDate(1-((first.getDay()-WS()+7)%7));
   let h='<div class="weekhead">';
-  for(let i=0;i<7;i++){const wd=(WS()+i)%7;h+=`<div class="${wd===0||wd===6?'we':''}">${WD[wd]}</div>`;}
+  for(let i=0;i<7;i++){const wd=(WS()+i)%7;h+=`<div class="${wd===0?'sun':wd===6?'sat':''}">週${WD[wd]}</div>`;}
   h+='</div><div class="month">';
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=ymd(d);
-    const out=d.getMonth()!==m,today=sameYmd(d,new Date()),we=d.getDay()===0||d.getDay()===6,sel=ds===state.selDate;
-    const holi=holName(ds);
+    const out=d.getMonth()!==m,today=sameYmd(d,new Date()),dow=d.getDay(),sel=ds===state.selDate;
+    const holi=holName(ds);const lun=solar2lunar(d.getFullYear(),d.getMonth()+1,d.getDate());
     const evs=eventsOn(ds);let chips='';
-    evs.slice(0,3).forEach(e=>chips+=monthChip(e,ds));
-    if(evs.length>3)chips+=`<div class="more">+${evs.length-3}</div>`;
-    h+=`<div class="day ${out?'out':''} ${today?'today':''} ${we?'we':''} ${sel?'sel':''} ${holi?'holiday':''}" data-d="${ds}"><div class="dnum">${d.getDate()}</div>${holi?`<div class="holi">${esc(holi)}</div>`:''}${chips}</div>`;}
+    if(holi)chips+=`<div class="chip" style="background:#E5484D22;color:#E5484D">${esc(holi)}</div>`;
+    const room=holi?3:4;
+    evs.slice(0,room).forEach(e=>chips+=monthChip(e,ds));
+    if(evs.length>room)chips+=`<div class="more">+${evs.length-room}</div>`;
+    h+=`<div class="day ${out?'out':''} ${today?'today':''} ${dow===0?'sun':dow===6?'sat':''} ${sel?'sel':''}" data-d="${ds}"><div class="dnum">${d.getDate()}</div><div class="lunar">${lun.m}/${lun.d}</div>${chips}</div>`;}
   h+='</div>'+renderDayList(state.selDate,true);
   return h;
 }
@@ -581,9 +625,10 @@ function renderWeek(){
 function evColor(e){return e.color||calById(e.calendarId).color;}
 function monthChip(e,ds){const color=evColor(e);
   const sd=ymd(e.start),ed=ymd(e.end);const multi=sd!==ed&&(!e.repeat||e.repeat==='none');
-  if(multi){const isS=ds===sd,isE=ds===ed;
-    return `<div class="chip span ${isS?'s':''} ${isE?'e':''}" style="background:${color}">${isS?esc(e.title):'&nbsp;'}</div>`;}
-  return `<div class="chip ${e.allDay?'allday':''}" style="background:${color}">${e.allDay?'':fmtTime(e.start)+' '}${esc(e.title)}</div>`;}
+  if(multi){const isS=ds===sd,isE=ds===ed; // 跨日：實色長條 + 白字
+    return `<div class="chip span ${isS?'s':''} ${isE?'e':''}" style="background:${color};color:#fff">${isS?esc(e.title):'&nbsp;'}</div>`;}
+  // 單日：淡底 + 彩色字（TimeTree 風格）
+  return `<div class="chip" style="background:${color}22;color:${color}">${esc(e.title)}</div>`;}
 function evPeopleIds(e){return [e.createdBy,...(e.attendees||[])].filter((v,i,a)=>v&&a.indexOf(v)===i);}
 function evAvatars(e){const ids=evPeopleIds(e);if(!ids.length)return '';
   const shown=ids.slice(0,5).map(id=>{const p=profById(id);return `<span class="mini-av" title="${esc(dispName(p))}">${p.emoji}</span>`;}).join('');
