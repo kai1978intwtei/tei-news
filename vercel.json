@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "sh vercel-build.sh",
-  "outputDirectory": "_site",
+  "outputDirectory": "salesys",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [

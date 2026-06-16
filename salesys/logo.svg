@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80">
+  <!-- 8 diamonds in tight cascade, touching corner-to-corner -->
+  <g fill="#262626">
+    <!-- Row 1: top center -->
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(24,10) rotate(45)"/>
+    <!-- Row 2: left + right -->
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(10,24) rotate(45)"/>
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(38,24) rotate(45)"/>
+    <!-- Row 3: center -->
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(24,38) rotate(45)"/>
+    <!-- Row 4: left + right -->
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(10,52) rotate(45)"/>
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(38,52) rotate(45)"/>
+    <!-- Row 5: center -->
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(24,66) rotate(45)"/>
+    <!-- Row 6: tail offset down-right -->
+    <rect x="-8" y="-8" width="16" height="16" transform="translate(52,72) rotate(45)"/>
+  </g>
+  <!-- TEi wordmark (pure black, bold condensed) -->
+  <text x="86" y="54"
+        font-family="'Arial Black', 'Helvetica Neue Bold', Impact, 'Franklin Gothic Heavy', sans-serif"
+        font-size="60" font-weight="900" fill="#000000" letter-spacing="-3">TEi</text>
+  <!-- COMPOSITES subtitle (letter-spaced, dark) -->
+  <text x="90" y="72"
+        font-family="Arial, 'Helvetica Neue', sans-serif"
+        font-size="10.5" font-weight="700" fill="#1f1f1f" letter-spacing="3.5">COMPOSITES</text>
+</svg>
