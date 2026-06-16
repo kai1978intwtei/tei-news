@@ -1323,6 +1323,71 @@
   .role-block .mini-card .stat .v{font-size:14px;font-weight:700;font-family:var(--font-mono);}
   .role-block .mini-card .stat .l{font-size:10px;color:var(--text-muted);}
 
+  /* --- 經理觀察:下屬日報狀態表 + 動作 timeline + 隱私邊界 --- */
+  .privacy-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    background:#EEF2FF;color:#4338CA;
+    padding:3px 9px;border-radius:5px;
+    font-size:11px;font-weight:600;letter-spacing:0.02em;
+    border:1px solid #C7D2FE;
+  }
+  .privacy-badge svg{flex-shrink:0;}
+  .daily-status-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .daily-status-table th{
+    text-align:left;padding:8px 10px;font-weight:600;font-size:11px;
+    color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;
+    border-bottom:1px solid var(--border);background:var(--surface-soft);
+  }
+  .daily-status-table td{padding:10px;border-bottom:1px solid var(--border);}
+  .daily-status-table tr:last-child td{border-bottom:0;}
+  .daily-status-table .nm{font-weight:600;}
+  .daily-status-table .nm .en{color:var(--text-muted);font-weight:400;font-size:11px;margin-left:4px;}
+  .daily-status-table .submitted-y{color:#047857;font-weight:700;}
+  .daily-status-table .submitted-n{color:#B91C1C;font-weight:700;}
+  .daily-status-table .pf-sync{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+    padding:2px 8px;border-radius:4px;
+  }
+  .daily-status-table .pf-sync.ok{background:#D1FAE5;color:#047857;}
+  .daily-status-table .pf-sync.pending{background:#FEF3C7;color:#92400E;}
+  .daily-status-table .pf-sync.none{background:#F3F4F6;color:#6B7280;}
+  .daily-status-table .view-btn{
+    padding:4px 10px;border-radius:6px;border:1px solid var(--border);
+    background:var(--surface);font-size:11px;cursor:pointer;
+    color:var(--text-sub);
+  }
+  .daily-status-table .view-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .daily-status-table .view-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .action-timeline{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+  .action-timeline .row{
+    display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;
+    font-size:12px;background:var(--surface-soft);
+  }
+  .action-timeline .row .t{font-family:var(--font-mono);color:var(--text-muted);font-size:11px;width:48px;flex-shrink:0;}
+  .action-timeline .row .who{font-weight:600;width:80px;flex-shrink:0;}
+  .action-timeline .row .act{color:var(--text-sub);}
+  .action-timeline .row .act.upload{color:#047857;font-weight:600;}
+
+  .privacy-boundary{
+    background:linear-gradient(135deg,#FAFBFF 0%,#F5F3FF 100%);
+    border:1px solid #DDD6FE;border-radius:12px;
+    padding:18px;margin-top:18px;
+  }
+  .privacy-boundary .pb-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .privacy-boundary .pb-head svg{color:#4338CA;}
+  .privacy-boundary .pb-title{font-size:14px;font-weight:700;color:#312E81;}
+  .privacy-boundary .pb-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:720px){ .privacy-boundary .pb-grid{grid-template-columns:1fr;} }
+  .privacy-boundary .pb-col h4{
+    font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--text-muted);font-weight:600;margin:0 0 8px 0;
+  }
+  .privacy-boundary .pb-col ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px;font-size:12px;line-height:1.5;}
+  .privacy-boundary .pb-col li{display:flex;gap:6px;align-items:flex-start;}
+  .privacy-boundary .pb-col .x{color:#B91C1C;font-weight:700;flex-shrink:0;}
+  .privacy-boundary .pb-col .ok{color:#047857;font-weight:700;flex-shrink:0;}
+
   /* --- 協助任務:卡片清單 --- */
   .assist-grid{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;
@@ -1850,7 +1915,13 @@
     <!-- ===== 業務報告 + ProjFlow 日報同步 ===== -->
     <div class="section-head" style="margin-top:18px;">
       <div class="section-title">業務報告 ‧ Sales Report <em>每日填寫</em></div>
-      <div class="section-link">寫完按右下角按鈕,系統會自動抓出可上 ProjFlow 日報的內容</div>
+      <div class="section-link" style="display:flex;align-items:center;gap:10px;">
+        <span class="privacy-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          私人草稿 ‧ 經理看不到原文
+        </span>
+        <span>寫完按右下角按鈕,系統會自動抓出可上 ProjFlow 日報的內容</span>
+      </div>
     </div>
     <div class="sales-report-box">
       <textarea id="salesReportRaw" placeholder="範例(可直接全部寫進去,系統會自動過濾機密欄位):
@@ -2467,6 +2538,72 @@
       </div>
       <div class="rb-mini-cards" id="tfShipCards">
         <!-- 由 JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- ===== 今日日報狀態(僅顯示狀態 + ProjFlow 同步,不顯示原文) ===== -->
+    <div class="role-block">
+      <div class="rb-head">
+        <div class="rb-title">今日日報狀態 <span class="badge">統計</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">業務報告原文僅本人可見;此處僅顯示是否上傳 ProjFlow + 字數 + 時間</div>
+      </div>
+      <table class="daily-status-table" id="teamDailyStatusTable">
+        <thead>
+          <tr>
+            <th>業務</th>
+            <th>今日日報</th>
+            <th>上傳時間</th>
+            <th>字數</th>
+            <th>ProjFlow 同步</th>
+            <th style="text-align:right;">查看 (僅 ProjFlow 版本)</th>
+          </tr>
+        </thead>
+        <tbody><!-- JS 渲染 --></tbody>
+      </table>
+    </div>
+
+    <!-- ===== 下屬動作摘要(僅動作類型,不顯示內容) ===== -->
+    <div class="role-block">
+      <div class="rb-head">
+        <div class="rb-title">下屬動作摘要 <span class="badge">本日</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">僅顯示動作類型 ‧ 不顯示輸入內容 ‧ 不顯示對話訊息</div>
+      </div>
+      <div class="action-timeline" id="teamActionTimeline">
+        <!-- JS 渲染 -->
+      </div>
+    </div>
+
+    <!-- ===== 隱私邊界說明 ===== -->
+    <div class="privacy-boundary">
+      <div class="pb-head">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="pb-title">隱私邊界 ‧ 經理觀察權限明示</div>
+      </div>
+      <div class="pb-grid">
+        <div class="pb-col">
+          <h4>✓ 您看得到的(全面觀察)</h4>
+          <ul>
+            <li><span class="ok">✓</span> 業績達成率 / 案件進度 / 拜訪數</li>
+            <li><span class="ok">✓</span> 日報是否提交 + 字數 + 時間 + ProjFlow 同步狀態</li>
+            <li><span class="ok">✓</span> 動作類型 timeline(開啟頁面 / 拜訪打卡 / 派任務 等)</li>
+            <li><span class="ok">✓</span> 全員 KPI 彙整 + 排名</li>
+            <li><span class="ok">✓</span> 跨部任務委派 + 完成狀態</li>
+            <li><span class="ok">✓</span> 客戶清單範圍(經理 = 自己團隊所有 sales 的客戶)</li>
+            <li><span class="ok">✓</span> 業務上傳到 ProjFlow 的日報版本(已過濾)</li>
+          </ul>
+        </div>
+        <div class="pb-col">
+          <h4>✗ 您看不到的(個人隱私)</h4>
+          <ul>
+            <li><span class="x">✗</span> 業務報告**原文**(僅上傳 ProjFlow 的過濾版可見)</li>
+            <li><span class="x">✗</span> 個人聊天訊息內容(只能看誰跟誰聊、不能看內容)</li>
+            <li><span class="x">✗</span> 個人筆記 / 私人附件 URL / 草稿</li>
+            <li><span class="x">✗</span> 業績明細的客戶單價 / 報價金額(機密)</li>
+            <li><span class="x">✗</span> 業助對其他業務的協助內容</li>
+            <li><span class="x">✗</span> UI 個人化設定 / 鍵盤快捷鍵</li>
+            <li><span class="x">✗</span> 健康 / 請假具體原因(只看 在班 / 不在班)</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -5348,6 +5485,63 @@
 
   // ===== 初始 ‧ 預設業務經理視角（蔡欣沛）=====
   applyPersona("june");
+
+  // ===== 經理觀察:下屬日報狀態 + 動作 timeline =====
+  (function setupTeamObservation(){
+    const dailyStatus = [
+      { name:'張哲瑋', en:'Kai Chang',    submitted:true,  uploadedAt:'17:42', charCount:287, pf:'ok' },
+      { name:'吳冠廷', en:'Stanley Wu',   submitted:true,  uploadedAt:'17:55', charCount:412, pf:'ok' },
+      { name:'林姿涵', en:'Sunny Lin',    submitted:true,  uploadedAt:'18:12', charCount:198, pf:'pending' },
+      { name:'王立人', en:'Leo Wang',     submitted:false, uploadedAt:null,    charCount:0,   pf:'none' },
+      { name:'黃詩涵', en:'Kate Huang',   submitted:true,  uploadedAt:'17:30', charCount:356, pf:'ok' },
+    ];
+    const actions = [
+      { t:'08:55', who:'蔡欣沛', act:'簽到 / 開啟衝刺艙' },
+      { t:'09:20', who:'張哲瑋', act:'建立新案件' },
+      { t:'10:30', who:'吳冠廷', act:'拜訪打卡(客戶 #34)' },
+      { t:'11:00', who:'黃詩涵', act:'派出協助任務 → 業助' },
+      { t:'13:15', who:'林姿涵', act:'更新聯絡簿' },
+      { t:'14:00', who:'蔡欣沛', act:'開啟業務報告' },
+      { t:'14:30', who:'吳冠廷', act:'案件狀態變更(報價 → 接單)' },
+      { t:'15:10', who:'黃詩涵', act:'發起船務需求' },
+      { t:'16:45', who:'林姿涵', act:'更新案件甘特' },
+      { t:'17:30', who:'黃詩涵', act:'✓ 上傳日報到 ProjFlow', upload:true },
+      { t:'17:42', who:'張哲瑋', act:'✓ 上傳日報到 ProjFlow', upload:true },
+      { t:'17:55', who:'吳冠廷', act:'✓ 上傳日報到 ProjFlow', upload:true },
+      { t:'18:12', who:'林姿涵', act:'✓ 上傳日報到 ProjFlow', upload:true },
+    ];
+
+    const tbody = document.querySelector('#teamDailyStatusTable tbody');
+    if(tbody){
+      tbody.innerHTML = dailyStatus.map(r => {
+        const subCls = r.submitted ? 'submitted-y' : 'submitted-n';
+        const subTxt = r.submitted ? '✓ 已上傳' : '✗ 未上傳';
+        const pfLabel = { ok:'✓ 已同步', pending:'⏳ 同步中', none:'— 未同步' }[r.pf] || '—';
+        const viewBtn = r.submitted
+          ? `<button class="view-btn" onclick="window.open('https://pm-system-mauve.vercel.app/reports/daily/2026-06-16?from=salesys&u=${encodeURIComponent(r.en)}','_blank')">在 ProjFlow 查看 →</button>`
+          : `<button class="view-btn" disabled>尚未上傳</button>`;
+        return `<tr>
+          <td><div class="nm">${r.name}<span class="en">${r.en}</span></div></td>
+          <td><span class="${subCls}">${subTxt}</span></td>
+          <td>${r.uploadedAt || '—'}</td>
+          <td>${r.charCount ? r.charCount + ' 字' : '—'}</td>
+          <td><span class="pf-sync ${r.pf}">${pfLabel}</span></td>
+          <td style="text-align:right;">${viewBtn}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    const timeline = document.getElementById('teamActionTimeline');
+    if(timeline){
+      timeline.innerHTML = actions.slice().reverse().map(a => `
+        <div class="row">
+          <div class="t">${a.t}</div>
+          <div class="who">${a.who}</div>
+          <div class="act ${a.upload ? 'upload' : ''}">${a.act}</div>
+        </div>
+      `).join('');
+    }
+  })();
 
   // ===== 業務報告 → ProjFlow 日報同步 =====
   (function setupDailyReportSync(){
