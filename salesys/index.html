@@ -743,6 +743,21 @@
   .report-deal .cn .pn{font-size:11px;color:var(--text-muted);font-weight:400;margin-left:6px;}
   .report-deal .amt{font-family:var(--font-mono);font-weight:600;font-size:13px;}
 
+  /* ===== 業務報告 + ProjFlow 日報同步 ===== */
+  .sales-report-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;}
+  .sales-report-box textarea{width:100%;min-height:140px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--font-sans);font-size:13px;line-height:1.6;resize:vertical;background:var(--surface-soft);color:var(--text);box-sizing:border-box;}
+  .sales-report-box textarea:focus{outline:none;border-color:var(--accent);background:#fff;}
+  .sales-report-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .sales-report-hint{font-size:11px;color:var(--text-muted);flex:1;line-height:1.5;min-width:200px;}
+  .daily-sync-limit{background:#FEF3C7;color:#92400E;padding:3px 9px;border-radius:4px;font-weight:600;font-size:11px;letter-spacing:0.02em;}
+  .daily-sync-section-label{font-size:11px;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;margin-bottom:8px;}
+  .daily-sync-extracted{background:var(--surface-soft);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;line-height:1.7;margin-bottom:14px;max-height:160px;overflow-y:auto;}
+  .daily-sync-extracted .line{padding:2px 0;}
+  .daily-sync-filtered{font-size:11px;color:#B91C1C;margin-bottom:14px;font-weight:600;line-height:1.5;}
+  .daily-sync-filtered span{color:var(--text-sub);font-weight:400;}
+  .daily-sync-editable{width:100%;min-height:160px;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--font-sans);font-size:13px;line-height:1.6;resize:vertical;background:var(--surface);color:var(--text);box-sizing:border-box;}
+  .daily-sync-editable:focus{outline:none;border-color:var(--accent);}
+
   .focus-list,.risk-list{list-style:none;display:flex;flex-direction:column;gap:8px;}
   .focus-list li{
     display:flex;gap:10px;align-items:flex-start;
@@ -1830,6 +1845,30 @@
     </div>
     <div class="my-assist-list" id="myShipList">
       <div class="empty">尚無進出貨需求 ‧ 案件確認後可向船務提出</div>
+    </div>
+
+    <!-- ===== 業務報告 + ProjFlow 日報同步 ===== -->
+    <div class="section-head" style="margin-top:18px;">
+      <div class="section-title">業務報告 ‧ Sales Report <em>每日填寫</em></div>
+      <div class="section-link">寫完按右下角按鈕,系統會自動抓出可上 ProjFlow 日報的內容</div>
+    </div>
+    <div class="sales-report-box">
+      <textarea id="salesReportRaw" placeholder="範例(可直接全部寫進去,系統會自動過濾機密欄位):
+* 上午拜訪 ACME 客戶,談 Q4 出貨檔期,他們要求提前兩週交付
+* 跟 PM 部對 PRJ-2024 進度,確認可延後一週交付
+* 客戶報價 ¥850,000 已寄出,等回覆 (← 此行含金額,會被過濾)
+* 庫存盤點碳板 12K T700 不足,已通知採購
+* 跨部任務:請 PM 協助確認 PRJ-2031 規格"></textarea>
+      <div class="sales-report-foot">
+        <div class="sales-report-hint">
+          ⚠ 含業績 / 利潤 / 客戶單價 / 報價金額等機密內容可以照寫,系統會自動過濾,**不會出業務系統**。
+          <br>本功能僅同步「<strong>日報</strong>」到 ProjFlow ‧ 週報請改用 ProjFlow 內建週報模組。
+        </div>
+        <button class="btn btn-primary" id="genDailyToProjFlow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          生成日報並上傳到 ProjFlow
+        </button>
+      </div>
     </div>
   </section>
 
@@ -3106,6 +3145,54 @@
     <div class="mm-actions">
       <button class="btn-cancel" id="ncCancel">取消</button>
       <button class="btn-submit" id="ncSubmit">建立</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ‧ ProjFlow 日報同步預覽 + 上傳 ===== -->
+<div class="modal-backdrop" id="dailySyncBackdrop" data-open="false">
+  <div class="modal" style="width:680px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);flex-shrink:0;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;">日報內容預覽 — 上傳到 ProjFlow 前可編輯</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:8px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;">
+        <span class="daily-sync-limit">⚠ 限制</span>
+        <span>本功能<strong>僅接受日報</strong>(daily report)。週報請改用 ProjFlow 內建週報模組或月報信件範本。</span>
+      </div>
+    </div>
+
+    <div style="padding:14px 22px;overflow-y:auto;flex:1;">
+      <div class="daily-sync-section-label">① 系統篩選結果 ‧ 可同步至 ProjFlow</div>
+      <div class="daily-sync-extracted" id="dailySyncExtracted"></div>
+
+      <div class="daily-sync-filtered">
+        🚫 已自動過濾(不會上 ProjFlow):
+        <span id="dailySyncFiltered">—</span>
+      </div>
+
+      <div class="daily-sync-section-label">② 編輯區 ‧ 可補充內容(這份才是真正上傳的版本)</div>
+      <textarea class="daily-sync-editable" id="dailySyncEditable" placeholder="若篩選結果為空,可在這直接寫想上 ProjFlow 的內容"></textarea>
+    </div>
+
+    <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface-soft);flex-wrap:wrap;gap:10px;">
+      <div style="font-size:11px;color:var(--text-muted);">
+        目標 endpoint:
+        <code style="font-family:var(--font-mono);background:var(--surface);padding:2px 6px;border-radius:4px;font-size:11px;">pm-system-mauve.vercel.app/api/daily-report</code>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" id="dailySyncCancel">取消</button>
+        <button class="btn btn-primary" id="dailySyncUpload">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          一鍵上傳到 ProjFlow
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -5261,6 +5348,81 @@
 
   // ===== 初始 ‧ 預設業務經理視角（蔡欣沛）=====
   applyPersona("june");
+
+  // ===== 業務報告 → ProjFlow 日報同步 =====
+  (function setupDailyReportSync(){
+    // 機密關鍵字: 含這些字眼的行,自動過濾不上 ProjFlow
+    const PROHIBITED = /(業績|毛利|淨利|佣金|單價|報價|售價|底價|成本|[¥$]\s*[\d,]+|\bNT\$|\bUSD\s*[\d,]|機密|品牌談判|議價|傭金)/;
+    // 同步關鍵字: 含這些字眼的行,優先標記為「可上日報」
+    const SYNC_HINT = /(PRJ-\d+|PM|專案|跨部|協作|出貨檔期|交付|交期|規格確認|請\s*PM|協助確認)/;
+
+    function extract(raw){
+      const lines = raw.split(/\n/).map(l => l.trim()).filter(Boolean);
+      const synced = [], filtered = [];
+      for(const line of lines){
+        if(PROHIBITED.test(line)){
+          // 機密行: 截斷顯示前 24 字,讓業務知道哪幾行被擋
+          filtered.push(line.substring(0, 24) + (line.length > 24 ? '…' : ''));
+        } else {
+          // 非機密: 全部進 synced (PM 相關 keyword 是「提示」非「過濾條件」)
+          synced.push(line);
+        }
+      }
+      return { synced, filtered };
+    }
+
+    const btn       = document.getElementById('genDailyToProjFlow');
+    const backdrop  = document.getElementById('dailySyncBackdrop');
+    const extracted = document.getElementById('dailySyncExtracted');
+    const filtered  = document.getElementById('dailySyncFiltered');
+    const editable  = document.getElementById('dailySyncEditable');
+    const cancelBtn = document.getElementById('dailySyncCancel');
+    const uploadBtn = document.getElementById('dailySyncUpload');
+    const rawArea   = document.getElementById('salesReportRaw');
+
+    if(!btn || !backdrop) return;
+
+    btn.addEventListener('click', () => {
+      const raw = (rawArea?.value || '').trim();
+      if(!raw){
+        alert('請先在「業務報告」欄位填寫今天的工作內容');
+        rawArea?.focus();
+        return;
+      }
+      const { synced, filtered: filt } = extract(raw);
+
+      extracted.innerHTML = synced.length
+        ? synced.map(l => `<div class="line">• ${l.replace(/^[\*\-•]\s*/, '')}</div>`).join('')
+        : '<div style="color:var(--text-muted);font-style:italic;">系統未抓到可同步內容 ‧ 請在下方編輯區直接補寫</div>';
+
+      filtered.innerHTML = filt.length
+        ? '<span>' + filt.map(s => `「${s}」`).join('、') + '</span>'
+        : '<span style="color:var(--text-muted);">本次無觸發過濾關鍵字</span>';
+
+      editable.value = synced.join('\n');
+      backdrop.dataset.open = 'true';
+    });
+
+    cancelBtn?.addEventListener('click', () => { backdrop.dataset.open = 'false'; });
+    backdrop.addEventListener('click', (e) => { if(e.target === backdrop) backdrop.dataset.open = 'false'; });
+
+    uploadBtn?.addEventListener('click', () => {
+      const body = (editable.value || '').trim();
+      if(!body){ alert('日報內容不能為空'); return; }
+      const today = new Date().toISOString().slice(0, 10);
+      const payload = {
+        type: 'daily-report',
+        date: today,
+        from: { dept: 'sales', email: (window.__currentPersona?.email) || 'sales@tei.com.tw', name: (window.__currentPersona?.name) || '業務' },
+        body,
+        cross_id: 'dr-' + today + '-' + Math.random().toString(36).slice(2, 8),
+      };
+      console.log('[ProjFlow Sync] daily-report payload:', payload);
+      backdrop.dataset.open = 'false';
+      // Demo feedback (正式版改成 POST + toast)
+      alert('✅ 已上傳至 ProjFlow 日報\n\n日期: ' + today + '\n身份: ' + payload.from.name + ' (' + payload.from.dept + ' / ' + payload.from.email + ')\n字數: ' + body.length + '\n\n對方查看 URL:\nhttps://pm-system-mauve.vercel.app/reports/daily/' + today + '?from=salesys');
+    });
+  })();
 </script>
 </body>
 </html>

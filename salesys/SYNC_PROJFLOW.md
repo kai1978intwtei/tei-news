@@ -229,7 +229,89 @@ sendMessage({
 
 ---
 
-## 七、不同步資料的硬性界線(安全)
+## 七、業務日報 → ProjFlow 同步機制
+
+### 7.1 為什麼業務系統有「日報生成」按鈕
+
+業務每天寫一份**完整的業務報告**(留在業務系統),系統提供一個按鈕:
+
+> 📤 **生成日報並上傳到 ProjFlow**
+
+點下去 → 系統自動篩出可上 ProjFlow 的內容 → 業務在 modal 預覽並可編輯 → 一鍵上傳。
+
+業務報告原始版本**永遠留在業務系統**,ProjFlow 只看到篩過、業務確認過的版本。
+
+### 7.2 限制:**僅接受日報**
+
+- ✅ 日報(daily report)— 本機制處理
+- ❌ 週報(weekly report)— **不接受**,請用 ProjFlow 內建週報模組或月報信件範本
+- ❌ 月報、季報、年度報告 — 不接受
+
+業務系統 UI 上**必須清楚標示這個限制**(目前在按鈕旁的提示文字 + modal 頂部黃色警示框)。
+
+### 7.3 系統自動過濾規則
+
+業務報告原文中,**符合以下 regex 的整行自動過濾**,不會出業務系統:
+
+```js
+const PROHIBITED = /(業績|毛利|淨利|佣金|單價|報價|售價|底價|成本|[¥$]\s*[\d,]+|\bNT\$|\bUSD\s*[\d,]|機密|品牌談判|議價|傭金)/;
+```
+
+過濾後,modal 會在「🚫 已自動過濾」段落列出**前 24 字 + 省略號**,讓業務確認哪幾行被擋下來(若擋錯可在原文修正後重新生成)。
+
+### 7.4 上傳 payload schema(POST)
+
+```http
+POST https://pm-system-mauve.vercel.app/api/daily-report
+Content-Type: application/json
+Authorization: Bearer <salesys-jwt>
+
+{
+  "type": "daily-report",
+  "date": "2026-06-16",
+  "from": {
+    "dept": "sales",
+    "email": "kai@tei.com.tw",
+    "name": "蔡欣沛"
+  },
+  "body": "* 拜訪 ACME 客戶談 Q4 出貨檔期\n* 跟 PM 部對 PRJ-2024 進度...\n* 跨部任務:請 PM 協助確認 PRJ-2031 規格",
+  "cross_id": "dr-2026-06-16-a3f7q2"
+}
+```
+
+ProjFlow 端的 endpoint 要做:
+1. 驗證 `from.dept` 屬於可同步部門(目前只接受 `sales` 的日報)
+2. 寫入 `daily_reports` 表,並在 PM 工作檯顯示為「**業務同步**」標記的段落
+3. 回傳 ProjFlow 端的查看 URL,業務系統會顯示給操作者確認
+4. 若同一個 `(from.email, date)` 已有日報 → 回 409,前端 toast 提示「已存在,本日不可重複上傳」
+
+### 7.5 為什麼不接受週報
+
+- 業務週報的數據粒度涵蓋業績、客戶單價、毛利等**整合性機密**,即便逐行過濾也容易漏
+- 週報通常含「下週計畫」,涉及未公開商機
+- 強制週報走另一條人工審核路徑,降低自動洩漏風險
+
+### 7.6 預期工作流
+
+```
+業務(每天下班前)
+  ↓
+在業務系統「我的衝刺」頁面填整份業務報告
+  ↓
+點「生成日報並上傳到 ProjFlow」
+  ↓
+系統篩 → 顯示可同步預覽 + 已過濾項目清單
+  ↓
+業務檢查、補充、(可選)刪除不想上的行
+  ↓
+點「一鍵上傳到 ProjFlow」
+  ↓
+ProjFlow 收到 → 寫入 daily_reports → PM 可在工作檯看到「業務同步」段落
+```
+
+---
+
+## 八、不同步資料的硬性界線(安全)
 
 ProjFlow **絕對不應該**透過任何 endpoint 取得以下資料:
 - 利潤 / 毛利 / 佣金 (profit_analysis 表)
@@ -242,7 +324,7 @@ ProjFlow **絕對不應該**透過任何 endpoint 取得以下資料:
 
 ---
 
-## 八、正式版上線時(取代原型階段)
+## 九、正式版上線時(取代原型階段)
 
 - 廢除 URL 明碼帶 `(dept, email)` → 改用 **Supabase JWT** 內嵌
 - JWT claims 內含 `dept` `role` `email` `name` `enName`
