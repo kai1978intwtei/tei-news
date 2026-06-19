@@ -168,16 +168,15 @@
 <!-- 紙紋顆粒 -->
 <svg class="grain"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
-<!-- 所選 Canva 紙雕視覺：全頁柔焦底圖（缺檔自動隱藏，退回紙雕 SVG 場景） -->
-<img class="bgphoto" src="dashboard-bg.png" alt="" onerror="this.style.display='none'">
+<!-- 所選 Canva 紙雕視覺：全頁柔焦底圖（自動載入，缺圖退回紙雕 SVG 場景） -->
+<img class="bgphoto" id="bgphoto" alt="">
 <div class="veil"></div>
 
 <div class="wrap">
 
   <!-- 頂部主視覺：套用所選設計（第 3 張） -->
   <div class="hero" id="hero">
-    <img src="dashboard-bg.png" alt="TEi 紙雕工作站主視覺"
-         onerror="document.getElementById('hero').classList.add('fallback');document.getElementById('hero').innerHTML='主視覺圖 dashboard-bg.png 尚未放入 — 從 Canva 下載後置於本檔同目錄即顯示。下方功能介面已套用同款紙雕配色。'">
+    <img id="heroimg" alt="TEi 紙雕工作站主視覺">
     <div class="cap">TEi 網路空戰指揮中心 · 紙雕主視覺
       <small>套用所選 Canva 設計（Serene Papercraft Dashboard）· 配色：奶油白／鼠尾草綠／陶土橘</small>
     </div>
@@ -234,6 +233,25 @@
 </div>
 
 <script>
+/* 自動載入所選 Canva 紙雕視覺：先試 Canva 線上圖，再試本地 dashboard-bg.png，最後退回紙雕場景 */
+(function(){
+  var CANVA='https://export-download.canva.com/5qx5M/DAHNCT5qx5M/-1/0-1218730612882764808.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQYCGKMUH5AO7UJ26%2F20260618%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260618T175914Z&X-Amz-Expires=91439&X-Amz-Signature=91f3667233d07865e484c35a0d7c47e3c9e691712e73fa9d43392239c9abb0b5&X-Amz-SignedHeaders=host%3Bx-amz-expected-bucket-owner&response-expires=Fri%2C%2019%20Jun%202026%2019%3A23%3A13%20GMT';
+  var LOCAL='dashboard-bg.png';
+  function load(el,onFail){
+    if(!el)return;var stage=0;
+    el.onerror=function(){stage++;if(stage===1){el.src=LOCAL;}else{el.onerror=null;if(onFail)onFail();}};
+    el.src=CANVA;
+  }
+  load(document.getElementById('heroimg'),function(){
+    var h=document.getElementById('hero');
+    h.classList.add('fallback');
+    h.innerHTML='主視覺載入失敗（Canva 連結可能逾期）。可從 Canva 重新下載並放 dashboard-bg.png 於同目錄。下方功能介面已套用同款紙雕配色。';
+  });
+  load(document.getElementById('bgphoto'),function(){
+    var b=document.getElementById('bgphoto');if(b)b.style.display='none';
+  });
+})();
+
 const DIM=[
  {n:'維度 1',nm:'程式 Bug 查驗',v:78,note:'無致命破版；更新頻率三處打架、整頁 refresh 體驗差',tag:'良好'},
  {n:'維度 2',nm:'網路安全',v:55,note:'新聞站 XSS 面乾淨；安全標頭全缺、salesys 一處 DOM-XSS',tag:'待強化'},
