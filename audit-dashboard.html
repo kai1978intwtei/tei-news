@@ -50,6 +50,18 @@
 
  .wrap{max-width:1180px;margin:0 auto;position:relative;z-index:1}
 
+ /* 套用所選 Canva 紙雕視覺：頂部主視覺 + 全頁底圖 */
+ .bgphoto{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.5;filter:blur(3px)}
+ .veil{position:fixed;inset:0;z-index:-1;
+   background:linear-gradient(180deg,rgba(241,236,227,.55),rgba(169,182,173,.5))}
+ .hero{border-radius:22px;overflow:hidden;margin-bottom:18px;box-shadow:var(--lift);position:relative;background:var(--paper-2)}
+ .hero img{display:block;width:100%;height:auto}
+ .hero .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 22px;color:#fff;
+   font-size:13px;font-weight:600;letter-spacing:.01em;
+   background:linear-gradient(180deg,transparent,rgba(58,48,36,.62))}
+ .hero .cap small{display:block;font-weight:400;opacity:.85;font-size:11px;margin-top:2px}
+ .hero.fallback{padding:40px 24px;text-align:center;color:var(--mut);font-size:13px}
+
  /* 紙卡通則 */
  .card{background:var(--paper);border-radius:20px;box-shadow:var(--lift);position:relative;
    border:1px solid rgba(255,255,255,.45)}
@@ -156,7 +168,20 @@
 <!-- 紙紋顆粒 -->
 <svg class="grain"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
+<!-- 所選 Canva 紙雕視覺：全頁柔焦底圖（缺檔自動隱藏，退回紙雕 SVG 場景） -->
+<img class="bgphoto" src="dashboard-bg.png" alt="" onerror="this.style.display='none'">
+<div class="veil"></div>
+
 <div class="wrap">
+
+  <!-- 頂部主視覺：套用所選設計（第 3 張） -->
+  <div class="hero" id="hero">
+    <img src="dashboard-bg.png" alt="TEi 紙雕工作站主視覺"
+         onerror="document.getElementById('hero').classList.add('fallback');document.getElementById('hero').innerHTML='主視覺圖 dashboard-bg.png 尚未放入 — 從 Canva 下載後置於本檔同目錄即顯示。下方功能介面已套用同款紙雕配色。'">
+    <div class="cap">TEi 網路空戰指揮中心 · 紙雕主視覺
+      <small>套用所選 Canva 設計（Serene Papercraft Dashboard）· 配色：奶油白／鼠尾草綠／陶土橘</small>
+    </div>
+  </div>
 
   <header class="top card">
     <span class="bead"></span><span class="cico"></span>
