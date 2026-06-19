@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TEi 網路空戰指揮中心 · Website Audit Console</title>
+<style>
+ *{box-sizing:border-box;margin:0;padding:0}
+ :root{
+   --teal:#81d8d0;--teal-d:#5fc7be;--ink:#1d1d1f;--mut:#6e6e73;
+   --crit:#e5484d;--high:#f5a524;--ok:#10b981;--na:#94a3b8;
+ }
+ html,body{overscroll-behavior-y:none}
+ body{min-height:100vh;color:var(--ink);line-height:1.5;
+   font-family:"SF Pro Display",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Helvetica Neue",sans-serif;
+   letter-spacing:-.003em;-webkit-font-smoothing:antialiased;
+   background:
+     radial-gradient(1200px 820px at 8% -10%,rgba(255,255,255,.55),transparent 60%),
+     radial-gradient(1000px 720px at 92% 0%,rgba(255,255,255,.30),transparent 65%),
+     radial-gradient(900px 700px at 50% 110%,rgba(10,186,181,.25),transparent 60%),
+     linear-gradient(180deg,#b4e6e1 0%,#81d8d0 55%,#5fc7be 100%);
+   background-attachment:fixed;padding:24px}
+ .wrap{max-width:1180px;margin:0 auto}
+ .glass{background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(28px);
+   -webkit-backdrop-filter:saturate(180%) blur(28px);border-radius:22px;
+   border:1px solid rgba(255,255,255,.6);
+   box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 18px 50px rgba(60,70,90,.12),0 6px 18px rgba(60,70,90,.06)}
+ header.top{padding:26px 30px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+ .logo-ph{height:52px;min-width:52px;border-radius:12px;background:linear-gradient(135deg,#2a2a2a,#111);
+   color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.03em;padding:0 14px}
+ .htext h1{font-size:23px;font-weight:600;letter-spacing:-.02em}
+ .htext .sub{color:var(--mut);font-size:12.5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:3px}
+ .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(16,185,129,.7);animation:p 2s infinite}
+ @keyframes p{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+ .spacer{flex:1}
+ .total{text-align:center;padding:6px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(245,165,36,.16),rgba(229,72,77,.12));border:1px solid rgba(255,255,255,.6)}
+ .total b{font-size:34px;font-weight:800;display:block;line-height:1;background:linear-gradient(135deg,#f5a524,#e5484d);-webkit-background-clip:text;background-clip:text;color:transparent}
+ .total span{font-size:11px;color:var(--mut)}
+
+ .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:20px}
+ .card{padding:18px 18px 16px;position:relative;overflow:hidden}
+ .card .n{font-size:11px;color:var(--mut);font-weight:600}
+ .card .nm{font-size:15px;font-weight:700;margin:2px 0 12px}
+ .ring{display:flex;align-items:center;gap:14px}
+ .ring svg{flex-shrink:0}
+ .ring .v{font-size:26px;font-weight:800}
+ .ring .v small{font-size:12px;color:var(--mut);font-weight:600}
+ .card .note{font-size:12px;color:var(--mut);margin-top:11px;line-height:1.5}
+ .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;margin-top:10px}
+
+ section.glass{padding:24px 28px;margin-bottom:20px}
+ section h2{font-size:17px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+ section .desc{font-size:12.5px;color:var(--mut);margin-bottom:16px}
+ .finding{border-left:3px solid var(--na);padding:11px 14px;border-radius:0 12px 12px 0;background:rgba(255,255,255,.55);margin-bottom:10px}
+ .finding.c{border-color:var(--crit)} .finding.h{border-color:var(--high)}
+ .finding .ttl{font-weight:700;font-size:13.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+ .sev{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;color:#fff;flex-shrink:0}
+ .sev.c{background:var(--crit)} .sev.h{background:var(--high)}
+ .finding .path{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:11px;color:#9333ea;margin:4px 0}
+ .finding .why{font-size:12.5px;color:#374151;margin-top:3px}
+ .finding .fix{font-size:12.5px;color:#065f46;margin-top:4px}
+ .finding .fix b{color:#047857}
+
+ .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+ @media(max-width:760px){.cols{grid-template-columns:1fr}}
+ ul.lst{list-style:none} ul.lst li{font-size:12.5px;padding:7px 0 7px 22px;position:relative;border-bottom:1px solid rgba(0,0,0,.05)}
+ ul.lst li:before{content:'';position:absolute;left:4px;top:13px;width:7px;height:7px;border-radius:50%;background:var(--teal-d)}
+ ul.lst li b{color:var(--ink)}
+ .caps{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+ .cap{font-size:12px;font-weight:600;padding:7px 13px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.7)}
+ footer{text-align:center;color:rgba(0,0,0,.5);font-size:11.5px;padding:14px;line-height:1.7}
+ .pill{display:inline-block;font-size:11px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.7);border-radius:99px;padding:3px 10px;margin:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top glass">
+    <div class="logo-ph">TEi</div>
+    <div class="htext">
+      <h1>網路空戰指揮中心 · Website Audit Console</h1>
+      <div class="sub"><span class="dot"></span> 本地臨時工作站 · 演示模式
+        <span>·</span> 稽核對象 <b>tei-news</b>
+        <span>·</span> 分支 <b>claude/website-audit-seo-72yiqq</b>
+        <span>·</span> 2026-06-19</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="total"><b>49</b><span>空戰優勢總分 / 100</span></div>
+  </header>
+
+  <!-- 七大維度評分卡 -->
+  <div class="grid" id="cards"></div>
+
+  <!-- 立即處理 -->
+  <section class="glass">
+    <h2>🔴 立即處理（Critical / High）</h2>
+    <div class="desc">皆可改在不會被自動覆蓋的安全位置（產生器樣板、設定檔、新增獨立檔），符合「不手改 index.html」原則。</div>
+    <div id="findings"></div>
+  </section>
+
+  <div class="cols">
+    <section class="glass">
+      <h2>🟡 短期優化 <span style="font-size:12px;color:var(--mut);font-weight:500">1–2 週</span></h2>
+      <ul class="lst" id="short"></ul>
+    </section>
+    <section class="glass">
+      <h2>🟢 中長期戰略</h2>
+      <ul class="lst" id="long"></ul>
+    </section>
+  </div>
+
+  <section class="glass">
+    <h2>🛠️ 這個工作站能做什麼</h2>
+    <div class="desc">website-audit-seo 代理的七大作戰維度。維度 4／5 需外網實測，待線上網址與環境放行後補做。</div>
+    <div class="caps" id="caps"></div>
+  </section>
+
+  <footer>
+    本工作站為本地臨時演示，資料來源為 website-audit-seo 代理對本機 repo 的實際稽核（附行號實證）。<br>
+    競品分析與線上實測因執行環境外網白名單暫擋，標記為待補。此頁不影響你的線上網站與任何既有網址。
+  </footer>
+
+</div>
+
+<script>
+const DIM=[
+ {n:'維度 1',nm:'程式 Bug 查驗',v:78,note:'無致命破版；更新頻率三處打架、整頁 refresh 體驗差',tag:'良好'},
+ {n:'維度 2',nm:'網路安全',v:55,note:'新聞站 XSS 面乾淨；安全標頭全缺、salesys 一處 DOM-XSS',tag:'待強化'},
+ {n:'維度 3',nm:'SEO 效率',v:38,note:'description／OG／canonical／JSON-LD／robots／sitemap 全缺',tag:'弱'},
+ {n:'維度 4',nm:'行銷火力',v:null,note:'需 WebSearch 建關鍵字叢集，外網被擋，待放行',tag:'待補'},
+ {n:'維度 5',nm:'競品對標',v:null,note:'需外網實測台灣同業，待放行',tag:'待補'},
+ {n:'維度 6',nm:'使用者旅程',v:60,note:'新聞站無產品、無 CTA、無詢價入口，幾乎零轉換',tag:'待強化'},
+ {n:'維度 7',nm:'AEO／GEO／AIO',v:30,note:'無結構化資料、無 FAQ、無 AI 爬蟲策略；鮮度優勢未用',tag:'弱'},
+];
+function col(v){if(v==null)return'#94a3b8';if(v>=75)return'#10b981';if(v>=50)return'#f5a524';return'#e5484d'}
+document.getElementById('cards').innerHTML=DIM.map(d=>{
+ const c=col(d.v),pct=d.v==null?0:d.v,r=22,cir=2*Math.PI*r,off=cir*(1-pct/100);
+ const ring=`<svg width="58" height="58" viewBox="0 0 58 58"><circle cx="29" cy="29" r="${r}" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="6"/><circle cx="29" cy="29" r="${r}" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${cir}" stroke-dashoffset="${off}" transform="rotate(-90 29 29)"/></svg>`;
+ const val=d.v==null?'<span style="font-size:18px;color:#94a3b8">N/A</span>':`${d.v}<small>/100</small>`;
+ const tagbg=d.v==null?'rgba(148,163,184,.18)':d.v>=75?'rgba(16,185,129,.16)':d.v>=50?'rgba(245,165,36,.16)':'rgba(229,72,77,.14)';
+ return`<div class="card glass"><div class="n">${d.n}</div><div class="nm">${d.nm}</div>
+   <div class="ring">${ring}<div class="v">${val}</div></div>
+   <div class="note">${d.note}</div>
+   <span class="tag" style="background:${tagbg};color:${c}">${d.tag}</span></div>`;
+}).join('');
+
+const F=[
+ {s:'C',t:'部署根目錄恐讓新聞站沒被收錄',p:'vercel.json:3',why:'outputDirectory:"salesys" 代表線上根目錄服務的是內部業務系統，而非 index.html 新聞站；robots/sitemap 放 repo 根也不會被服務，且可能暴露內部系統。',fix:'確認線上根目錄打開哪頁，再決定改 outputDirectory 或把 SEO 資產放進 salesys。'},
+ {s:'C',t:'六大基礎 SEO 標籤全缺（實證 0 筆）',p:'fetch_news.ps1:2403-2414 → index.html:1-12',why:'無 description→摘要被亂抓；無 OG→LINE／Email 分享無預覽縮圖，點擊率腰斬；無 canonical→每 10 分改動易判重複。',fix:'改在 fetch_news.ps1 head 樣板補齊（勿手改 index.html）。'},
+ {s:'C',t:'缺六大 HTTP 安全標頭',p:'vercel.json:6-25',why:'缺 CSP／HSTS／X-Content-Type-Options／X-Frame-Options／Referrer-Policy／Permissions-Policy；資安掃描與供應商評估會直接扣分。',fix:'在 vercel.json headers 對 /(.*) 增補；CSP 需放行 salesys 的 Google Fonts。'},
+ {s:'H',t:'salesys 任務卡一處 DOM-XSS（漏跳脫）',p:'salesys/index.html:4291-4292',why:'${t.title}/${t.desc} 以 innerHTML 渲染卻未跳脫，值來自使用者輸入；同檔已有 escapeHtml() 卻獨漏此處。資料僅存記憶體 → 目前 Medium，接後端持久化即升 High。',fix:'改為 ${escapeHtml(t.title)} / ${escapeHtml(t.desc||"(無說明)")}。'},
+ {s:'H',t:'更新頻率三處打架',p:'update-news.yml:6（*/10）vs index.html meta refresh 1800（30分）',why:'後端每 10 分產生、瀏覽器每 30 分整頁 reload，名實不符，誤導維運並與「即時脈動」綠點矛盾。',fix:'統一口徑為 10 分，並將整頁 refresh 改 JS 局部更新。'},
+ {s:'H',t:'整頁 meta refresh 傷體驗與 SEO',p:'index.html:6 / fetch_news.ps1:2408',why:'400KB 大頁每次整頁重載、捲動位置歸零；http-equiv refresh 被搜尋引擎視為負面訊號。',fix:'移除 meta refresh，改用 fetch() 局部抽換新聞區塊。'},
+];
+document.getElementById('findings').innerHTML=F.map(f=>{
+ const cls=f.s==='C'?'c':'h',lab=f.s==='C'?'CRITICAL':'HIGH';
+ return`<div class="finding ${cls}"><div class="ttl"><span class="sev ${cls}">${lab}</span>${f.t}</div>
+  <div class="path">📄 ${f.p}</div><div class="why">為什麼重要：${f.why}</div>
+  <div class="fix"><b>怎麼修：</b>${f.fix}</div></div>`;
+}).join('');
+
+const SHORT=['新增 <b>robots.txt</b>（含 GPTBot／PerplexityBot／ClaudeBot／Google-Extended 與 Sitemap 行）',
+ '新增 <b>sitemap.xml</b>，由 fetch_news.ps1 順手產生並蓋 lastmod，把鮮度餵搜尋引擎',
+ '<b>JSON-LD 結構化資料</b>：Organization（50 年資歷＋sameAs）／WebSite／ItemList',
+ 'salesys 全檔 innerHTML 一致性掃描：含使用者輸入一律 escapeHtml',
+ '<b>title 強化</b>：加入「碳纖維／複合材料」與台灣字眼',
+ 'CSP 友善化：salesys 的 Google Fonts 改自託管，改善 LCP'];
+const LONG=['<b>門面定位</b>：規劃真正的產品／詢價頁，新聞站作為鮮度與權威的內容引擎導流',
+ '<b>AEO/GEO/AIO 內容層</b>：FAQ 頁（FAQPage JSON-LD）回答問句式長尾，事實單元供 AI 引用',
+ '<b>效能/CWV</b>：400KB 單頁＋fixed 背景＋大量 blur 壓 LCP/INP，配合局部更新改善',
+ '<b>行銷火力（維度4）</b>：外網放行後建關鍵字叢集與 content gap 盤點'];
+document.getElementById('short').innerHTML=SHORT.map(x=>`<li>${x}</li>`).join('');
+document.getElementById('long').innerHTML=LONG.map(x=>`<li>${x}</li>`).join('');
+
+const CAPS=['① 程式 Bug 查驗','② 網路安全（防禦性）','③ SEO 效率','④ 行銷火力與精準打擊','⑤ 台灣競品對標與排前三','⑥ 模擬使用者旅程','⑦ AEO／GEO／AIO'];
+document.getElementById('caps').innerHTML=CAPS.map(c=>`<span class="cap">${c}</span>`).join('');
+</script>
+</body>
+</html>
