@@ -1,0 +1,30 @@
+# TEi 自訂代理（Claude Code Subagents）
+
+## website-audit-seo —— 網路空戰總顧問
+
+專門查驗本站的 **程式 Bug、網路安全、SEO 效率**，並進行 **網路行銷競爭力分析、
+台灣同業競品打擊策略、模擬使用者行為檢驗**。總目標：提升 TEi 的網路空戰優勢。
+
+### 怎麼啟動
+
+在 Claude Code 對話中直接用自然語言描述需求即可，Claude 會自動委派給此代理。例如：
+
+- 「幫我對 index.html 做一次網站總體檢」
+- 「掃一下我們網站的資安問題，給可以貼進 vercel.json 的修正」
+- 「我們在 Google 搜尋『碳纖維 台灣』排不上去，做 SEO 體檢和競品分析」
+- 「模擬一個航太採購工程師來逛網站，看哪裡會流失詢價」
+- 「做 AEO／GEO／AIO 計畫，讓我們被 ChatGPT、Perplexity、Google AI Overviews 引用」
+
+也可明確指定：`使用 website-audit-seo 代理做總體檢`。
+
+### 涵蓋的七大維度
+
+1. 程式 Bug 查驗 2. 網路安全（防禦性） 3. SEO 效率
+4. 網路行銷競爭力與精準打擊 5. 台灣競爭者分析與排前三策略 6. 模擬使用者行為檢驗
+7. AEO／GEO／AIO 行銷提升計畫（讓網站被 AI 搜尋與生成引擎主動引用）
+
+### 重要原則
+
+- `index.html` 由 `fetch_news.ps1` + GitHub Actions 每 30 分鐘自動產生，**請勿手改其本體**；
+  持久化的 SEO/安全修正要改在產生器樣板、`vercel.json`，或新增 `robots.txt`/`sitemap.xml`。
+- 只做合法、白帽、防禦性的工作；不協助攻擊對手或負面 SEO。
