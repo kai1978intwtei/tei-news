@@ -138,6 +138,18 @@
  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
  footer{text-align:center;color:var(--mut);font-size:11px;padding:18px;line-height:1.8}
  @media print{.btn,.seg,.mini,.hint,.toast{display:none}body{background:#fff}.dnote{max-height:none!important;padding:13px 15px!important;margin-top:14px!important}}
+ /* URL 體檢列 */
+ .url-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+ input.urlinput{flex:1;min-width:200px;border:none;outline:none;font-family:inherit;
+   font-size:14px;color:var(--ink);background:var(--bg);padding:14px 18px;border-radius:18px;
+   box-shadow:var(--inset);-webkit-appearance:none;caret-color:var(--accent)}
+ input.urlinput::placeholder{color:var(--mut)}
+ input.urlinput:focus{box-shadow:var(--inset),0 0 0 2px rgba(59,111,245,.22)}
+ .audit-status{font-size:12px;color:var(--mut);margin-top:12px;min-height:18px;transition:color .2s}
+ .audit-status.ok{color:#3E8E6E}.audit-status.err{color:#C2603F}
+ .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(166,164,153,.5);
+   border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+ @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -148,18 +160,29 @@
     <div class="htext">
       <h1>網路空戰指揮中心 · 柔軟工作站</h1>
       <div class="sub"><span class="dot"></span> Neumorphism 柔軟 UI
-        <span>·</span> 稽核對象 <b>tei-news</b>
-        <span>·</span> 2026-06-20</div>
+        <span>·</span> 稽核對象 <b id="auditTarget">tei-news</b>
+        <span>·</span> <span id="auditDate">2026-06-20</span></div>
     </div>
     <div class="spacer"></div>
-    <div class="total"><div><span class="gv">49</span></div><small>空戰優勢<br>總分 / 100</small></div>
+    <div class="total"><div><span class="gv" id="totalScore">49</span></div><small>空戰優勢<br>總分 / 100</small></div>
     <button class="btn" id="btnCopyAll" type="button" title="複製整份摘要文字">複製摘要</button>
     <button class="btn accent" id="btnPrint" type="button" title="列印或另存 PDF">匯出 PDF</button>
   </header>
 
+  <section class="card" style="padding:22px 28px;margin-bottom:24px">
+    <div style="font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.04em;margin-bottom:12px">▶ 即時 PSI 體檢 — 貼任何公開網址，秒出真實分數</div>
+    <div class="url-row">
+      <input type="url" id="urlInput" class="urlinput" placeholder="https://example.com" autocomplete="off" spellcheck="false">
+      <button class="segbtn" type="button" data-strat="mobile" aria-pressed="true">手機版</button>
+      <button class="segbtn" type="button" data-strat="desktop" aria-pressed="false">電腦版</button>
+      <button class="btn accent" type="button" id="btnRun">▶ 體檢</button>
+    </div>
+    <div class="audit-status" id="auditStatus"></div>
+  </section>
+
   <div class="hint card">
-    <span class="ic">🔗</span>
-    <div>想體檢別的網址?<b> 把網址貼到對話框給 Claude</b>,我就跑完整七維體檢(Bug／資安／SEO／行銷／競品／使用者／AEO‑GEO‑AIO)、判斷狀況,再把這頁換成那個網址的真實結果。一個動作,不用設定。</div>
+    <span class="ic">💡</span>
+    <div>PSI 可直接測四維：效能→維度1、Best Practices→維度2、SEO→維度3、無障礙→維度6，AEO 代理分→維度7。<b>行銷火力（維度4）、競品對標（維度5）</b>需外網搜尋，請在 Claude 對話中補做。</div>
   </div>
 
   <div class="grid" id="cards"></div>
@@ -202,7 +225,8 @@
 </div>
 
 <script>
-const DIM=[
+// === 七維資料 ===
+let DIM=[
  {n:'維度 1',nm:'程式 Bug 查驗',v:78,tag:'良好',cls:'good',note:'無致命破版；但更新頻率三處打架、整頁 meta refresh 體驗差。建議統一更新口徑並改局部更新。'},
  {n:'維度 2',nm:'網路安全',v:55,tag:'待強化',cls:'warn',note:'新聞站 XSS 面乾淨；但六大安全標頭全缺、salesys 任務卡一處 DOM-XSS（漏 escapeHtml）。'},
  {n:'維度 3',nm:'SEO 效率',v:38,tag:'弱',cls:'weak',note:'description／OG／canonical／JSON-LD／robots／sitemap 全缺，搜尋與分享預覽幾乎拿不到分。'},
@@ -211,32 +235,45 @@ const DIM=[
  {n:'維度 6',nm:'使用者旅程',v:60,tag:'待強化',cls:'warn',note:'新聞站無產品、無 CTA、無詢價入口，幾乎零轉換。建議規劃詢價頁並由內容導流。'},
  {n:'維度 7',nm:'AEO／GEO／AIO',v:30,tag:'弱',cls:'weak',note:'無結構化資料、無 FAQ、無 AI 爬蟲策略；每 10 分鐘的鮮度優勢完全沒被用上。'},
 ];
-const r=52,cir=2*Math.PI*r;
-document.getElementById('cards').innerHTML=DIM.map(d=>{
- const pct=d.v==null?0:d.v,off=cir*(1-pct/100);
- const ring=`<svg width="124" height="124" viewBox="0 0 124 124">
-   <circle cx="62" cy="62" r="${r}" fill="none" stroke="rgba(166,164,153,.30)" stroke-width="9"/>
-   <circle cx="62" cy="62" r="${r}" fill="none" stroke="#3B6FF5" stroke-width="9" stroke-linecap="round"
-     stroke-dasharray="${cir.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 62 62)"/></svg>`;
- const val=d.v==null?'<span class="gv na">待補</span>':`<span class="gv">${d.v}<small>/100</small></span>`;
- return`<div class="card dcard" title="點我看詳情">
-   <div class="n">${d.n}</div><div class="nm">${d.nm}</div>
-   <div class="gauge">${ring}${val}</div>
-   <span class="pill ${d.cls}">${d.tag}</span>
-   <div class="exp">▾ 點卡看詳情</div>
-   <div class="dnote">${d.note}</div></div>`;
-}).join('')
- // 末張：柔軟開關控制台，呼應參考圖元件
- +`<div class="card dcard" style="align-items:stretch">
-    <div class="n" style="text-align:center">控制台</div><div class="nm" style="text-align:center">作戰開關</div>
-    <div class="ctrls">
-      <div class="ctrl">即時鮮度脈動<span class="sw on" data-sw></span></div>
-      <div class="ctrl">AI 爬蟲開放<span class="sw on" data-sw></span></div>
-      <div class="ctrl">安全標頭強制<span class="sw" data-sw></span></div>
-      <div class="ctrl">競品雷達<span class="sw" data-sw></span></div>
-    </div></div>`;
-document.querySelectorAll('[data-sw]').forEach(s=>s.addEventListener('click',()=>s.classList.toggle('on')));
 
+// === 七維卡渲染（可重複呼叫） ===
+function renderCards(){
+ const r=52,cir=2*Math.PI*r;
+ document.getElementById('cards').innerHTML=DIM.map(d=>{
+  const pct=d.v==null?0:d.v,off=cir*(1-pct/100);
+  const ring=`<svg width="124" height="124" viewBox="0 0 124 124">
+    <circle cx="62" cy="62" r="${r}" fill="none" stroke="rgba(166,164,153,.30)" stroke-width="9"/>
+    <circle cx="62" cy="62" r="${r}" fill="none" stroke="#3B6FF5" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${cir.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 62 62)"/></svg>`;
+  const val=d.v==null?'<span class="gv na">待補</span>':`<span class="gv">${d.v}<small>/100</small></span>`;
+  return`<div class="card dcard" title="點我看詳情">
+    <div class="n">${d.n}</div><div class="nm">${d.nm}</div>
+    <div class="gauge">${ring}${val}</div>
+    <span class="pill ${d.cls}">${d.tag}</span>
+    <div class="exp">▾ 點卡看詳情</div>
+    <div class="dnote">${d.note}</div></div>`;
+ }).join('')
+  +`<div class="card dcard" style="align-items:stretch">
+     <div class="n" style="text-align:center">控制台</div><div class="nm" style="text-align:center">作戰開關</div>
+     <div class="ctrls">
+       <div class="ctrl">即時鮮度脈動<span class="sw on" data-sw></span></div>
+       <div class="ctrl">AI 爬蟲開放<span class="sw on" data-sw></span></div>
+       <div class="ctrl">安全標頭強制<span class="sw" data-sw></span></div>
+       <div class="ctrl">競品雷達<span class="sw" data-sw></span></div>
+     </div></div>`;
+ document.querySelectorAll('[data-sw]').forEach(s=>s.addEventListener('click',()=>s.classList.toggle('on')));
+}
+renderCards();
+
+// === 更新總分 ===
+function updateTotal(){
+ const scored=DIM.filter(d=>d.v!=null);
+ const avg=scored.length?Math.round(scored.reduce((a,d)=>a+d.v,0)/scored.length):0;
+ document.getElementById('totalScore').textContent=avg;
+}
+updateTotal();
+
+// === 問題清單 ===
 const F=[
  {s:'C',t:'部署根目錄恐讓新聞站沒被收錄',p:'vercel.json:3',why:'outputDirectory:"salesys" 代表線上根目錄服務的是內部業務系統，而非 index.html 新聞站；robots/sitemap 放 repo 根也不會被服務，且可能暴露內部系統。',fix:'確認線上根目錄打開哪頁，再決定改 outputDirectory 或把 SEO 資產放進 salesys。'},
  {s:'C',t:'六大基礎 SEO 標籤全缺（實證 0 筆）',p:'fetch_news.ps1:2403-2414 → index.html:1-12',why:'無 description→摘要被亂抓；無 OG→LINE／Email 分享無預覽縮圖，點擊率腰斬；無 canonical→每 10 分改動易判重複。',fix:'改在 fetch_news.ps1 head 樣板補齊（勿手改 index.html）。'},
@@ -265,7 +302,7 @@ document.getElementById('fbar').addEventListener('click',function(e){
  renderFindings(b.dataset.f);
 });
 
-/* ===== 傻瓜功能 ===== */
+// === 工具函式 ===
 let _t;
 function toast(msg){let el=document.getElementById('toast');
  if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el);}
@@ -278,17 +315,14 @@ function copyText(txt){
 function fallbackCopy(txt){const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
  document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('已複製 ✓')}catch(e){toast('請手動複製')}document.body.removeChild(ta);}
 
-/* 匯出 PDF（列印） */
 document.getElementById('btnPrint').addEventListener('click',()=>window.print());
 
-/* 每個問題卡：一鍵複製修正 */
 document.getElementById('findings').addEventListener('click',function(e){
  const b=e.target.closest('.copybtn');if(!b)return;
  const f=F[+b.dataset.fix];
  copyText(`【${f.s==='C'?'重大':'高'}】${f.t}\n檔案：${f.p}\n怎麼修：${f.fix}`);
 });
 
-/* 七維卡：點卡展開/收合詳情（點開關不觸發） */
 document.getElementById('cards').addEventListener('click',function(e){
  if(e.target.closest('[data-sw]'))return;
  const c=e.target.closest('.dcard');if(!c||!c.querySelector('.dnote'))return;
@@ -296,9 +330,11 @@ document.getElementById('cards').addEventListener('click',function(e){
  const ex=c.querySelector('.exp');if(ex)ex.textContent=c.classList.contains('open')?'▴ 收起':'▾ 點卡看詳情';
 });
 
-/* 一鍵複製整份摘要 */
 document.getElementById('btnCopyAll').addEventListener('click',function(){
- let s='TEi 網路空戰體檢摘要\n稽核對象：tei-news ｜ 日期：2026-06-20\n空戰優勢總分：49 / 100\n\n── 七大維度 ──\n';
+ const target=document.getElementById('auditTarget').textContent;
+ const date=document.getElementById('auditDate').textContent;
+ const score=document.getElementById('totalScore').textContent;
+ let s=`TEi 網路空戰體檢摘要\n稽核對象：${target} ｜ 日期：${date}\n空戰優勢總分：${score} / 100\n\n── 七大維度 ──\n`;
  DIM.forEach(d=>{s+=`${d.n} ${d.nm}：${d.v==null?'待補':d.v+'/100'}（${d.tag}）\n  ${d.note}\n`;});
  s+='\n── 立即處理 ──\n';
  F.forEach((f,i)=>{s+=`${i+1}.【${f.s==='C'?'重大':'高'}】${f.t}\n   檔案：${f.p}\n   怎麼修：${f.fix}\n`;});
@@ -320,6 +356,99 @@ document.getElementById('long').innerHTML=LONG.map(x=>`<li>${x}</li>`).join('');
 
 const CAPS=['① 程式 Bug 查驗','② 網路安全（防禦性）','③ SEO 效率','④ 行銷火力與精準打擊','⑤ 台灣競品對標與排前三','⑥ 模擬使用者旅程','⑦ AEO／GEO／AIO'];
 document.getElementById('caps').innerHTML=CAPS.map(c=>`<span class="cap">${c}</span>`).join('');
+
+// === URL 即時 PSI 體檢 ===
+function tagFor(v){
+ if(v>=80)return{tag:'良好',cls:'good'};
+ if(v>=60)return{tag:'待強化',cls:'warn'};
+ return{tag:'弱',cls:'weak'};
+}
+
+async function doAudit(){
+ let url=document.getElementById('urlInput').value.trim();
+ if(!url){toast('請先貼入網址');return;}
+ if(!/^https?:\/\//i.test(url))url='https://'+url;
+
+ const stratBtn=document.querySelector('[data-strat][aria-pressed="true"]');
+ const strategy=stratBtn?stratBtn.dataset.strat:'mobile';
+ const st=document.getElementById('auditStatus');
+ const btn=document.getElementById('btnRun');
+
+ btn.disabled=true;
+ st.className='audit-status';
+ st.innerHTML='<span class="spinner"></span>呼叫 Google PageSpeed Insights 中（約 20–40 秒，請稍候）…';
+
+ try{
+   const ep=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&category=seo&category=best-practices&category=accessibility`;
+   const res=await fetch(ep);
+   if(!res.ok){
+     let msg=`HTTP ${res.status}`;
+     try{const j=await res.json();if(j.error?.message)msg=j.error.message;}catch(e){}
+     throw new Error(msg);
+   }
+   const data=await res.json();
+   const cats=data.lighthouseResult.categories;
+   const au=data.lighthouseResult.audits;
+
+   const perf =Math.round((cats.performance?.score??0)*100);
+   const seo  =Math.round((cats.seo?.score??0)*100);
+   const bp   =Math.round((cats['best-practices']?.score??0)*100);
+   const a11y =Math.round((cats.accessibility?.score??0)*100);
+
+   // AEO 代理：結構化資料×40 + meta 描述×30 + 標題×30
+   const aeo=Math.min(100,Math.round(
+     (au['structured-data']?.score??0)*40+
+     (au['meta-description']?.score??0)*30+
+     (au['document-title']?.score??0)*30
+   ));
+
+   const lcpD=au['largest-contentful-paint']?.displayValue||'—';
+   const clsD=au['cumulative-layout-shift']?.displayValue||'—';
+   const tbtD=au['total-blocking-time']?.displayValue||'—';
+
+   function upd(i,v,note){
+     DIM[i].v=v;
+     const t=tagFor(v);DIM[i].tag=t.tag;DIM[i].cls=t.cls;
+     if(note)DIM[i].note=note;
+   }
+   upd(0,perf, `Lighthouse 效能 ${perf} 分。LCP ${lcpD}、CLS ${clsD}、TBT ${tbtD}。`);
+   upd(1,bp,   `Lighthouse Best Practices ${bp} 分（HTTPS、過時 API、安全最佳實務）。`);
+   upd(2,seo,  `Lighthouse SEO ${seo} 分（meta、robots、canonical、行動裝置友善性）。`);
+   upd(5,a11y, `Lighthouse 無障礙 ${a11y} 分，作為使用者可用性的代理指標。`);
+   upd(6,aeo,  `AEO 代理分 ${aeo}（結構化資料×40 + meta 描述×30 + 標題×30，PSI 可測範圍）。`);
+   // DIM[3]行銷、DIM[4]競品 維持 null，需外網補做
+
+   renderCards();
+   updateTotal();
+
+   const d=new Date();
+   const nowDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+   const nowTime=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+   let host=url;try{host=new URL(url).hostname;}catch(e){}
+
+   st.className='audit-status ok';
+   st.textContent=`✓ 體檢完成 — ${host} ／ ${strategy==='mobile'?'手機版':'電腦版'} ／ ${nowDate} ${nowTime}`;
+   document.getElementById('auditTarget').textContent=host;
+   document.getElementById('auditDate').textContent=nowDate;
+
+ }catch(e){
+   st.className='audit-status err';
+   st.textContent=`✗ 體檢失敗：${e.message}。請確認網址正確且可公開存取。`;
+ }finally{
+   btn.disabled=false;
+ }
+}
+
+// 手機版 / 電腦版切換
+document.querySelectorAll('[data-strat]').forEach(b=>{
+ b.addEventListener('click',function(){
+   document.querySelectorAll('[data-strat]').forEach(t=>t.setAttribute('aria-pressed','false'));
+   this.setAttribute('aria-pressed','true');
+ });
+});
+
+document.getElementById('btnRun').addEventListener('click',doAudit);
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')doAudit();});
 </script>
 </body>
 </html>
