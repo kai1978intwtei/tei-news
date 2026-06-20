@@ -137,6 +137,57 @@
  .caps{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px}
  .cap{font-size:12px;font-weight:600;padding:8px 14px;border-radius:13px;background:var(--sand);color:var(--ink);
    box-shadow:var(--lift-sm)}
+
+ /* ===== 紙雕按鈕：按鍵本身就是一層層裁切疊起來的紙，可按壓 ===== */
+ .pbtn{
+   --pc:var(--terra); --pc-side:var(--terra-d); --pc-deep:#b06f3d; --pc-ink:#5a3920;
+   position:relative;border:none;outline:none;cursor:pointer;
+   font-family:inherit;font-weight:700;font-size:13px;letter-spacing:.01em;color:var(--pc-ink);
+   padding:11px 20px;border-radius:13px;background:var(--pc);
+   /* 上緣紙光 + 紙厚側壁兩層 + 柔落影：紙雕命脈 */
+   box-shadow:
+     0 1px 0 rgba(255,255,255,.55) inset,
+     0 -3px 5px rgba(120,80,45,.18) inset,
+     0 2px 0 var(--pc-side),
+     0 4px 0 var(--pc-deep),
+     0 8px 11px rgba(110,86,63,.30),
+     0 16px 26px rgba(70,80,75,.14);
+   transform:translateY(0);transition:transform .12s ease,box-shadow .12s ease;
+   -webkit-tap-highlight-color:transparent}
+ .pbtn::before{/* 裁切紙的微毛邊高光 */content:'';position:absolute;inset:1px;border-radius:12px;
+   box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);pointer-events:none}
+ .pbtn:hover{transform:translateY(-2px);
+   box-shadow:
+     0 1px 0 rgba(255,255,255,.6) inset,
+     0 -3px 5px rgba(120,80,45,.18) inset,
+     0 2px 0 var(--pc-side),
+     0 4px 0 var(--pc-deep),
+     0 12px 16px rgba(110,86,63,.32),
+     0 22px 34px rgba(70,80,75,.16)}
+ .pbtn:active{transform:translateY(4px);/* 紙被按進去：側壁壓薄、落影收起 */
+   box-shadow:
+     0 1px 0 rgba(255,255,255,.4) inset,
+     0 -2px 4px rgba(120,80,45,.22) inset,
+     0 1px 0 var(--pc-side),
+     0 2px 5px rgba(110,86,63,.26)}
+ .pbtn.sage{--pc:var(--sage);--pc-side:#86998c;--pc-deep:#6f8678;--pc-ink:#2f4034}
+ .pbtn.sand{--pc:var(--sand);--pc-side:#cdbf9f;--pc-deep:#b6a684;--pc-ink:#5b513a}
+
+ /* 紙雕分頁／篩選鍵：薄一層的裁切紙片，選中時紙片抬起 */
+ .ptabs{display:inline-flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+ .ptab{position:relative;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;
+   color:var(--mut);background:var(--sand);padding:9px 16px;border-radius:12px;
+   box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 2px 0 #d6c8a8,0 4px 8px rgba(110,86,63,.16);
+   transform:translateY(0);transition:transform .12s,box-shadow .12s,color .12s,background .12s}
+ .ptab:hover{transform:translateY(-1px)}
+ .ptab[aria-pressed="true"]{color:#5a3920;background:var(--terra);transform:translateY(-2px);
+   box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 2px 0 var(--terra-d),0 4px 0 #b06f3d,
+              0 10px 16px rgba(110,86,63,.28)}
+ .ptab .cnt{display:inline-block;min-width:17px;margin-left:6px;padding:0 5px;border-radius:99px;
+   font-size:10px;line-height:16px;background:rgba(110,86,63,.14);color:inherit}
+ .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+ .toolbar .spacer{flex:1}
+ @media print{.pbtn,.ptabs,.toolbar .pbtn{display:none}}
  /* 深色「描圖紙」設定卡 —— 唯一半透 */
  .vellum{background:rgba(124,138,130,.42);backdrop-filter:blur(2px);color:#2f3530}
  .vellum h2,.vellum .lbl{color:#2f3530}
@@ -194,6 +245,7 @@
     </div>
     <div class="spacer"></div>
     <div class="total"><b>49</b><span>空戰優勢總分 / 100</span></div>
+    <button class="pbtn sage" id="btnPrint" type="button" title="列印或另存 PDF">🖨 匯出報告</button>
   </header>
 
   <div class="grid" id="cards"></div>
@@ -202,6 +254,11 @@
     <span class="bead"></span><span class="cico"></span>
     <h2>🔴 立即處理（Critical / High）</h2>
     <div class="desc">皆可改在不會被自動覆蓋的安全位置（產生器樣板、設定檔、新增獨立檔），符合「不手改 index.html」原則。</div>
+    <div class="ptabs" id="fbar" role="group" aria-label="嚴重度篩選">
+      <button class="ptab" type="button" data-f="all" aria-pressed="true">全部<span class="cnt" id="cAll"></span></button>
+      <button class="ptab" type="button" data-f="C" aria-pressed="false">重大 Critical<span class="cnt" id="cC"></span></button>
+      <button class="ptab" type="button" data-f="H" aria-pressed="false">高 High<span class="cnt" id="cH"></span></button>
+    </div>
     <div id="findings"></div>
   </section>
 
@@ -286,12 +343,27 @@ const F=[
  {s:'H',t:'更新頻率三處打架',p:'update-news.yml:6（*/10）vs meta refresh 1800（30分）',why:'後端每 10 分產生、瀏覽器每 30 分整頁 reload，名實不符，誤導維運並與「即時脈動」綠點矛盾。',fix:'統一口徑為 10 分，並將整頁 refresh 改 JS 局部更新。'},
  {s:'H',t:'整頁 meta refresh 傷體驗與 SEO',p:'index.html:6 / fetch_news.ps1:2408',why:'400KB 大頁每次整頁重載、捲動位置歸零；http-equiv refresh 被搜尋引擎視為負面訊號。',fix:'移除 meta refresh，改用 fetch() 局部抽換新聞區塊。'},
 ];
-document.getElementById('findings').innerHTML=F.map(f=>{
- const cls=f.s==='C'?'c':'h',lab=f.s==='C'?'CRITICAL':'HIGH';
- return`<div class="finding ${cls}"><div class="ttl"><span class="sev ${cls}">${lab}</span>${f.t}</div>
-  <div class="path">📄 ${f.p}</div><div class="why">為什麼重要：${f.why}</div>
-  <div class="fix"><b>怎麼修：</b>${f.fix}</div></div>`;
-}).join('');
+function renderFindings(filter){
+ const list=filter==='all'?F:F.filter(f=>f.s===filter);
+ document.getElementById('findings').innerHTML=list.map(f=>{
+  const cls=f.s==='C'?'c':'h',lab=f.s==='C'?'CRITICAL':'HIGH';
+  return`<div class="finding ${cls}"><div class="ttl"><span class="sev ${cls}">${lab}</span>${f.t}</div>
+   <div class="path">📄 ${f.p}</div><div class="why">為什麼重要：${f.why}</div>
+   <div class="fix"><b>怎麼修：</b>${f.fix}</div></div>`;
+ }).join('');
+}
+renderFindings('all');
+// 紙雕篩選鍵：點擊切換、計數
+document.getElementById('cAll').textContent=F.length;
+document.getElementById('cC').textContent=F.filter(f=>f.s==='C').length;
+document.getElementById('cH').textContent=F.filter(f=>f.s==='H').length;
+document.getElementById('fbar').addEventListener('click',function(e){
+ const b=e.target.closest('.ptab');if(!b)return;
+ this.querySelectorAll('.ptab').forEach(t=>t.setAttribute('aria-pressed',t===b));
+ renderFindings(b.dataset.f);
+});
+// 紙雕匯出鍵：列印 / 另存 PDF
+document.getElementById('btnPrint').addEventListener('click',()=>window.print());
 
 const SHORT=['新增 <b>robots.txt</b>（含 GPTBot／PerplexityBot／ClaudeBot／Google-Extended 與 Sitemap 行）',
  '新增 <b>sitemap.xml</b>，由 fetch_news.ps1 順手產生並蓋 lastmod，把鮮度餵搜尋引擎',
