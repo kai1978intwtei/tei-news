@@ -177,7 +177,18 @@
       <button class="segbtn" type="button" data-strat="desktop" aria-pressed="false">電腦版</button>
       <button class="btn accent" type="button" id="btnRun">▶ 體檢</button>
     </div>
+    <div class="url-row" style="margin-top:12px">
+      <input type="password" id="apiKey" class="urlinput" placeholder="Google PSI API 金鑰（建議填，免費；空白則用每日極少的匿名額度）" autocomplete="off" spellcheck="false">
+      <button class="mini" type="button" id="btnKeyHelp" title="如何取得免費金鑰">怎麼拿金鑰?</button>
+    </div>
     <div class="audit-status" id="auditStatus"></div>
+    <div id="keyHelp" style="display:none;font-size:12px;color:#6b6960;margin-top:12px;padding:14px 16px;border-radius:14px;box-shadow:var(--inset-sm);line-height:1.9">
+      <b style="color:var(--accent)">免費金鑰 3 步驟（約 1 分鐘）：</b><br>
+      1. 開 <b>console.cloud.google.com/apis/credentials</b>，登入 Google 帳號<br>
+      2. 上方「啟用 API」搜尋 <b>PageSpeed Insights API</b> 並啟用<br>
+      3. 回 Credentials →「建立憑證」→「API 金鑰」→ 複製貼到上面欄位<br>
+      <span style="color:var(--mut)">金鑰只存在你這台瀏覽器（localStorage），不會上傳。免費額度每天 25,000 次。</span>
+    </div>
   </section>
 
   <div class="hint card">
@@ -373,13 +384,16 @@ async function doAudit(){
  const strategy=stratBtn?stratBtn.dataset.strat:'mobile';
  const st=document.getElementById('auditStatus');
  const btn=document.getElementById('btnRun');
+ const apiKey=document.getElementById('apiKey').value.trim();
+ if(apiKey)localStorage.setItem('psiKey',apiKey);
 
  btn.disabled=true;
  st.className='audit-status';
  st.innerHTML='<span class="spinner"></span>呼叫 Google PageSpeed Insights 中（約 20–40 秒，請稍候）…';
 
  try{
-   const ep=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&category=seo&category=best-practices&category=accessibility`;
+   const keyParam=apiKey?`&key=${encodeURIComponent(apiKey)}`:'';
+   const ep=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&category=seo&category=best-practices&category=accessibility${keyParam}`;
    const res=await fetch(ep);
    if(!res.ok){
      let msg=`HTTP ${res.status}`;
@@ -433,7 +447,13 @@ async function doAudit(){
 
  }catch(e){
    st.className='audit-status err';
-   st.textContent=`✗ 體檢失敗：${e.message}。請確認網址正確且可公開存取。`;
+   if(/quota|Queries per day|rateLimitExceeded/i.test(e.message)){
+     st.innerHTML='✗ Google 匿名額度今天用完了。請在上面欄位填一支<b>免費 API 金鑰</b>（按「怎麼拿金鑰?」看 1 分鐘教學），填完即可繼續無限體檢。';
+     document.getElementById('keyHelp').style.display='block';
+     document.getElementById('apiKey').focus();
+   }else{
+     st.textContent=`✗ 體檢失敗：${e.message}。請確認網址正確且可公開存取。`;
+   }
  }finally{
    btn.disabled=false;
  }
@@ -447,8 +467,17 @@ document.querySelectorAll('[data-strat]').forEach(b=>{
  });
 });
 
+// 還原已存的金鑰、金鑰教學開關
+const savedKey=localStorage.getItem('psiKey');
+if(savedKey)document.getElementById('apiKey').value=savedKey;
+document.getElementById('btnKeyHelp').addEventListener('click',()=>{
+ const h=document.getElementById('keyHelp');
+ h.style.display=h.style.display==='none'?'block':'none';
+});
+
 document.getElementById('btnRun').addEventListener('click',doAudit);
 document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')doAudit();});
+document.getElementById('apiKey').addEventListener('keydown',e=>{if(e.key==='Enter')doAudit();});
 </script>
 </body>
 </html>
