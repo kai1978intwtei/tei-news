@@ -3,416 +3,211 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TEi 網路空戰指揮中心 · 紙雕工作站</title>
+<title>TEi 網路空戰指揮中心 · 柔軟工作站</title>
 <style>
  *{box-sizing:border-box;margin:0;padding:0}
  :root{
-   /* 對著參考圖取色 —— 立體紙雕 */
-   --tile:#F4EFE7;        /* 奶油紙磚（卡片） */
-   --sage:#9FB3A6;        /* 鼠尾草綠紙 */
-   --sage-d:#86998c;      /* 綠紙厚側 */
-   --terra:#CE8053;       /* 陶土橘紙（亮面） */
-   --terra-d:#B46235;     /* 陶土橘紙（厚側／暗面） */
-   --sand:#E3D2B0;        /* 砂紙黃 */
-   --sand-d:#CDBA94;      /* 砂紙厚側 */
-   --pin:#E08A52;         /* 圖釘橘珠 */
-   --pin-d:#BC6531;
-   --ink:#5B5343;         /* 紙上文字 */
-   --mut:#938A77;         /* 淡墨 */
+   /* Neumorphism 柔軟 UI —— 同色系 + 雙向柔影 + 藍色點綴 */
+   --bg:#E7E5E0;
+   --ink:#56544E;
+   --mut:#9C9A91;
+   --accent:#3B6FF5;
+   --accent-2:#6E92F8;
+   --hi:rgba(255,255,255,.92);
+   --sh:rgba(166,164,153,.55);
+   --raise:-6px -6px 12px var(--hi),6px 6px 14px var(--sh);
+   --raise-sm:-3px -3px 7px var(--hi),4px 4px 9px var(--sh);
+   --raise-lg:-9px -9px 18px var(--hi),9px 9px 20px var(--sh);
+   --inset:inset -4px -4px 8px var(--hi),inset 5px 5px 10px var(--sh);
+   --inset-sm:inset -2px -2px 5px var(--hi),inset 3px 3px 6px var(--sh);
  }
  html,body{overscroll-behavior-y:none}
- body{min-height:100vh;color:var(--ink);line-height:1.55;
+ body{min-height:100vh;color:var(--ink);line-height:1.55;background:var(--bg);
    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Inter",-apple-system,sans-serif;
-   letter-spacing:-.002em;-webkit-font-smoothing:antialiased;
-   /* 上方柔綠霧、下方暖砂 —— 取自參考圖環境 */
-   background:linear-gradient(178deg,#C8D5C9 0%,#CDD6C7 32%,#D8D3BE 60%,#E6D6B6 100%);
-   background-attachment:fixed;padding:30px 22px 70px;position:relative;overflow-x:hidden}
+   letter-spacing:-.002em;-webkit-font-smoothing:antialiased;padding:30px 22px 64px}
+ .wrap{max-width:1180px;margin:0 auto}
 
- /* 底部折疊牛皮紙山景（立體分層，對著參考圖下緣） */
- .scene{position:fixed;left:0;right:0;bottom:0;height:62vh;z-index:-2;overflow:hidden;pointer-events:none}
- .scene svg{position:absolute;bottom:0;width:100%;height:100%;min-width:1200px}
- /* 紙紋顆粒 */
- .grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.07;mix-blend-mode:multiply}
- .spark{position:fixed;width:11px;height:11px;pointer-events:none;z-index:0;opacity:.7;
-   background:radial-gradient(circle,#fff 0%,transparent 60%)}
- .spark::before,.spark::after{content:'';position:absolute;background:#fff;opacity:.8}
- .spark::before{left:4.5px;top:-3px;width:1.4px;height:17px;border-radius:2px}
- .spark::after{top:4.5px;left:-3px;width:17px;height:1.4px;border-radius:2px}
+ /* 柔軟卡 */
+ .card{background:var(--bg);border-radius:26px;box-shadow:var(--raise)}
 
- .wrap{max-width:1200px;margin:0 auto;position:relative;z-index:1}
-
- /* ===== 紙磚（每張卡都是一塊有厚度、有柔影的奶油卡紙） ===== */
- .tile{background:linear-gradient(180deg,#F8F4ED,var(--tile) 60%,#EFE8DB);
-   border-radius:28px;position:relative;
-   box-shadow:
-     0 1px 0 rgba(255,255,255,.9) inset,
-     0 -10px 18px rgba(150,135,110,.05) inset,
-     0 3px 5px rgba(120,108,90,.12),
-     0 16px 28px rgba(110,100,82,.16),
-     0 40px 60px rgba(95,88,70,.10)}
- /* 紙磚切邊高光 */
- .tile::after{content:'';position:absolute;inset:0;border-radius:28px;
-   box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5),inset 0 0 0 2.5px rgba(120,100,75,.04);
-   pointer-events:none}
- /* 圖釘橘珠：每張紙磚左上，會在紙面上投影 */
- .pin{position:absolute;left:22px;top:20px;width:22px;height:22px;border-radius:50%;z-index:4;
-   background:radial-gradient(circle at 34% 28%,#F2B488,var(--pin) 52%,var(--pin-d) 92%);
-   box-shadow:
-     0 1px 0 rgba(255,255,255,.5) inset,
-     0 -2px 3px rgba(150,70,30,.3) inset,
-     2px 5px 7px rgba(120,70,40,.34),
-     5px 9px 12px rgba(120,70,40,.16)}
-
- /* 抬頭紙磚 */
- header.top{padding:24px 30px;margin-bottom:20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
- .logo{height:52px;min-width:52px;border-radius:15px;padding:0 16px;
-   display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;color:#fff6ee;
-   letter-spacing:.03em;
-   background:linear-gradient(160deg,var(--terra),var(--terra-d));
-   box-shadow:0 1px 0 rgba(255,255,255,.4) inset,0 4px 7px rgba(150,80,40,.34),0 10px 16px rgba(150,80,40,.16)}
- .htext h1{font-size:23px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+ /* 抬頭 */
+ header.top{padding:22px 28px;margin-bottom:24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+ .logo{height:56px;min-width:56px;border-radius:18px;padding:0 16px;display:flex;align-items:center;justify-content:center;
+   font-weight:800;font-size:19px;letter-spacing:.03em;color:var(--accent);background:var(--bg);box-shadow:var(--raise-sm)}
+ .htext h1{font-size:22px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
  .htext .sub{color:var(--mut);font-size:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px}
  .htext .sub b{color:var(--ink);font-weight:700}
- .dot{width:9px;height:9px;border-radius:50%;background:#7ba585;box-shadow:0 1px 2px rgba(110,86,63,.3)}
+ .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(59,111,245,.16)}
  .spacer{flex:1}
- /* 總分：陶土紙圓頂 */
- .total{text-align:center;padding:14px 26px;border-radius:20px;color:#5a3517;position:relative;
-   background:radial-gradient(120% 120% at 32% 22%,#F4C79E,var(--terra) 58%,var(--terra-d));
-   box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 -4px 8px rgba(150,80,40,.25) inset,
-              0 5px 9px rgba(150,80,40,.3),0 14px 22px rgba(150,80,40,.16)}
- .total b{font-size:34px;font-weight:800;display:block;line-height:1;color:#5a3517}
- .total span{font-size:11px;opacity:.85}
+ .total{display:flex;align-items:center;gap:14px;padding:12px 20px;border-radius:20px;box-shadow:var(--inset)}
+ .total .gv{font-size:30px;font-weight:800;color:var(--accent);line-height:1}
+ .total small{font-size:11px;color:var(--mut);display:block;margin-top:3px}
 
- /* ===== 真 3D 打光紙雕按鈕：底是 SVG 打光紙磚，字浮在上面 ===== */
- .claybtn{position:relative;border:none;outline:none;background:none;cursor:pointer;padding:0;
-   transform:translateY(0);transition:transform .12s ease;-webkit-tap-highlight-color:transparent}
- .claybtn .cb{position:absolute;inset:0;width:100%;height:100%;display:block}
- .claybtn .lbl{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;
-   width:100%;height:100%;font-family:inherit;font-weight:800;letter-spacing:.01em;
-   text-shadow:0 1px 0 rgba(255,255,255,.45)}
- .claybtn:hover{transform:translateY(-2px)}
- .claybtn:active{transform:translateY(3px)}
+ /* ===== 柔軟按鈕：Default / Hover / Pressed / Disabled ===== */
+ .btn{border:none;outline:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;color:var(--ink);
+   background:var(--bg);padding:12px 22px;border-radius:16px;box-shadow:var(--raise-sm);
+   transition:box-shadow .14s ease,color .14s ease,transform .05s ease;-webkit-tap-highlight-color:transparent}
+ .btn:hover{box-shadow:var(--raise)}
+ .btn:active{box-shadow:var(--inset-sm);color:var(--accent)}
+ .btn.accent{color:var(--accent)}
+ .btn:disabled{cursor:default;color:#BDBBB2;box-shadow:var(--raise-sm);opacity:.7}
 
- /* 七維紙磚網格 */
- .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:22px;margin-bottom:22px}
- .dtile{padding:24px 24px 22px;display:flex;flex-direction:column;min-height:276px}
- .dtile .nm{font-size:16.5px;font-weight:800;margin:2px 0 0 30px;color:var(--ink)}
- .dtile .n{font-size:10.5px;color:var(--mut);font-weight:700;margin-left:30px}
- .viz{flex:1;display:flex;align-items:center;justify-content:center;padding:14px 0 8px}
- .viz svg{width:auto;height:140px;max-width:100%}
- .drow{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:4px}
- .score{font-size:30px;font-weight:800;color:var(--ink);line-height:1}
- .score small{font-size:13px;color:var(--mut);font-weight:700}
- .score.na{font-size:20px;color:#9aa399}
- .chip{font-size:10.5px;font-weight:800;padding:5px 11px;border-radius:99px;
-   box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 2px 4px rgba(110,90,60,.18)}
+ /* 分段篩選鍵：未選=凸起，選中=壓入(Pressed) */
+ .seg{display:inline-flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+ .segbtn{border:none;outline:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px;color:var(--mut);
+   background:var(--bg);padding:11px 18px;border-radius:14px;box-shadow:var(--raise-sm);
+   display:inline-flex;align-items:center;gap:8px;transition:box-shadow .14s,color .14s;-webkit-tap-highlight-color:transparent}
+ .segbtn:hover{box-shadow:var(--raise)}
+ .segbtn[aria-pressed="true"]{box-shadow:var(--inset);color:var(--accent)}
+ .segbtn .cnt{min-width:20px;padding:1px 7px;border-radius:99px;font-size:10.5px;font-weight:800;
+   background:var(--bg);box-shadow:var(--inset-sm);color:inherit}
+ .segbtn[aria-pressed="true"] .cnt{color:var(--accent)}
 
- /* 區塊紙磚 */
- section.tile{padding:24px 28px;margin-bottom:20px}
- section h2{font-size:17px;font-weight:800;margin-bottom:3px;display:flex;align-items:center;gap:9px;color:var(--ink);margin-left:8px}
- section .desc{font-size:12px;color:var(--mut);margin:0 0 15px 8px}
+ /* 七維柔軟卡 */
+ .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:24px;margin-bottom:24px}
+ .dcard{padding:24px 22px 22px;display:flex;flex-direction:column;align-items:center;text-align:center}
+ .dcard .n{font-size:10.5px;color:var(--mut);font-weight:700;letter-spacing:.04em}
+ .dcard .nm{font-size:16px;font-weight:800;margin:2px 0 16px;color:var(--ink)}
+ /* 凹陷圓井 + 藍色進度環 + 中央數字 */
+ .gauge{position:relative;width:124px;height:124px;border-radius:50%;box-shadow:var(--inset);
+   display:grid;place-items:center;margin-bottom:16px}
+ .gauge svg{position:absolute;inset:0}
+ .gauge .gv{font-size:30px;font-weight:800;color:var(--ink);line-height:1}
+ .gauge .gv small{font-size:12px;color:var(--mut);font-weight:700}
+ .gauge .gv.na{font-size:17px;color:var(--mut)}
+ .pill{font-size:11px;font-weight:800;padding:7px 16px;border-radius:99px;color:var(--mut);
+   background:var(--bg);box-shadow:var(--raise-sm)}
+ .pill.good{color:#3E8E6E} .pill.warn{color:#C08A3A} .pill.weak{color:#C2603F} .pill.accent{color:var(--accent)}
 
- /* 真 3D 打光紙雕篩選鍵 */
- .ptabs{display:inline-flex;gap:10px;flex-wrap:wrap;margin:0 0 16px 8px}
- .ptab{position:relative;border:none;outline:none;background:none;cursor:pointer;padding:0;height:42px;
-   transform:translateY(0);transition:transform .12s;-webkit-tap-highlight-color:transparent}
- .ptab .cb{position:absolute;inset:0;width:100%;height:100%;display:block}
- .ptab .lbl{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:6px;
-   width:100%;height:100%;padding:0 16px;font-family:inherit;font-weight:800;font-size:12px;color:var(--mut);
-   text-shadow:0 1px 0 rgba(255,255,255,.4)}
- .ptab:hover{transform:translateY(-1px)}
- .ptab[aria-pressed="true"]{transform:translateY(-2px)}
- .ptab[aria-pressed="true"] .lbl{color:#5a3517}
- .ptab .cnt{display:inline-block;min-width:18px;padding:0 5px;border-radius:99px;
-   font-size:10px;line-height:17px;background:rgba(110,86,63,.18);color:inherit}
+ /* 柔軟開關（呼應參考圖元件） */
+ .ctrls{display:flex;flex-direction:column;gap:14px;width:100%;margin-top:2px}
+ .ctrl{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12.5px;font-weight:600;color:var(--ink)}
+ .sw{width:50px;height:28px;border-radius:99px;box-shadow:var(--inset);position:relative;cursor:pointer;flex-shrink:0;transition:box-shadow .15s}
+ .sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+   background:var(--bg);box-shadow:var(--raise-sm);transition:left .18s ease,background .18s}
+ .sw.on::after{left:25px;background:var(--accent)}
 
- /* 立即處理：每筆一張小紙片 */
- .finding{padding:13px 16px 13px 17px;border-radius:16px;background:linear-gradient(180deg,#F6F1E9,#ECE4D5);
-   box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 2px 4px rgba(110,90,60,.12),0 8px 16px rgba(95,88,70,.10);
-   margin-bottom:12px;position:relative;overflow:hidden}
- .finding::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px}
- .finding.c::before{background:var(--terra-d)} .finding.h::before{background:var(--terra)}
- .finding .ttl{font-weight:800;font-size:14px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;color:var(--ink)}
- .sev{font-size:9.5px;font-weight:800;padding:4px 9px;border-radius:8px;color:#fff7ef;flex-shrink:0;
-   box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 2px 4px rgba(150,80,40,.25)}
- .sev.c{background:var(--terra-d)} .sev.h{background:var(--terra)}
- .finding .path{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11px;color:#7a5a38;margin:6px 0;
-   background:var(--sand);display:inline-block;padding:3px 9px;border-radius:8px;
-   box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 1px 2px rgba(110,90,60,.18)}
- .finding .why{font-size:12px;color:#5c574c;margin-top:3px}
- .finding .fix{font-size:12px;color:#5a4a36;margin-top:4px}
- .finding .fix b{color:var(--terra-d)}
+ /* 區塊 */
+ section.card{padding:26px 28px;margin-bottom:24px}
+ section h2{font-size:16.5px;font-weight:800;margin-bottom:4px;color:var(--ink)}
+ section .desc{font-size:12px;color:var(--mut);margin-bottom:18px}
 
- .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+ /* 立即處理：每筆一條柔軟表格列 */
+ .finding{padding:15px 18px;border-radius:18px;box-shadow:var(--raise-sm);margin-bottom:14px;background:var(--bg)}
+ .finding .ttl{font-weight:800;font-size:14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;color:var(--ink)}
+ .sev{font-size:9.5px;font-weight:800;padding:5px 10px;border-radius:9px;flex-shrink:0;box-shadow:var(--inset-sm)}
+ .sev.c{color:#C2603F} .sev.h{color:#C08A3A}
+ .finding .path{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11px;color:var(--accent);margin:9px 0;
+   background:var(--bg);display:inline-block;padding:5px 11px;border-radius:10px;box-shadow:var(--inset-sm)}
+ .finding .why{font-size:12px;color:#6b6960;margin-top:4px}
+ .finding .fix{font-size:12px;color:var(--ink);margin-top:5px}
+ .finding .fix b{color:var(--accent)}
+
+ .cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
  @media(max-width:760px){.cols{grid-template-columns:1fr}}
  ul.lst{list-style:none}
- ul.lst li{font-size:12px;padding:9px 0 9px 24px;position:relative;border-bottom:1px dashed rgba(110,86,63,.16);color:#5c574c}
+ ul.lst li{font-size:12px;padding:11px 0 11px 22px;position:relative;color:#6b6960;border-bottom:1px solid rgba(166,164,153,.22)}
  ul.lst li:last-child{border-bottom:none}
- ul.lst li:before{content:'';position:absolute;left:2px;top:14px;width:11px;height:11px;border-radius:50%;
-   background:radial-gradient(circle at 34% 28%,#F2B488,var(--pin) 60%,var(--pin-d));
-   box-shadow:1px 2px 3px rgba(120,70,40,.3)}
- ul.lst li b{color:var(--ink)}
+ ul.lst li:before{content:'';position:absolute;left:0;top:15px;width:9px;height:9px;border-radius:50%;
+   background:var(--accent);box-shadow:0 0 0 3px rgba(59,111,245,.14)}
+ ul.lst li b{color:var(--ink);font-weight:700}
 
- .caps{display:flex;flex-wrap:wrap;gap:10px;margin-left:8px}
- .cap{font-size:12px;font-weight:700;padding:9px 15px;border-radius:14px;background:var(--sand);color:var(--ink);
-   box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 2px 0 var(--sand-d),0 5px 9px rgba(110,90,60,.16)}
+ .caps{display:flex;flex-wrap:wrap;gap:12px}
+ .cap{font-size:12px;font-weight:700;padding:10px 16px;border-radius:14px;color:var(--ink);background:var(--bg);box-shadow:var(--raise-sm)}
 
- footer{text-align:center;color:rgba(70,64,52,.62);font-size:11px;padding:18px;line-height:1.8}
- @media print{.pbtn,.ptabs{display:none}body{background:#fff}.tile{box-shadow:0 0 0 1px #e4dccb}}
+ footer{text-align:center;color:var(--mut);font-size:11px;padding:18px;line-height:1.8}
+ @media print{.btn,.seg{display:none}body{background:#fff}}
 </style>
 </head>
 <body>
-
-<!-- 底部折疊牛皮紙山景（立體分層） -->
-<div class="scene">
- <svg viewBox="0 0 1440 560" preserveAspectRatio="xMidYMax slice">
-  <defs>
-   <filter id="fold" x="-20%" y="-30%" width="140%" height="160%">
-     <feDropShadow dx="0" dy="-9" stdDeviation="16" flood-color="#b59a6e" flood-opacity="0.18"/>
-   </filter>
-  </defs>
-  <path filter="url(#fold)" fill="#EBDDC2" d="M0,300 C240,250 420,300 680,270 C920,242 1080,300 1440,262 L1440,560 L0,560 Z"/>
-  <path filter="url(#fold)" fill="#E3D2B0" d="M0,372 C260,330 470,382 720,352 C980,322 1170,376 1440,346 L1440,560 L0,560 Z"/>
-  <path filter="url(#fold)" fill="#DAC59E" d="M0,442 C300,406 520,452 800,427 C1040,405 1230,450 1440,422 L1440,560 L0,560 Z"/>
-  <path filter="url(#fold)" fill="#D0B88C" d="M0,502 C320,476 560,512 860,494 C1100,480 1290,510 1440,490 L1440,560 L0,560 Z"/>
- </svg>
-</div>
-<div class="spark" style="left:7%;top:6%"></div>
-<div class="spark" style="left:93%;top:13%;transform:scale(.7)"></div>
-<div class="spark" style="left:82%;top:4%;transform:scale(.5)"></div>
-
-<!-- 紙紋顆粒 -->
-<svg class="grain"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
-
-<!-- 共用紙雕濾鏡／漸層 -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <filter id="lift" x="-30%" y="-30%" width="160%" height="170%">
-    <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#6e5a45" flood-opacity="0.30"/>
-  </filter>
-  <filter id="liftS" x="-40%" y="-40%" width="180%" height="190%">
-    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#6e5a45" flood-opacity="0.30"/>
-  </filter>
-  <linearGradient id="gTerra" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#DB9468"/><stop offset="1" stop-color="#C16E3F"/></linearGradient>
-  <linearGradient id="gSage" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#ABBDB0"/><stop offset="1" stop-color="#90A597"/></linearGradient>
-  <linearGradient id="gSand" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#ECDDBE"/><stop offset="1" stop-color="#D8C49C"/></linearGradient>
-  <linearGradient id="gCream" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#F6EFE2"/><stop offset="1" stop-color="#E7DCC6"/></linearGradient>
-
-  <!-- 真 3D 打光：把平面形狀打成有軟光、有高光、有接地影的立體黏土/紙雕表面 -->
-  <filter id="clay" x="-35%" y="-35%" width="170%" height="180%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="bump"/>
-    <feDiffuseLighting in="bump" surfaceScale="3" diffuseConstant="1.15"
-        lighting-color="#fff7ec" result="diff">
-      <feDistantLight azimuth="235" elevation="68"/>
-    </feDiffuseLighting>
-    <feComposite in="diff" in2="SourceGraphic" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="lit"/>
-    <feComposite in="lit" in2="SourceAlpha" operator="in" result="lit"/>
-    <feSpecularLighting in="bump" surfaceScale="3" specularConstant="0.28" specularExponent="9"
-        lighting-color="#fffaf0" result="spec">
-      <feDistantLight azimuth="235" elevation="68"/>
-    </feSpecularLighting>
-    <feComposite in="spec" in2="SourceAlpha" operator="in" result="spec"/>
-    <feComposite in="lit" in2="spec" operator="arithmetic" k1="0" k2="1" k3="0.7" k4="0" result="surf"/>
-    <feDropShadow in="surf" dx="0" dy="6" stdDeviation="7" flood-color="#7a6347" flood-opacity="0.22"/>
-  </filter>
-  <!-- 球面打光：圖釘珠／旋鈕 -->
-  <filter id="ball" x="-45%" y="-45%" width="190%" height="200%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="5.5" result="bump"/>
-    <feDiffuseLighting in="bump" surfaceScale="4" diffuseConstant="1.18"
-        lighting-color="#fff7ec" result="diff">
-      <feDistantLight azimuth="235" elevation="66"/>
-    </feDiffuseLighting>
-    <feComposite in="diff" in2="SourceGraphic" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="lit"/>
-    <feComposite in="lit" in2="SourceAlpha" operator="in" result="lit"/>
-    <feSpecularLighting in="bump" surfaceScale="4" specularConstant="0.3" specularExponent="11"
-        lighting-color="#fffaf0" result="spec">
-      <feDistantLight azimuth="235" elevation="66"/>
-    </feSpecularLighting>
-    <feComposite in="spec" in2="SourceAlpha" operator="in" result="spec"/>
-    <feComposite in="lit" in2="spec" operator="arithmetic" k1="0" k2="1" k3="0.65" k4="0" result="surf"/>
-    <feDropShadow in="surf" dx="0" dy="3" stdDeviation="3" flood-color="#8a6a45" flood-opacity="0.24"/>
-  </filter>
-</defs></svg>
-
 <div class="wrap">
 
-  <header class="top tile">
-    <span class="pin"></span>
+  <header class="top card">
     <div class="logo">TEi</div>
     <div class="htext">
-      <h1>網路空戰指揮中心 · 紙雕工作站</h1>
-      <div class="sub"><span class="dot"></span> 立體紙雕主題
+      <h1>網路空戰指揮中心 · 柔軟工作站</h1>
+      <div class="sub"><span class="dot"></span> Neumorphism 柔軟 UI
         <span>·</span> 稽核對象 <b>tei-news</b>
         <span>·</span> 2026-06-20</div>
     </div>
     <div class="spacer"></div>
-    <div class="total"><b>49</b><span>空戰優勢總分 / 100</span></div>
-    <button class="claybtn" id="btnPrint" type="button" title="列印或另存 PDF" style="width:154px;height:50px">
-      <svg class="cb" viewBox="0 0 154 50"><rect x="5" y="4" width="144" height="42" rx="16" fill="url(#gSage)" filter="url(#clay)"/></svg>
-      <span class="lbl" style="font-size:13px;color:#2f4034">🖨 匯出報告</span>
-    </button>
+    <div class="total"><div><span class="gv">49</span></div><small>空戰優勢<br>總分 / 100</small></div>
+    <button class="btn accent" id="btnPrint" type="button" title="列印或另存 PDF">匯出報告</button>
   </header>
 
-  <div class="grid">
+  <div class="grid" id="cards"></div>
 
-    <!-- 維度1 程式Bug：分層紙雕山（每層各自 3D 打光） -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 1</div><div class="nm">程式 Bug 查驗</div>
-      <div class="viz"><svg width="210" height="120" viewBox="0 0 210 120">
-        <ellipse cx="108" cy="113" rx="84" ry="5" fill="#6e5a45" opacity=".14"/>
-        <polygon points="30,104 56,56 82,104" fill="url(#gSage)" filter="url(#clay)"/>
-        <polygon points="130,106 158,60 186,106" fill="url(#gSand)" filter="url(#clay)"/>
-        <polygon points="72,108 114,32 156,108" fill="url(#gTerra)" filter="url(#clay)"/>
-      </svg></div>
-      <div class="drow"><div class="score">78<small>/100</small></div>
-        <span class="chip" style="background:#DCE7DE;color:#5e7a66">良好</span></div>
-    </div>
-
-    <!-- 維度2 網路安全：單峰防護山 -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 2</div><div class="nm">網路安全</div>
-      <div class="viz"><svg width="210" height="120" viewBox="0 0 210 120">
-        <ellipse cx="112" cy="113" rx="78" ry="5" fill="#6e5a45" opacity=".14"/>
-        <polygon points="118,108 148,58 178,108" fill="url(#gSage)" filter="url(#clay)"/>
-        <polygon points="56,108 106,24 156,108" fill="url(#gTerra)" filter="url(#clay)"/>
-      </svg></div>
-      <div class="drow"><div class="score">55<small>/100</small></div>
-        <span class="chip" style="background:#F3DEC6;color:#b46235">待強化</span></div>
-    </div>
-
-    <!-- 維度3 SEO：厚紙甜甜圈 38% -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 3</div><div class="nm">SEO 效率</div>
-      <div class="viz"><svg width="130" height="120" viewBox="0 0 130 120">
-        <circle cx="65" cy="61" r="40" fill="none" stroke="#E2D4B8" stroke-width="22" filter="url(#clay)"/>
-        <circle cx="65" cy="60" r="40" fill="none" stroke="url(#gTerra)" stroke-width="22"
-          stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="155.7" transform="rotate(-90 65 60)" filter="url(#clay)"/>
-        <text x="65" y="67" text-anchor="middle" font-size="21" font-weight="800" fill="#6E5A45">38</text>
-      </svg></div>
-      <div class="drow"><div class="score">38<small>/100</small></div>
-        <span class="chip" style="background:#EFD3BC;color:#b46235">弱</span></div>
-    </div>
-
-    <!-- 維度4 行銷火力：紙條長條圖（待補） -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 4</div><div class="nm">行銷火力</div>
-      <div class="viz"><svg width="200" height="120" viewBox="0 0 200 120">
-        <ellipse cx="108" cy="113" rx="82" ry="4.5" fill="#6e5a45" opacity=".13"/>
-        <rect x="34" y="64" width="20" height="44" rx="10" fill="url(#gTerra)" filter="url(#clay)"/>
-        <rect x="66" y="44" width="20" height="64" rx="10" fill="url(#gSand)" filter="url(#clay)"/>
-        <rect x="98" y="80" width="20" height="28" rx="10" fill="url(#gTerra)" filter="url(#clay)"/>
-        <rect x="130" y="36" width="20" height="72" rx="10" fill="url(#gSand)" filter="url(#clay)"/>
-        <rect x="162" y="58" width="20" height="50" rx="10" fill="url(#gTerra)" filter="url(#clay)"/>
-      </svg></div>
-      <div class="drow"><div class="score na">待補</div>
-        <span class="chip" style="background:#DCE0DA;color:#7d8a80">外網待放行</span></div>
-    </div>
-
-    <!-- 維度5 競品對標：浮雕折線（待補） -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 5</div><div class="nm">競品對標</div>
-      <div class="viz"><svg width="210" height="120" viewBox="0 0 210 120">
-        <path d="M18,92 C46,70 58,84 80,52 C100,24 120,70 144,46 C166,24 182,40 196,30"
-          fill="none" stroke="url(#gTerra)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" filter="url(#clay)"/>
-        <circle cx="80" cy="52" r="8" fill="url(#gCream)" filter="url(#ball)"/>
-        <circle cx="144" cy="46" r="8" fill="url(#gSage)" filter="url(#ball)"/>
-      </svg></div>
-      <div class="drow"><div class="score na">待補</div>
-        <span class="chip" style="background:#DCE0DA;color:#7d8a80">外網待放行</span></div>
-    </div>
-
-    <!-- 維度6 使用者旅程：流程節點 -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 6</div><div class="nm">使用者旅程</div>
-      <div class="viz"><svg width="200" height="120" viewBox="0 0 200 120">
-        <path d="M40,30 L40,56 L70,56 M70,56 L70,84" fill="none" stroke="#9a8a70" stroke-width="2.5" opacity=".55"/>
-        <rect x="92" y="22" width="78" height="13" rx="6.5" fill="url(#gSand)" filter="url(#clay)"/>
-        <rect x="92" y="50" width="78" height="13" rx="6.5" fill="url(#gTerra)" filter="url(#clay)"/>
-        <rect x="92" y="78" width="78" height="13" rx="6.5" fill="url(#gSand)" filter="url(#clay)"/>
-        <circle cx="40" cy="24" r="9" fill="url(#gTerra)" filter="url(#ball)"/>
-        <circle cx="170" cy="28" r="5.5" fill="#C16E3F" filter="url(#ball)"/>
-        <circle cx="170" cy="56" r="5.5" fill="#C16E3F" filter="url(#ball)"/>
-        <circle cx="170" cy="84" r="5.5" fill="#C16E3F" filter="url(#ball)"/>
-      </svg></div>
-      <div class="drow"><div class="score">60<small>/100</small></div>
-        <span class="chip" style="background:#F3DEC6;color:#b46235">待強化</span></div>
-    </div>
-
-    <!-- 維度7 AEO/GEO/AIO：紙派餅 30% -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">維度 7</div><div class="nm">AEO／GEO／AIO</div>
-      <div class="viz"><svg width="130" height="120" viewBox="0 0 130 120">
-        <circle cx="65" cy="60" r="46" fill="url(#gCream)" filter="url(#clay)"/>
-        <path d="M65,60 L65,14 A46,46 0 0,1 105.8,82.9 Z" fill="url(#gSage)" filter="url(#clay)"/>
-        <path d="M65,60 L105.8,82.9 A46,46 0 0,1 78.5,103.6 Z" fill="url(#gTerra)" filter="url(#clay)"/>
-      </svg></div>
-      <div class="drow"><div class="score">30<small>/100</small></div>
-        <span class="chip" style="background:#EFD3BC;color:#b46235">弱</span></div>
-    </div>
-
-    <!-- 旋鈕紙磚：對著參考圖中間那排立體旋鈕（球面打光） -->
-    <div class="tile dtile"><span class="pin"></span>
-      <div class="n">控制台</div><div class="nm">作戰開關</div>
-      <div class="viz"><svg width="200" height="120" viewBox="0 0 200 120">
-        <circle cx="46" cy="60" r="22" fill="url(#gCream)" filter="url(#ball)"/><circle cx="46" cy="60" r="11" fill="url(#gTerra)" filter="url(#ball)"/>
-        <circle cx="100" cy="60" r="22" fill="url(#gCream)" filter="url(#ball)"/><circle cx="100" cy="60" r="11" fill="url(#gSand)" filter="url(#ball)"/>
-        <circle cx="154" cy="60" r="22" fill="url(#gCream)" filter="url(#ball)"/><circle cx="154" cy="60" r="11" fill="url(#gSage)" filter="url(#ball)"/>
-      </svg></div>
-      <div class="drow"><div class="score" style="font-size:15px;color:var(--mut)">三維開關</div>
-        <span class="chip" style="background:#DCE7DE;color:#5e7a66">紙雕</span></div>
-    </div>
-
-  </div>
-
-  <section class="tile">
-    <span class="pin"></span>
-    <h2>🔴 立即處理（Critical / High）</h2>
+  <section class="card">
+    <h2>立即處理（Critical / High）</h2>
     <div class="desc">皆可改在不會被自動覆蓋的安全位置（產生器樣板、設定檔、新增獨立檔），符合「不手改 index.html」原則。</div>
-    <div class="ptabs" id="fbar" role="group" aria-label="嚴重度篩選">
-      <button class="ptab" type="button" data-f="all" aria-pressed="true" style="width:96px">
-        <svg class="cb" viewBox="0 0 96 42"><rect class="tbg" x="3" y="3" width="90" height="36" rx="13" fill="url(#gTerra)" filter="url(#clay)"/></svg>
-        <span class="lbl">全部<span class="cnt" id="cAll"></span></span></button>
-      <button class="ptab" type="button" data-f="C" aria-pressed="false" style="width:152px">
-        <svg class="cb" viewBox="0 0 152 42"><rect class="tbg" x="3" y="3" width="146" height="36" rx="13" fill="url(#gSand)" filter="url(#clay)"/></svg>
-        <span class="lbl">重大 Critical<span class="cnt" id="cC"></span></span></button>
-      <button class="ptab" type="button" data-f="H" aria-pressed="false" style="width:120px">
-        <svg class="cb" viewBox="0 0 120 42"><rect class="tbg" x="3" y="3" width="114" height="36" rx="13" fill="url(#gSand)" filter="url(#clay)"/></svg>
-        <span class="lbl">高 High<span class="cnt" id="cH"></span></span></button>
+    <div class="seg" id="fbar" role="group" aria-label="嚴重度篩選">
+      <button class="segbtn" type="button" data-f="all" aria-pressed="true">全部<span class="cnt" id="cAll"></span></button>
+      <button class="segbtn" type="button" data-f="C" aria-pressed="false">重大 Critical<span class="cnt" id="cC"></span></button>
+      <button class="segbtn" type="button" data-f="H" aria-pressed="false">高 High<span class="cnt" id="cH"></span></button>
     </div>
     <div id="findings"></div>
   </section>
 
   <div class="cols">
-    <section class="tile">
-      <span class="pin"></span>
-      <h2>🟡 短期優化 <span style="font-size:12px;color:var(--mut);font-weight:600">1–2 週</span></h2>
+    <section class="card">
+      <h2>短期優化 <span style="font-size:12px;color:var(--mut);font-weight:600">1–2 週</span></h2>
+      <div class="desc">可立即排程的低風險增益。</div>
       <ul class="lst" id="short"></ul>
     </section>
-    <section class="tile">
-      <span class="pin"></span>
-      <h2>🟢 中長期戰略</h2>
+    <section class="card">
+      <h2>中長期戰略</h2>
+      <div class="desc">需要規劃與內容投入的高價值方向。</div>
       <ul class="lst" id="long"></ul>
     </section>
   </div>
 
-  <section class="tile">
-    <span class="pin"></span>
-    <h2>🛠️ 這個工作站能做什麼</h2>
+  <section class="card">
+    <h2>這個工作站能做什麼</h2>
     <div class="desc">website-audit-seo 代理的七大作戰維度。維度 4／5 需外網實測，待線上網址與環境放行後補做。</div>
     <div class="caps" id="caps"></div>
   </section>
 
   <footer>
-    立體紙雕主題 · 圖表、圖示、按鍵、旋鈕皆以 CSS／SVG 做成分層紙雕（非背景貼圖）。<br>
-    資料來源為 website-audit-seo 代理對本機 repo 的實際稽核（附行號）。競品分析與線上實測因外網白名單暫擋，標記為待補。
+    Neumorphism 柔軟 UI 主題 · 全部元件以純 CSS 雙向柔影做成（無外部圖、無背景貼圖）。<br>
+    資料來源為 website-audit-seo 代理對本機 repo 的實際稽核（附行號）。
   </footer>
 
 </div>
 
 <script>
+const DIM=[
+ {n:'維度 1',nm:'程式 Bug 查驗',v:78,tag:'良好',cls:'good'},
+ {n:'維度 2',nm:'網路安全',v:55,tag:'待強化',cls:'warn'},
+ {n:'維度 3',nm:'SEO 效率',v:38,tag:'弱',cls:'weak'},
+ {n:'維度 4',nm:'行銷火力',v:null,tag:'外網待放行',cls:'accent'},
+ {n:'維度 5',nm:'競品對標',v:null,tag:'外網待放行',cls:'accent'},
+ {n:'維度 6',nm:'使用者旅程',v:60,tag:'待強化',cls:'warn'},
+ {n:'維度 7',nm:'AEO／GEO／AIO',v:30,tag:'弱',cls:'weak'},
+];
+const r=52,cir=2*Math.PI*r;
+document.getElementById('cards').innerHTML=DIM.map(d=>{
+ const pct=d.v==null?0:d.v,off=cir*(1-pct/100);
+ const ring=`<svg width="124" height="124" viewBox="0 0 124 124">
+   <circle cx="62" cy="62" r="${r}" fill="none" stroke="rgba(166,164,153,.30)" stroke-width="9"/>
+   <circle cx="62" cy="62" r="${r}" fill="none" stroke="#3B6FF5" stroke-width="9" stroke-linecap="round"
+     stroke-dasharray="${cir.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 62 62)"/></svg>`;
+ const val=d.v==null?'<span class="gv na">待補</span>':`<span class="gv">${d.v}<small>/100</small></span>`;
+ return`<div class="card dcard">
+   <div class="n">${d.n}</div><div class="nm">${d.nm}</div>
+   <div class="gauge">${ring}${val}</div>
+   <span class="pill ${d.cls}">${d.tag}</span></div>`;
+}).join('')
+ // 末張：柔軟開關控制台，呼應參考圖元件
+ +`<div class="card dcard" style="align-items:stretch">
+    <div class="n" style="text-align:center">控制台</div><div class="nm" style="text-align:center">作戰開關</div>
+    <div class="ctrls">
+      <div class="ctrl">即時鮮度脈動<span class="sw on" data-sw></span></div>
+      <div class="ctrl">AI 爬蟲開放<span class="sw on" data-sw></span></div>
+      <div class="ctrl">安全標頭強制<span class="sw" data-sw></span></div>
+      <div class="ctrl">競品雷達<span class="sw" data-sw></span></div>
+    </div></div>`;
+document.querySelectorAll('[data-sw]').forEach(s=>s.addEventListener('click',()=>s.classList.toggle('on')));
+
 const F=[
  {s:'C',t:'部署根目錄恐讓新聞站沒被收錄',p:'vercel.json:3',why:'outputDirectory:"salesys" 代表線上根目錄服務的是內部業務系統，而非 index.html 新聞站；robots/sitemap 放 repo 根也不會被服務，且可能暴露內部系統。',fix:'確認線上根目錄打開哪頁，再決定改 outputDirectory 或把 SEO 資產放進 salesys。'},
  {s:'C',t:'六大基礎 SEO 標籤全缺（實證 0 筆）',p:'fetch_news.ps1:2403-2414 → index.html:1-12',why:'無 description→摘要被亂抓；無 OG→LINE／Email 分享無預覽縮圖，點擊率腰斬；無 canonical→每 10 分改動易判重複。',fix:'改在 fetch_news.ps1 head 樣板補齊（勿手改 index.html）。'},
@@ -425,8 +220,8 @@ function renderFindings(filter){
  const list=filter==='all'?F:F.filter(f=>f.s===filter);
  document.getElementById('findings').innerHTML=list.map(f=>{
   const cls=f.s==='C'?'c':'h',lab=f.s==='C'?'CRITICAL':'HIGH';
-  return`<div class="finding ${cls}"><div class="ttl"><span class="sev ${cls}">${lab}</span>${f.t}</div>
-   <div class="path">📄 ${f.p}</div><div class="why">為什麼重要：${f.why}</div>
+  return`<div class="finding"><div class="ttl"><span class="sev ${cls}">${lab}</span>${f.t}</div>
+   <div class="path">${f.p}</div><div class="why">為什麼重要：${f.why}</div>
    <div class="fix"><b>怎麼修：</b>${f.fix}</div></div>`;
  }).join('');
 }
@@ -435,11 +230,8 @@ document.getElementById('cAll').textContent=F.length;
 document.getElementById('cC').textContent=F.filter(f=>f.s==='C').length;
 document.getElementById('cH').textContent=F.filter(f=>f.s==='H').length;
 document.getElementById('fbar').addEventListener('click',function(e){
- const b=e.target.closest('.ptab');if(!b)return;
- this.querySelectorAll('.ptab').forEach(t=>{
-   const on=t===b;t.setAttribute('aria-pressed',on);
-   const bg=t.querySelector('.tbg');if(bg)bg.setAttribute('fill',on?'url(#gTerra)':'url(#gSand)');
- });
+ const b=e.target.closest('.segbtn');if(!b)return;
+ this.querySelectorAll('.segbtn').forEach(t=>t.setAttribute('aria-pressed',t===b));
  renderFindings(b.dataset.f);
 });
 document.getElementById('btnPrint').addEventListener('click',()=>window.print());
