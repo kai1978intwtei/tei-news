@@ -44,6 +44,16 @@ jobs:
         shell: pwsh
         run: Copy-Item output/latest.html -Destination index.html -Force
 
+      - name: Compute commit stats
+        shell: pwsh
+        run: |
+          $cache = 0
+          if (Test-Path .translate_cache.json) {
+            try { $cache = (Get-Content .translate_cache.json -Raw | ConvertFrom-Json).PSObject.Properties.Count } catch { $cache = 0 }
+          }
+          $sizeKB = if (Test-Path index.html) { [math]::Round((Get-Item index.html).Length / 1KB) } else { 0 }
+          "STATS=快取 $cache 條, index.html ${sizeKB}KB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Commit & push (reset-on-conflict pattern)
         shell: bash
         run: |
@@ -51,10 +61,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 把我們剛產生的最新 index.html / cache 暫存到 /tmp，避免 reset 時被覆蓋
+          # 只把剛產生的 index.html 暫存到 /tmp，避免 reset 時被覆蓋。
+          # .translate_cache.json 已改由 actions/cache 持久化、且列入 .gitignore，不再進 git。
           mkdir -p /tmp/ours
           cp -f index.html /tmp/ours/ 2>/dev/null || true
-          cp -f .translate_cache.json /tmp/ours/ 2>/dev/null || true
 
           # 嘗試最多 8 次：每次都 reset 到 origin/main 最新狀態 → 還原我們的檔案 → push
           for i in 1 2 3 4 5 6 7 8; do
@@ -62,16 +72,15 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # 把暫存的我方最新檔案還原回工作目錄
+            # 把暫存的我方最新 index.html 還原回工作目錄（reset --hard 不會動到被 .gitignore 的快取）
             cp -f /tmp/ours/index.html . 2>/dev/null || true
-            cp -f /tmp/ours/.translate_cache.json . 2>/dev/null || true
 
-            git add index.html .translate_cache.json
+            git add index.html
             if git diff --cached --quiet; then
               echo "Remote already up-to-date with our content. No commit needed."
               exit 0
             fi
-            git commit -m "auto-update $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git commit -m "auto-update $(date -u +'%Y-%m-%d %H:%M UTC') [${STATS}]"
 
             if git push origin HEAD:main; then
               echo "Pushed successfully on attempt $i"

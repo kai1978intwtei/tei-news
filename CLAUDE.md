@@ -50,8 +50,8 @@
 ## 5. 已知技術債與待辦（依 CP 值排序）
 
 - [ ] **拆配置檔**：把 `fetch_news.ps1` 的 RSS 來源（L87–556）、關鍵字表（L109–160）、翻譯邏輯（L644–760）抽成 `sources.json` / `keywords.json` / `translate.ps1`。
-- [ ] **快取不入 git**：`.translate_cache.json` 改用 GitHub Actions cache / Artifacts，移進 `.gitignore`（可瘦身 repo 3–5MB）。
-- [ ] **結構化 commit 訊息**：自動更新訊息從 `auto-update <時間>` 改為含統計（快取數、新翻譯數）。
+- [x] **快取不入 git**：`.translate_cache.json` 已列入 `.gitignore` 並從索引移除，改由 workflow 的 `actions/cache@v4` 持久化（run_id 為 key、`translate-cache-` 為 restore 前綴）。
+- [x] **結構化 commit 訊息**：自動更新訊息已改為 `auto-update <時間> [快取 N 條, index.html NKB]`（見 workflow「Compute commit stats」步驟）。
 - [ ] **拆巨型 HTML**：大型單檔的內嵌 CSS/JS 拆成 `css/`、`js/modules/`，降低每次編輯 context。
 - [ ] **無測試／lint／建置**：尚無 package.json、ESLint、單元測試。
 

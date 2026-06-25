@@ -1,1 +1,4 @@
 _site/
+
+# 翻譯快取改由 GitHub Actions cache 持久化，不入 git（避免 repo 肥大）
+.translate_cache.json
