@@ -5,7 +5,7 @@
 -- Depends: 2026-05-28-teisale-assistant-shipping-contacts.sql (must run first)
 -- Target:  ProjFlow PostgreSQL (Supabase-style auth.uid())
 --
--- 本 migration 對應前端 teisale-prototype.html 聯絡簿頁的新功能:
+-- 本 migration 對應前端 salesys/index.html 聯絡簿頁的新功能:
 --   1. 客戶 / 供應商 加上「產業別」分類(11 種)
 --   2. 加上「區域 → 國家」層級分類(11 區 / 30+ 國家)
 --   3. 增加索引以支援多維度篩選查詢

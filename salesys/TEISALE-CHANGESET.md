@@ -1,8 +1,8 @@
 # TEi-Salesys ‧ 衝刺艙 ‧ ProjFlow 變更規格
 
-> **文件用途**:本文件提供 ProjFlow 後端應對前端原型 `teisale-prototype.html` 新增功能所需的 schema / RLS / API / profile 變更。  
+> **文件用途**:本文件提供 ProjFlow 後端應對前端原型 `salesys/index.html` 新增功能所需的 schema / RLS / API / profile 變更。  
 > **變更分支**:`claude/fervent-ptolemy-zSq3U`  
-> **前端原型版本**:`teisale-prototype.html`(本次新增 4 個分頁、2 個 tier、3 種資料表)
+> **前端原型版本**:`salesys/index.html`(本次新增 4 個分頁、2 個 tier、3 種資料表)
 
 ---
 
@@ -580,4 +580,4 @@ GM dashboard 可用這幾個欄位顯示「**聯絡簿分類覆蓋率**」與「
 
 ---
 
-> 結束。任何欄位 / 規則有疑問,請以本前端原型實際行為為準(`teisale-prototype.html` 在 `claude/fervent-ptolemy-zSq3U` 分支)。
+> 結束。任何欄位 / 規則有疑問,請以本前端原型實際行為為準(`salesys/index.html` 在 `claude/fervent-ptolemy-zSq3U` 分支)。

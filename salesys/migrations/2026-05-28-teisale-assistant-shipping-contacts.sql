@@ -5,7 +5,7 @@
 -- Author:  TEi-Salesys 衝刺艙原型 v2
 -- Target:  ProjFlow PostgreSQL (Supabase-style auth.uid())
 --
--- 本 migration 對應前端 teisale-prototype.html 的下列功能新增:
+-- 本 migration 對應前端 salesys/index.html 的下列功能新增:
 --   1. 業務助理 (assistant) 與船務 (shipping) 兩個新 tier
 --   2. teisale.assistant_task    業助任務(含截止日 + 附件)
 --   3. teisale.shipping_item     船務進出貨(含報關 + EDI 欄位)
