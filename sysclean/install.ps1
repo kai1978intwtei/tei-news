@@ -164,6 +164,7 @@ if (-not $NoScan) {
 Write-Host ''
 Write-Host '=============== 安裝完成 ===============' -ForegroundColor Cyan
 Write-Host '桌面按鈕：一鍵健檢／一鍵保養／一鍵面板（面板網址 http://localhost:8377）'
-Write-Host '每週日 12:10 自動保養；橋接器每 10 分鐘收 AI 交件（深度動作仍需你核准）'
+Write-Host '每週日 12:10 自動保養；橋接器每 2 分鐘收手機遙控指令與 AI 交件'
 Write-Host 'AI 一鍵指令：在本資料夾開 Claude Code，輸入 /pc-clean'
+Write-Host '手機遙控：跑 remote-setup.ps1 把遙控器搬到 OneDrive，手機就能按' -ForegroundColor Green
 Write-Host '全部移除：install.ps1 -Uninstall' -ForegroundColor DarkGray
