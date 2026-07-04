@@ -1,4 +1,7 @@
 _site/
+node_modules/
+package.json
+package-lock.json
 
 # sysclean 本機產物（報告/備份/紀錄/自動計畫不進版控）
 sysclean/reports/
