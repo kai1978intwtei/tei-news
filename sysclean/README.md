@@ -54,10 +54,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File sysclean\clean.ps1 -Undo sys
 3. **開機自啟**：登錄檔 Run（HKLM/HKCU/WOW6432Node）＋啟動資料夾，含「已停用」狀態判讀
 4. **排程任務**：所有非 Microsoft 排程（很多軟體的更新器藏在這）
 5. **自動服務**：開機自動啟動的服務，自動標記第三方
-6. **垃圾檔案**：使用者/系統暫存、Windows Update 下載快取、Chrome/Edge 快取、
+6. **垃圾檔案**：使用者/系統暫存、Windows Update 下載快取、
    當機傾印（CrashDumps/Minidump/MEMORY.DMP）、著色器快取、資源回收筒、Windows.old
-7. **已安裝軟體**：依大小排序前 40 名（找暫時用不到的大型軟體，解除安裝一律人工執行）
-8. **大檔案深掃**（`-DeepDisk` 選配）：使用者資料夾 >200MB 檔案前 25 名
+7. **瀏覽器深掃（藏在網頁裡的都抓出來）**：
+   - Chrome / Edge / Brave / Vivaldi / Opera / Firefox，**所有使用者設定檔**（不只 Default）
+   - 快取、Code Cache、GPUCache、媒體快取、**Service Worker 離線儲存**（網站藏資料的地方）
+   - **擴充功能盤點**：列出每個瀏覽器裝了哪些外掛（名稱/版本/大小/權限），
+     高風險權限（<all_urls>、webRequest、debugger…）自動標紅 —— 挖礦、廣告外掛最常躲這裡
+8. **已安裝軟體**：依大小排序前 40 名（找暫時用不到的大型軟體，解除安裝一律人工執行）
+9. **大檔案深掃**（`-DeepDisk` 選配）：使用者資料夾 >200MB 檔案前 25 名
 
 ## 安全設計
 
@@ -66,6 +71,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File sysclean\clean.ps1 -Undo sys
 - **白名單底線**：`config.json` 的受保護程序／服務（Defender、網路、音效、輸入法、核心系統）
   即使寫進 plan.json 也會被拒絕執行。
 - **刪檔範圍鎖死**：只允許 `allowedCleanPaths` 列出的暫存／快取資料夾，其他路徑一律拒絕。
+- **瀏覽器只清快取**：`cleanBrowserCache` 只清 `browserCacheSubdirs` 列出的快取子目錄，
+  書籤、密碼、歷史、Cookie、擴充功能本體絕對不碰；可疑擴充功能只「列出來給你看」，
+  移除一律由你自己在瀏覽器的擴充功能頁面操作（直接刪資料夾會弄壞設定檔）。
 - **凡可逆皆備份**：停用自啟（備份登錄值）、啟動捷徑（搬到 backups/ 而非刪除）、
   排程任務（可重新啟用）、服務啟動模式（記錄原值），全部可 `-Undo` 一鍵還原。
 - **解除安裝不自動化**：大型軟體只列清單，由你自己在「設定 → 應用程式」處理。

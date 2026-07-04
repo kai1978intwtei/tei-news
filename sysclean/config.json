@@ -62,13 +62,27 @@
     "%SystemRoot%\\Temp",
     "%SystemRoot%\\SoftwareDistribution\\Download",
     "%SystemRoot%\\Minidump",
-    "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Cache",
-    "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Code Cache",
-    "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Cache",
-    "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Code Cache",
     "%LOCALAPPDATA%\\CrashDumps",
     "%LOCALAPPDATA%\\D3DSCache",
     "%LOCALAPPDATA%\\NVIDIA\\DXCache",
-    "%LOCALAPPDATA%\\NVIDIA\\GLCache"
+    "%LOCALAPPDATA%\\NVIDIA\\GLCache",
+    "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\cache2"
+  ],
+
+  "_瀏覽器說明": "browserProfileRoots 是 cleanBrowserCache 動作允許的瀏覽器設定檔範圍（萬用字元涵蓋所有 Profile）；browserCacheSubdirs 是設定檔底下「只會被清理」的快取子目錄，書籤／密碼／歷史／擴充功能本體絕對不會被碰。",
+  "browserProfileRoots": [
+    "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*",
+    "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*",
+    "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*",
+    "%LOCALAPPDATA%\\Vivaldi\\User Data\\*",
+    "%LOCALAPPDATA%\\Opera Software\\Opera Stable"
+  ],
+  "browserCacheSubdirs": [
+    "Cache",
+    "Code Cache",
+    "GPUCache",
+    "Media Cache",
+    "Service Worker\\CacheStorage",
+    "Service Worker\\ScriptCache"
   ]
 }

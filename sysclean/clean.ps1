@@ -16,8 +16,8 @@ sysclean/clean.ps1 — 個人電腦系統清理執行器（預設乾跑，加 -A
   還原：powershell -NoProfile -ExecutionPolicy Bypass -File sysclean\clean.ps1 -Undo sysclean\backups\backup-XXXX.json
 
 plan.json 支援的動作（見 plan.sample.json）：
-  cleanTemp / emptyRecycleBin / disableStartupRegistry / disableStartupFolder /
-  disableTask / setServiceManual / stopProcess / flushDns
+  cleanTemp / cleanBrowserCache / emptyRecycleBin / disableStartupRegistry /
+  disableStartupFolder / disableTask / setServiceManual / stopProcess / flushDns
 #>
 [CmdletBinding()]
 param(
@@ -62,6 +62,10 @@ $protectedServices  = @($config.protectedServices  | ForEach-Object { $_.ToLower
 $allowedCleanPaths  = @($config.allowedCleanPaths | ForEach-Object {
     [Environment]::ExpandEnvironmentVariables($_).TrimEnd('\')
 })
+$browserProfileRoots = @($config.browserProfileRoots | ForEach-Object {
+    [Environment]::ExpandEnvironmentVariables($_).TrimEnd('\')
+})
+$browserCacheSubdirs = @($config.browserCacheSubdirs)
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -80,9 +84,15 @@ function Get-FolderSizeMB {
 function Test-AllowedCleanPath {
     param([string]$Path)
     $expanded = [Environment]::ExpandEnvironmentVariables($Path).TrimEnd('\')
+    if ($expanded -match '\.\.') { return $null }   # 禁止路徑跳脫
     foreach ($allowed in $allowedCleanPaths) {
-        if ($expanded.Equals($allowed, [System.StringComparison]::OrdinalIgnoreCase)) { return $expanded }
-        if ($expanded.StartsWith($allowed + '\', [System.StringComparison]::OrdinalIgnoreCase)) { return $expanded }
+        if ($allowed.Contains('*')) {
+            if ($expanded -like $allowed) { return $expanded }
+            if ($expanded -like ($allowed + '\*')) { return $expanded }
+        } else {
+            if ($expanded.Equals($allowed, [System.StringComparison]::OrdinalIgnoreCase)) { return $expanded }
+            if ($expanded.StartsWith($allowed + '\', [System.StringComparison]::OrdinalIgnoreCase)) { return $expanded }
+        }
     }
     return $null
 }
@@ -172,6 +182,40 @@ foreach ($a in $actions) {
             $freed = [math]::Round($before - $after, 1)
             $freedMB += [math]::Max($freed, 0)
             Write-Log "已清理：$target（釋放約 $freed MB，使用中檔案自動略過）" 'Green'; $done++
+        }
+
+        'cleanBrowserCache' {
+            $profPath = [Environment]::ExpandEnvironmentVariables([string]$a.path).TrimEnd('\')
+            $okRoot = $false
+            if ($profPath -notmatch '\.\.') {
+                foreach ($r in $browserProfileRoots) {
+                    if ($profPath -like $r -or $profPath.Equals($r, [System.StringComparison]::OrdinalIgnoreCase)) { $okRoot = $true; break }
+                }
+            }
+            if (-not $okRoot) {
+                Write-Log "拒絕：$($a.path) 不是 config.json 允許的瀏覽器設定檔路徑" 'Red'; $skipped++; break
+            }
+            $before = 0.0
+            foreach ($sub in $browserCacheSubdirs) { $before += Get-FolderSizeMB -Path (Join-Path $profPath $sub) }
+            if (-not $Apply) {
+                Write-Log "[乾跑] 會清瀏覽器快取（只清快取子目錄，不碰書籤/密碼/歷史/擴充功能）：$profPath（目前約 $([math]::Round($before,1)) MB）$reason" 'Yellow'; break
+            }
+            $browserProcs = Get-Process -Name chrome, msedge, brave, vivaldi, opera -ErrorAction SilentlyContinue
+            if ($browserProcs) {
+                Write-Log '提醒：瀏覽器仍開啟中，使用中的快取檔會自動略過（先關閉瀏覽器可清得更乾淨）' 'Yellow'
+            }
+            foreach ($sub in $browserCacheSubdirs) {
+                $dir = Join-Path $profPath $sub
+                if (Test-Path -LiteralPath $dir) {
+                    Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue |
+                        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
+            $after = 0.0
+            foreach ($sub in $browserCacheSubdirs) { $after += Get-FolderSizeMB -Path (Join-Path $profPath $sub) }
+            $freed = [math]::Round($before - $after, 1)
+            $freedMB += [math]::Max($freed, 0)
+            Write-Log "已清瀏覽器快取：$profPath（釋放約 $freed MB）" 'Green'; $done++
         }
 
         'emptyRecycleBin' {

@@ -238,10 +238,6 @@ $junkTargets = @(
     @{ name = '使用者暫存 (%TEMP%)';            path = $env:TEMP;                                                          action = 'cleanTemp' },
     @{ name = '系統暫存 (Windows\Temp)';        path = "$env:SystemRoot\Temp";                                             action = 'cleanTemp' },
     @{ name = 'Windows Update 下載快取';        path = "$env:SystemRoot\SoftwareDistribution\Download";                    action = 'cleanTemp' },
-    @{ name = 'Chrome 快取';                    path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache";          action = 'cleanTemp' },
-    @{ name = 'Chrome Code Cache';              path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Code Cache";     action = 'cleanTemp' },
-    @{ name = 'Edge 快取';                      path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache";         action = 'cleanTemp' },
-    @{ name = 'Edge Code Cache';                path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Code Cache";    action = 'cleanTemp' },
     @{ name = '應用程式當機傾印 (CrashDumps)';  path = "$env:LOCALAPPDATA\CrashDumps";                                     action = 'cleanTemp' },
     @{ name = '系統當機小型傾印 (Minidump)';    path = "$env:SystemRoot\Minidump";                                         action = 'cleanTemp' },
     @{ name = 'DirectX 著色器快取';             path = "$env:LOCALAPPDATA\D3DSCache";                                      action = 'cleanTemp' },
@@ -280,6 +276,122 @@ try {
         sizeMB = [math]::Round($rbSize / 1MB, 1); suggestedAction = 'emptyRecycleBin'
     }
 } catch { }
+
+# ---------- 6b. 瀏覽器深掃（藏在網頁裡的東西） ----------
+Write-Host '[6b] 瀏覽器深掃：所有瀏覽器 × 所有設定檔（快取／Service Worker／擴充功能）…' -ForegroundColor Green
+$chromiumBrowsers = @(
+    @{ name = 'Chrome';  userData = "$env:LOCALAPPDATA\Google\Chrome\User Data" },
+    @{ name = 'Edge';    userData = "$env:LOCALAPPDATA\Microsoft\Edge\User Data" },
+    @{ name = 'Brave';   userData = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data" },
+    @{ name = 'Vivaldi'; userData = "$env:LOCALAPPDATA\Vivaldi\User Data" },
+    @{ name = 'Opera';   userData = "$env:LOCALAPPDATA\Opera Software\Opera Stable" }
+)
+$cacheSubdirs = @('Cache', 'Code Cache', 'GPUCache', 'Media Cache', 'Service Worker\CacheStorage', 'Service Worker\ScriptCache')
+$browserExtensions = @()
+
+foreach ($b in $chromiumBrowsers) {
+    if (-not (Test-Path $b.userData)) { continue }
+    # Opera 的設定檔就是根目錄本身；其他 Chromium 系列是 Default / Profile N
+    if ($b.name -eq 'Opera') { $profiles = @(Get-Item $b.userData) }
+    else {
+        $profiles = @(Get-ChildItem $b.userData -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -eq 'Default' -or $_.Name -like 'Profile *' })
+    }
+    foreach ($prof in $profiles) {
+        # 快取（含 Service Worker 離線儲存 —— 網站藏資料的地方）
+        $cacheMB = 0.0
+        foreach ($sub in $cacheSubdirs) {
+            $s = Get-FolderSizeMB -Path (Join-Path $prof.FullName $sub)
+            if ($s) { $cacheMB += $s }
+        }
+        if ($cacheMB -gt 0) {
+            $junk += [pscustomobject]@{
+                name = "$($b.name) 瀏覽器快取（$($prof.Name)，含 Service Worker）"
+                path = $prof.FullName
+                sizeMB = [math]::Round($cacheMB, 1)
+                suggestedAction = 'cleanBrowserCache'
+            }
+        }
+        # 擴充功能盤點（藏在瀏覽器裡的常駐程式，挖礦／廣告外掛最常躲這裡）
+        $extRoot = Join-Path $prof.FullName 'Extensions'
+        if (Test-Path $extRoot) {
+            foreach ($extDir in @(Get-ChildItem $extRoot -Directory -ErrorAction SilentlyContinue)) {
+                $verDir = Get-ChildItem $extDir.FullName -Directory -ErrorAction SilentlyContinue |
+                    Sort-Object Name -Descending | Select-Object -First 1
+                if (-not $verDir) { continue }
+                $manifestPath = Join-Path $verDir.FullName 'manifest.json'
+                if (-not (Test-Path $manifestPath)) { continue }
+                $m = $null
+                try { $m = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
+                if (-not $m) { continue }
+                $extName = [string]$m.name
+                # 名稱是 __MSG_xxx__ 時到 _locales 解析真名
+                if ($extName -like '__MSG_*') {
+                    $msgKey = $extName -replace '^__MSG_', '' -replace '__$', ''
+                    $locale = if ($m.default_locale) { [string]$m.default_locale } else { 'en' }
+                    $msgPath = Join-Path $verDir.FullName "_locales\$locale\messages.json"
+                    if (Test-Path $msgPath) {
+                        try {
+                            $msgs = Get-Content $msgPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                            $prop = $msgs.PSObject.Properties | Where-Object { $_.Name -ieq $msgKey } | Select-Object -First 1
+                            if ($prop -and $prop.Value.message) { $extName = [string]$prop.Value.message }
+                        } catch { }
+                    }
+                }
+                $perms = @()
+                if ($m.permissions) { $perms = @($m.permissions | Where-Object { $_ -is [string] }) }
+                $browserExtensions += [pscustomobject]@{
+                    browser     = $b.name
+                    profile     = $prof.Name
+                    id          = $extDir.Name
+                    name        = $extName
+                    version     = [string]$m.version
+                    sizeMB      = Get-FolderSizeMB -Path $extDir.FullName
+                    permissions = ($perms -join ', ')
+                }
+            }
+        }
+    }
+}
+
+# Firefox：快取（LOCALAPPDATA）＋擴充功能清單（APPDATA 的 extensions.json）
+$ffCacheRoot = "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles"
+if (Test-Path $ffCacheRoot) {
+    foreach ($fp in @(Get-ChildItem $ffCacheRoot -Directory -ErrorAction SilentlyContinue)) {
+        $c2 = Join-Path $fp.FullName 'cache2'
+        $s = Get-FolderSizeMB -Path $c2
+        if ($s -gt 0) {
+            $junk += [pscustomobject]@{
+                name = "Firefox 瀏覽器快取（$($fp.Name)）"
+                path = $c2; sizeMB = $s; suggestedAction = 'cleanTemp'
+            }
+        }
+    }
+}
+$ffProfileRoot = "$env:APPDATA\Mozilla\Firefox\Profiles"
+if (Test-Path $ffProfileRoot) {
+    foreach ($fp in @(Get-ChildItem $ffProfileRoot -Directory -ErrorAction SilentlyContinue)) {
+        $extJson = Join-Path $fp.FullName 'extensions.json'
+        if (Test-Path $extJson) {
+            try {
+                $fx = Get-Content $extJson -Raw -Encoding UTF8 | ConvertFrom-Json
+                foreach ($ad in @($fx.addons)) {
+                    if ($ad.type -ne 'extension' -or $ad.hidden) { continue }
+                    $adName = if ($ad.defaultLocale -and $ad.defaultLocale.name) { [string]$ad.defaultLocale.name } else { [string]$ad.id }
+                    $browserExtensions += [pscustomobject]@{
+                        browser     = 'Firefox'
+                        profile     = $fp.Name
+                        id          = [string]$ad.id
+                        name        = $adName
+                        version     = [string]$ad.version
+                        sizeMB      = $null
+                        permissions = if ($ad.active) { '啟用中' } else { '已停用' }
+                    }
+                }
+            } catch { }
+        }
+    }
+}
 
 $junkTotalMB = [math]::Round((($junk | Where-Object { $_.sizeMB } | Measure-Object sizeMB -Sum).Sum), 1)
 
@@ -356,6 +468,7 @@ $report = [ordered]@{
     autoServices  = $services
     junk          = $junk
     junkTotalMB   = $junkTotalMB
+    browserExtensions = $browserExtensions
     installedApps = $installedApps
     largeFiles    = $largeFiles
     hints         = $hints
@@ -388,6 +501,7 @@ Write-Host ("記憶體使用：{0}% （{1} / {2} MB）" -f $system.memoryUsedPct
 Write-Host ("CPU 取樣：{0}%（{1} 核心）" -f $totalCpuPct, $cores)
 Write-Host ("可清理垃圾檔案合計：約 {0} MB" -f $junkTotalMB) -ForegroundColor Yellow
 Write-Host ("開機自啟項：{0} 個（啟用中 {1} 個）" -f $startupItems.Count, @($startupItems | Where-Object { $_.state -eq 'enabled' }).Count)
+Write-Host ("瀏覽器擴充功能：{0} 個（藏在網頁裡的常駐程式，請檢查報告確認都認得）" -f $browserExtensions.Count)
 Write-Host ("知識庫命中建議：{0} 筆" -f $hints.Count) -ForegroundColor Yellow
 Write-Host ''
 Write-Host "JSON 報告：$jsonPath"

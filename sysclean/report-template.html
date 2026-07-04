@@ -138,6 +138,17 @@ section('⚙️ 自動啟動服務（第三方排前面）',
        <td class="dim">${esc(s.state)}</td>
        <td>${s.thirdParty?'<span class="tag warn">第三方</span>':'<span class="tag ok">系統</span>'}</td></tr>`)));
 
+if (arr(D.browserExtensions).length) {
+  const risky = (p) => /<all_urls>|webRequest|nativeMessaging|debugger|proxy/i.test(p || '');
+  section('🧩 瀏覽器擴充功能（藏在網頁裡的常駐程式，確認每一個你都認得）',
+    table(['瀏覽器','設定檔','名稱','版本','大小 (MB)','權限'],
+      arr(D.browserExtensions).map(e =>
+        `<tr><td>${esc(e.browser)}</td><td class="dim">${esc(e.profile)}</td>
+         <td>${esc(e.name)}</td><td class="dim">${esc(e.version||'')}</td>
+         <td class="num">${num(e.sizeMB)}</td>
+         <td class="path">${risky(e.permissions)?'<span class="tag bad">高權限</span> ':''}${esc(e.permissions||'')}</td></tr>`)));
+}
+
 section('📦 已安裝軟體（依大小，找出暫時用不到的大型軟體）',
   table(['軟體','版本','大小 (MB)','安裝日期','發行者'],
     arr(D.installedApps).map(a =>

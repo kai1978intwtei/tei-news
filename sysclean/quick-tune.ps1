@@ -68,8 +68,21 @@ $config = Get-Content (Join-Path $scriptDir 'config.json') -Raw -Encoding UTF8 |
 $actions = @()
 foreach ($p in $config.allowedCleanPaths) {
     $expanded = [Environment]::ExpandEnvironmentVariables($p)
-    if (Test-Path -LiteralPath $expanded) {
+    if ($expanded.Contains('*')) {
+        # 萬用字元路徑（如 Firefox 各設定檔快取）展開成實際存在的資料夾
+        foreach ($m in @(Get-Item -Path $expanded -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer })) {
+            $actions += [pscustomobject]@{ type = 'cleanTemp'; path = $m.FullName; reason = '每週自動保養：零風險暫存／快取' }
+        }
+    } elseif (Test-Path -LiteralPath $expanded) {
         $actions += [pscustomobject]@{ type = 'cleanTemp'; path = $p; reason = '每週自動保養：零風險暫存／快取' }
+    }
+}
+# 瀏覽器快取（所有瀏覽器、所有設定檔；只清快取子目錄，不碰書籤/密碼/擴充功能）
+foreach ($r in $config.browserProfileRoots) {
+    $expanded = [Environment]::ExpandEnvironmentVariables($r)
+    foreach ($m in @(Get-Item -Path $expanded -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer })) {
+        if ($expanded.Contains('*') -and -not ($m.Name -eq 'Default' -or $m.Name -like 'Profile *')) { continue }
+        $actions += [pscustomobject]@{ type = 'cleanBrowserCache'; path = $m.FullName; reason = '每週自動保養：瀏覽器快取（含 Service Worker）' }
     }
 }
 $actions += [pscustomobject]@{ type = 'flushDns'; reason = '每週自動保養' }
