@@ -62,13 +62,14 @@ if ($RegisterStartup) {
 }
 
 # 面板按鈕 → 腳本對照表（只允許這幾個，網址亂打不會執行任何東西）
+# 參數一律用「具名」hashtable splatting，避免被當成位置參數塞錯欄位
 $runMap = @{
-    'tune'   = @{ file = 'quick-tune.ps1';   args = @();                      label = '一鍵保養（零風險）' }
-    'tunerb' = @{ file = 'quick-tune.ps1';   args = @('-IncludeRecycleBin');  label = '一鍵保養＋清回收筒' }
-    'scan'   = @{ file = 'scan.ps1';         args = @();                      label = '一鍵健檢（唯讀）' }
-    'dryrun' = @{ file = 'clean.ps1';        args = @();                      label = '乾跑預覽 plan.json' }
-    'apply'  = @{ file = 'clean.ps1';        args = @('-Apply');              label = '核准執行 plan.json' }
-    'bridge' = @{ file = 'agent-bridge.ps1'; args = @('-Once');               label = '處理橋接收件匣一輪' }
+    'tune'   = @{ file = 'quick-tune.ps1';   args = @{};                          label = '一鍵保養（零風險）' }
+    'tunerb' = @{ file = 'quick-tune.ps1';   args = @{ IncludeRecycleBin = $true }; label = '一鍵保養＋清回收筒' }
+    'scan'   = @{ file = 'scan.ps1';         args = @{};                          label = '一鍵健檢（唯讀）' }
+    'dryrun' = @{ file = 'clean.ps1';        args = @{};                          label = '乾跑預覽 plan.json' }
+    'apply'  = @{ file = 'clean.ps1';        args = @{ Apply = $true };           label = '核准執行 plan.json' }
+    'bridge' = @{ file = 'agent-bridge.ps1'; args = @{ Once = $true };            label = '處理橋接收件匣一輪' }
 }
 
 $html = @'
