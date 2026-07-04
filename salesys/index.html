@@ -1667,6 +1667,205 @@
     .ring{width:96px;height:96px;}
     .ring-label{font-size:22px;}
   }
+
+  /* ===== Mobile: Nav Tabs 水平捲動 ===== */
+  @media (max-width:768px){
+    .nav-tabs{
+      flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none; gap:2px;
+      padding:0 8px; margin:14px -16px 8px;
+    }
+    .nav-tabs::-webkit-scrollbar{display:none;}
+    .nav-tabs button{
+      white-space:nowrap; flex-shrink:0;
+      font-size:12px; padding:10px 12px;
+      min-height:44px;
+    }
+    .topbar-right{gap:8px;}
+    .persona-switch{display:none;}
+    .user-chip{padding:4px 10px 4px 4px;font-size:12px;}
+    .icon-btn{width:32px;height:32px;border-radius:8px;}
+  }
+  @media (max-width:480px){
+    .nav-tabs button{font-size:11px;padding:9px 10px;}
+    .brand .app-name{font-size:13px;}
+    .brand img{height:22px;}
+    .brand .sep{height:14px;}
+  }
+
+  /* ===== Mobile: Chat Drawer 對話列表返回鈕 ===== */
+  .chat-back-btn{
+    display:none; width:32px; height:32px; border-radius:8px;
+    background:transparent; border:0; color:var(--text-sub);
+    cursor:pointer; place-items:center; flex-shrink:0;
+  }
+  .chat-back-btn:hover{background:var(--surface-soft);color:var(--text);}
+  @media (max-width:640px){
+    .chat-back-btn{display:grid;}
+    .chat-thread{display:none;}
+    .chat-drawer.mobile-thread .chat-list{display:none !important;}
+    .chat-drawer.mobile-thread .chat-thread{display:flex !important;}
+    .chat-drawer:not(.mobile-thread) .chat-list{display:block !important;}
+    .chat-drawer:not(.mobile-thread) .chat-thread{display:none !important;}
+  }
+
+  /* ===== Mobile: Demo Floater ===== */
+  @media (max-width:640px){
+    .demo-floater{bottom:16px;right:16px;}
+    .demo-btn{padding:8px 12px;font-size:11px;}
+    .demo-dropdown{min-width:220px;max-height:60vh;overflow-y:auto;}
+  }
+
+  /* ===== AI Agent 智慧助手 ===== */
+  .ai-agent-fab{
+    position:fixed; bottom:24px; left:24px; z-index:100;
+    width:56px; height:56px; border-radius:50%;
+    background:linear-gradient(135deg,#7C3AED 0%,#6D28D9 100%);
+    color:#fff; border:0; cursor:pointer;
+    display:grid; place-items:center;
+    box-shadow:0 4px 14px rgba(124,58,237,0.35), 0 2px 4px rgba(0,0,0,0.12);
+    transition:all 0.2s ease;
+    font-size:24px;
+  }
+  .ai-agent-fab:hover{
+    transform:translateY(-2px) scale(1.05);
+    box-shadow:0 6px 20px rgba(124,58,237,0.45), 0 2px 4px rgba(0,0,0,0.12);
+  }
+  .ai-agent-fab:active{transform:scale(0.95);}
+  .ai-agent-fab .fab-badge{
+    position:absolute; top:-2px; right:-2px;
+    width:14px; height:14px; border-radius:50%;
+    background:#10B981; border:2px solid #fff;
+    animation:ai-pulse 2s infinite;
+  }
+  @keyframes ai-pulse{
+    0%{box-shadow:0 0 0 0 rgba(16,185,129,0.6);}
+    70%{box-shadow:0 0 0 6px rgba(16,185,129,0);}
+    100%{box-shadow:0 0 0 0 rgba(16,185,129,0);}
+  }
+
+  .ai-agent-panel{
+    position:fixed; bottom:0; left:0; width:420px; height:70vh;
+    max-height:calc(100vh - 40px);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 32px rgba(15,23,42,0.12), 0 -2px 8px rgba(15,23,42,0.06);
+    z-index:250;
+    display:flex; flex-direction:column;
+    transform:translateY(100%);
+    transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .ai-agent-panel[data-open="true"]{transform:translateY(0);}
+
+  .ai-agent-head{
+    display:flex; align-items:center; gap:12px;
+    padding:18px 20px; border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .ai-agent-head .ai-avatar{
+    width:36px; height:36px; border-radius:50%;
+    background:linear-gradient(135deg,#7C3AED,#6D28D9);
+    display:grid; place-items:center; color:#fff; font-size:18px;
+    flex-shrink:0;
+  }
+  .ai-agent-head .ai-info{flex:1;}
+  .ai-agent-head .ai-info h3{font-size:15px;font-weight:700;margin:0;color:var(--text);}
+  .ai-agent-head .ai-info .ai-status{font-size:11px;color:#10B981;font-weight:600;margin-top:1px;display:flex;align-items:center;gap:4px;}
+  .ai-agent-head .ai-info .ai-status::before{
+    content:''; width:6px; height:6px; border-radius:50%; background:#10B981;
+  }
+  .ai-agent-head .ai-close{
+    width:32px; height:32px; border-radius:8px;
+    background:transparent; border:0; color:var(--text-sub);
+    cursor:pointer; display:grid; place-items:center;
+  }
+  .ai-agent-head .ai-close:hover{background:var(--surface-soft);color:var(--text);}
+
+  .ai-messages{
+    flex:1; overflow-y:auto; padding:16px 18px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .ai-msg{display:flex;gap:8px;max-width:90%;animation:ai-fade-in 0.3s ease;}
+  @keyframes ai-fade-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .ai-msg.agent{align-self:flex-start;}
+  .ai-msg.user{align-self:flex-end;flex-direction:row-reverse;}
+  .ai-msg .ai-av{
+    width:24px; height:24px; border-radius:50%; flex-shrink:0;
+    display:grid; place-items:center; font-size:13px;
+  }
+  .ai-msg.agent .ai-av{background:linear-gradient(135deg,#EDE9FE,#DDD6FE);color:#7C3AED;}
+  .ai-msg.user .ai-av{display:none;}
+  .ai-msg .ai-bubble{
+    padding:10px 14px; border-radius:16px;
+    font-size:13px; line-height:1.6;
+  }
+  .ai-msg.agent .ai-bubble{
+    background:var(--surface-soft); border:1px solid var(--border);
+    color:var(--text); border-bottom-left-radius:4px;
+  }
+  .ai-msg.user .ai-bubble{
+    background:var(--confidential); color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .ai-msg .ai-time{font-size:10px;color:var(--text-muted);margin-top:3px;}
+
+  .ai-suggestions{
+    display:flex; flex-wrap:wrap; gap:6px;
+    padding:8px 18px; border-top:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .ai-suggestions button{
+    padding:6px 12px; border-radius:999px;
+    background:var(--surface-soft); border:1px solid var(--border);
+    color:var(--text-sub); font-size:11px; font-weight:500;
+    cursor:pointer; font-family:var(--font-sans);
+    transition:all 0.15s ease;
+  }
+  .ai-suggestions button:hover{background:var(--surface);color:var(--text);border-color:var(--border-strong);}
+
+  .ai-input{
+    border-top:1px solid var(--border); padding:12px 14px;
+    display:flex; gap:8px; align-items:flex-end;
+    flex-shrink:0; background:var(--surface);
+    border-radius:0 0 0 0;
+  }
+  .ai-input textarea{
+    flex:1; resize:none; border:1px solid var(--border); border-radius:12px;
+    padding:10px 14px; font-family:var(--font-sans); font-size:13px;
+    color:var(--text); background:var(--surface-soft);
+    min-height:40px; max-height:120px; line-height:1.5;
+    outline:none; transition:border-color 0.15s ease;
+  }
+  .ai-input textarea:focus{border-color:var(--confidential);background:var(--surface);}
+  .ai-input .ai-send{
+    background:var(--confidential); color:#fff; border:0; border-radius:12px;
+    width:40px; height:40px; cursor:pointer;
+    display:grid; place-items:center;
+    transition:all 0.15s ease; flex-shrink:0;
+  }
+  .ai-input .ai-send:hover{background:#6D28D9;}
+  .ai-input .ai-send:disabled{background:var(--text-dim);cursor:not-allowed;}
+
+  .ai-typing{
+    display:flex; gap:4px; align-items:center; padding:4px 0;
+  }
+  .ai-typing span{
+    width:6px; height:6px; border-radius:50%; background:var(--text-muted);
+    animation:ai-dot 1.2s infinite;
+  }
+  .ai-typing span:nth-child(2){animation-delay:0.2s;}
+  .ai-typing span:nth-child(3){animation-delay:0.4s;}
+  @keyframes ai-dot{
+    0%,80%,100%{opacity:0.3;transform:scale(0.8);}
+    40%{opacity:1;transform:scale(1);}
+  }
+
+  @media (max-width:640px){
+    .ai-agent-fab{width:48px;height:48px;font-size:20px;bottom:16px;left:16px;}
+    .ai-agent-panel{width:100%;border-radius:16px 16px 0 0;height:80vh;}
+  }
 </style>
 </head>
 <body>
@@ -3002,6 +3201,9 @@
 
     <main class="chat-thread">
       <div class="thread-head">
+        <button class="chat-back-btn" id="chatBackBtn" title="返回對話列表">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="avatar" id="threadAv">💬</div>
         <div class="info">
           <div class="name" id="threadName">選擇對話</div>
@@ -3355,6 +3557,38 @@
     <div class="empty-note" id="demoEmptyNote" hidden>業務無法檢視其他同仁視角</div>
     <button class="demo-reset" data-reset="true">↺ 切換為總經理 GM（Demo 重設）</button>
     <div class="demo-foot">⚠ 此切換器僅供 Demo ‧ 正式上線後移除</div>
+  </div>
+</div>
+
+<!-- ===== AI Agent 智慧助手 ===== -->
+<button class="ai-agent-fab" id="aiAgentFab" title="AI 智慧助手">
+  🤖
+  <div class="fab-badge"></div>
+</button>
+
+<div class="ai-agent-panel" id="aiAgentPanel" data-open="false">
+  <div class="ai-agent-head">
+    <div class="ai-avatar">🤖</div>
+    <div class="ai-info">
+      <h3>TEi AI 助手</h3>
+      <div class="ai-status">線上</div>
+    </div>
+    <button class="ai-close" id="aiAgentClose">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="ai-messages" id="aiMessages"></div>
+  <div class="ai-suggestions" id="aiSuggestions">
+    <button data-q="今天業績如何？">今天業績</button>
+    <button data-q="有哪些待辦事項？">待辦事項</button>
+    <button data-q="查詢客戶拜訪紀錄">拜訪紀錄</button>
+    <button data-q="幫我分析本月趨勢">月報分析</button>
+  </div>
+  <div class="ai-input">
+    <textarea id="aiInput" placeholder="輸入訊息，例如：查詢客戶資料..." rows="1"></textarea>
+    <button class="ai-send" id="aiSendBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
   </div>
 </div>
 
@@ -5615,6 +5849,141 @@
       backdrop.dataset.open = 'false';
       // Demo feedback (正式版改成 POST + toast)
       alert('✅ 已上傳至 ProjFlow 日報\n\n日期: ' + today + '\n身份: ' + payload.from.name + ' (' + payload.from.dept + ' / ' + payload.from.email + ')\n字數: ' + body.length + '\n\n對方查看 URL:\nhttps://pm-system-mauve.vercel.app/reports/daily/' + today + '?from=salesys');
+    });
+  })();
+
+  // ===== Mobile: Chat Drawer 對話列表切換 =====
+  (function setupChatMobile(){
+    const chatBackBtn = $("chatBackBtn");
+    if(!chatBackBtn) return;
+    chatBackBtn.addEventListener("click", () => {
+      chatDrawer.classList.remove("mobile-thread");
+    });
+    const origSelectConv = selectConv;
+    selectConv = function(id){
+      origSelectConv(id);
+      chatDrawer.classList.add("mobile-thread");
+    };
+  })();
+
+  // ===== AI Agent 智慧助手 =====
+  (function setupAiAgent(){
+    const fab     = $("aiAgentFab");
+    const panel   = $("aiAgentPanel");
+    const closeBtn= $("aiAgentClose");
+    const messages= $("aiMessages");
+    const input   = $("aiInput");
+    const sendBtn = $("aiSendBtn");
+    const sugBox  = $("aiSuggestions");
+    if(!fab||!panel) return;
+
+    function nowStr(){
+      const d = new Date();
+      return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+    }
+
+    function addMsg(role, text){
+      const wrap = document.createElement("div");
+      wrap.className = "ai-msg " + role;
+      const av = role==="agent" ? '<div class="ai-av">🤖</div>' : '<div class="ai-av"></div>';
+      wrap.innerHTML = av + '<div><div class="ai-bubble">' + text + '</div><div class="ai-time">' + nowStr() + '</div></div>';
+      messages.appendChild(wrap);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTyping(){
+      const el = document.createElement("div");
+      el.className = "ai-msg agent";
+      el.id = "aiTyping";
+      el.innerHTML = '<div class="ai-av">🤖</div><div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div></div>';
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+    }
+    function hideTyping(){
+      const el = document.getElementById("aiTyping");
+      if(el) el.remove();
+    }
+
+    const persona = () => personas[currentUserKey] || personas.june;
+    const responses = {
+      "今天業績如何": () => {
+        const p = persona();
+        if(p.kpi.revenue.value === "—") return "📊 " + p.name + "，您目前尚未設定業績目標，建議先到「個人目標設定」填寫年/季/月目標，系統才能幫您追蹤達標率。";
+        return "📊 " + p.name + " 本月營收達標率 " + p.kpi.revenue.pct + "%，累計 " + p.kpi.revenue.value + "。加油！";
+      },
+      "待辦事項": () => {
+        const p = persona();
+        const deals = dealsByPersona[currentUserKey] || [];
+        if(deals.length === 0) return "📋 " + p.name + "，目前尚無在手案件。可以到「我的衝刺」頁面登錄新訂單或建立客戶拜訪排程。";
+        return "📋 " + p.name + "，您有 " + deals.length + " 件在手案件。建議優先處理報價階段的案件，把握簽約時機。";
+      },
+      "拜訪紀錄": () => {
+        const p = persona();
+        if(p.kpi.visit.value === "—") return "📍 尚無拜訪紀錄。建議每週安排至少 3 次客戶拜訪，可在「我的衝刺」頁面打卡記錄。";
+        return "📍 本期拜訪 " + p.kpi.visit.value + "，達標率 " + p.kpi.visit.pct + "%。持續保持！";
+      },
+      "月報分析": () => {
+        const p = persona();
+        return "📈 " + p.name + " 的月報分析：\n\n• 營收達標率：" + p.kpi.revenue.pct + "%\n• 客戶拜訪數：" + p.kpi.visit.value + "\n• 新客開發：" + p.kpi.new.value + "\n\n建議重點：持續追蹤報價中案件的轉換率，並規劃下月新客開發策略。";
+      },
+    };
+
+    function getAiResponse(q){
+      const lower = q.toLowerCase();
+      for(const [key, fn] of Object.entries(responses)){
+        if(lower.includes(key) || q.includes(key)) return fn();
+      }
+      if(lower.match(/你好|嗨|hi|hello/)) return "👋 你好！我是 TEi AI 助手，可以幫您查詢業績、客戶資料、待辦事項等。有什麼需要幫忙的嗎？";
+      if(lower.match(/客戶|customer/)) return "👤 可以到「聯絡簿」頁面查看完整客戶列表。需要我幫您搜尋特定客戶嗎？請提供公司名稱或聯絡人姓名。";
+      if(lower.match(/船務|shipping|出貨/)) return "🚢 船務狀態請至「船務作業」頁面查看看板。目前的出貨排程與到貨狀態都在那裡即時更新。";
+      if(lower.match(/報告|report|日報/)) return "📝 您可以在「我的衝刺」頁面底部填寫業務日報，完成後點選「同步到 ProjFlow」就能上傳。機密數字會自動過濾。";
+      if(lower.match(/目標|target|kpi/)) return "🎯 業績目標設定請洽業務經理。目前系統支援設定年度、季度、月度三個層級的目標追蹤。";
+      if(lower.match(/權限|permission/)) return "🔒 權限管理由經理及總經理管理。如需調整存取權限，請聯繫主管。";
+      if(lower.match(/謝|thanks|thx/)) return "不客氣！有任何問題隨時找我 😊";
+      return "🤔 我理解您的問題：「" + q + "」\n\n目前我可以協助以下項目：\n• 查詢業績/KPI 狀態\n• 待辦事項提醒\n• 客戶拜訪紀錄\n• 月報趨勢分析\n• 操作系統導引\n\n請試著用上方的快捷按鈕，或換個方式描述您的需求。";
+    }
+
+    function sendAiMsg(){
+      const text = input.value.trim();
+      if(!text) return;
+      addMsg("user", text.replace(/[<>&]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c])));
+      input.value = "";
+      input.style.height = "auto";
+      sendBtn.disabled = true;
+      showTyping();
+      const delay = 600 + Math.random() * 800;
+      setTimeout(() => {
+        hideTyping();
+        addMsg("agent", getAiResponse(text));
+        sendBtn.disabled = false;
+      }, delay);
+    }
+
+    fab.addEventListener("click", () => {
+      const isOpen = panel.dataset.open === "true";
+      panel.dataset.open = isOpen ? "false" : "true";
+      if(!isOpen && messages.children.length === 0){
+        const p = persona();
+        addMsg("agent", "👋 " + p.name + " 您好！我是 TEi AI 助手。\n\n我可以幫您查詢業績、客戶資料、安排待辦事項等。請直接輸入問題，或點選下方快捷按鈕。");
+      }
+    });
+
+    closeBtn.addEventListener("click", () => { panel.dataset.open = "false"; });
+
+    sendBtn.addEventListener("click", sendAiMsg);
+    input.addEventListener("keydown", e => {
+      if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); sendAiMsg(); }
+    });
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = Math.min(120, input.scrollHeight) + "px";
+    });
+
+    sugBox.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-q]");
+      if(!btn) return;
+      input.value = btn.dataset.q;
+      sendAiMsg();
     });
   })();
 </script>
