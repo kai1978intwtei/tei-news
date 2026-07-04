@@ -29,7 +29,11 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $desktop   = [Environment]::GetFolderPath('Desktop')
-$buttons   = @('一鍵健檢', '一鍵保養', '一鍵面板')
+$buttons   = @(
+    @{ name = '一鍵健檢'; script = 'scan.ps1';          extra = ' -OpenReport' },
+    @{ name = '一鍵保養'; script = 'quick-tune.ps1';    extra = '' },
+    @{ name = '一鍵面板'; script = 'control-panel.ps1'; extra = '' }
+)
 
 # ---------- 移除模式 ----------
 if ($Uninstall) {
@@ -37,8 +41,10 @@ if ($Uninstall) {
     & (Join-Path $scriptDir 'quick-tune.ps1') -Unregister
     & (Join-Path $scriptDir 'agent-bridge.ps1') -Unregister
     foreach ($b in $buttons) {
-        $lnk = Join-Path $desktop "$b.lnk"
-        if (Test-Path $lnk) { Remove-Item $lnk -Force; Write-Host "已移除捷徑：$b" -ForegroundColor Green }
+        foreach ($ext in @('lnk', 'bat')) {
+            $item = Join-Path $desktop "$($b.name).$ext"
+            if (Test-Path $item) { Remove-Item $item -Force; Write-Host "已移除桌面按鈕：$($b.name).$ext" -ForegroundColor Green }
+        }
     }
     Write-Host '移除完成（腳本檔案本身保留，資料夾直接刪掉即可完全清除）。' -ForegroundColor Cyan
     exit 0
@@ -49,19 +55,42 @@ Write-Host '=============== sysclean 一鍵安裝器 ===============' -Foregroun
 # ---------- 1. 桌面按鈕 ----------
 if (-not $NoShortcuts) {
     Write-Host '[1/5] 建立桌面按鈕…' -ForegroundColor Green
-    try {
-        $ws = New-Object -ComObject WScript.Shell
-        foreach ($b in $buttons) {
-            $bat = Join-Path $scriptDir "$b.bat"
-            if (-not (Test-Path $bat)) { Write-Host "  找不到 $b.bat，略過" -ForegroundColor Yellow; continue }
-            $sc = $ws.CreateShortcut((Join-Path $desktop "$b.lnk"))
-            $sc.TargetPath = $bat
-            $sc.WorkingDirectory = $scriptDir
-            $sc.Description = "sysclean $b"
-            $sc.Save()
-            Write-Host "  桌面按鈕完成：$b" -ForegroundColor Green
+    $ws = $null
+    try { $ws = New-Object -ComObject WScript.Shell } catch { }
+    foreach ($b in $buttons) {
+        $ps1 = Join-Path $scriptDir $b.script
+        if (-not (Test-Path $ps1)) { Write-Host "  找不到 $($b.script)，略過" -ForegroundColor Yellow; continue }
+        $done = $false
+        # 方法一：標準 .lnk 捷徑
+        if ($ws) {
+            try {
+                $sc = $ws.CreateShortcut((Join-Path $desktop "$($b.name).lnk"))
+                $sc.TargetPath = 'powershell.exe'
+                $sc.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$ps1`"$($b.extra)"
+                $sc.WorkingDirectory = $scriptDir
+                $sc.Description = "sysclean $($b.name)"
+                $sc.Save()
+                $done = $true
+                Write-Host "  桌面按鈕完成：$($b.name)" -ForegroundColor Green
+            } catch { }
         }
-    } catch { Write-Host "  建立捷徑失敗：$($_.Exception.Message)" -ForegroundColor Red }
+        # 方法二：OneDrive 桌面／中文路徑造成 .lnk 失敗時，改放啟動用 .bat（雙擊效果相同）
+        if (-not $done) {
+            try {
+                $lines = @(
+                    '@echo off',
+                    "powershell -NoProfile -ExecutionPolicy Bypass -File `"$ps1`"$($b.extra)",
+                    'pause'
+                )
+                Set-Content -Path (Join-Path $desktop "$($b.name).bat") -Value $lines -Encoding Default
+                $done = $true
+                Write-Host "  桌面按鈕完成：$($b.name)（bat 版，雙擊一樣可用）" -ForegroundColor Green
+            } catch { }
+        }
+        if (-not $done) {
+            Write-Host "  無法放到桌面：$($b.name) —— 可直接雙擊 $scriptDir\$($b.name).bat 使用" -ForegroundColor Yellow
+        }
+    }
 } else { Write-Host '[1/5] 略過桌面按鈕（-NoShortcuts）' -ForegroundColor DarkGray }
 
 # ---------- 2. 每週自動保養 ----------
