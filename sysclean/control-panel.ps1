@@ -67,6 +67,7 @@ $runMap = @{
     'tune'   = @{ file = 'quick-tune.ps1';   args = @{};                          label = '一鍵保養（零風險）' }
     'tunerb' = @{ file = 'quick-tune.ps1';   args = @{ IncludeRecycleBin = $true }; label = '一鍵保養＋清回收筒' }
     'scan'   = @{ file = 'scan.ps1';         args = @{};                          label = '一鍵健檢（唯讀）' }
+    'makeplan' = @{ file = 'make-plan.ps1';  args = @{};                          label = '依健檢報告產生清理計畫' }
     'dryrun' = @{ file = 'clean.ps1';        args = @{};                          label = '乾跑預覽 plan.json' }
     'apply'  = @{ file = 'clean.ps1';        args = @{ Apply = $true };           label = '核准執行 plan.json' }
     'bridge' = @{ file = 'agent-bridge.ps1'; args = @{ Once = $true };            label = '處理橋接收件匣一輪' }
@@ -110,8 +111,9 @@ $html = @'
   <button onclick="run('tunerb',this)"><b>🗑️ 保養＋清回收筒</b><small>同上，連資源回收筒一起清</small></button>
   <button onclick="run('scan',this)"><b>🔍 一鍵健檢</b><small>唯讀掃描，跑完可看報告</small></button>
   <button onclick="window.open('/report','_blank')"><b>📊 看最新報告</b><small>HTML 健檢報告（新分頁）</small></button>
+  <button onclick="run('makeplan',this)"><b>🧠 產生清理計畫</b><small>依健檢報告自動列出可清項目（先健檢再按）</small></button>
   <button class="warn" onclick="run('dryrun',this)"><b>👀 乾跑預覽 plan.json</b><small>看深度清理計畫會做什麼（不執行）</small></button>
-  <button class="warn" onclick="if(confirm('確定執行 plan.json 的深度清理？（可還原，備份路徑會顯示在結果）')) run('apply',this)"><b>✅ 核准執行 plan.json</b><small>執行 AI 提的深度清理（先乾跑過再按）</small></button>
+  <button class="warn" onclick="if(confirm('確定執行 plan.json 的深度清理？（可還原，備份路徑會顯示在結果）')) run('apply',this)"><b>✅ 核准執行 plan.json</b><small>執行深度清理（先產生計畫＋乾跑過再按）</small></button>
   <button onclick="run('bridge',this)"><b>🤖 處理橋接收件匣</b><small>立刻處理遠端 AI 交來的計畫一輪</small></button>
   <button class="bad" onclick="if(confirm('關閉面板？（網址會失效，要再開就重跑 control-panel.ps1）')) quit(this)"><b>⏻ 關閉面板</b><small>停止本機伺服器</small></button>
 </div>
