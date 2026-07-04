@@ -1,0 +1,88 @@
+{
+  "_說明": "sysclean 安全設定檔。protectedProcesses / protectedServices 是絕對不碰的白名單；knownHogs 是常見吃資源軟體知識庫，供掃描器標註建議；allowedCleanPaths 是 clean.ps1 唯一允許刪檔的資料夾（支援環境變數）。",
+
+  "protectedProcesses": [
+    "System", "Idle", "Registry", "Memory Compression",
+    "smss", "csrss", "wininit", "winlogon", "services", "lsass",
+    "svchost", "dwm", "explorer", "fontdrvhost", "audiodg",
+    "sihost", "taskhostw", "ctfmon", "conhost", "dllhost",
+    "RuntimeBroker", "WmiPrvSE", "spoolsv", "SearchIndexer",
+    "MsMpEng", "NisSrv", "SecurityHealthService", "SecurityHealthSystray",
+    "WUDFHost", "SgrmBroker", "TextInputHost",
+    "powershell", "pwsh", "WindowsTerminal", "cmd",
+    "node", "claude", "git", "bash", "ssh"
+  ],
+
+  "protectedServices": [
+    "WinDefend", "SecurityHealthService", "MpsSvc", "BFE", "mpssvc",
+    "wuauserv", "BITS", "CryptSvc", "TrustedInstaller",
+    "Dhcp", "Dnscache", "NlaSvc", "netprofm", "nsi", "Wcmsvc", "WlanSvc",
+    "EventLog", "PlugPlay", "Power", "ProfSvc", "SamSs", "Schedule",
+    "RpcSs", "RpcEptMapper", "DcomLaunch", "LSM", "BrokerInfrastructure",
+    "CoreMessagingRegistrar", "StateRepository", "SystemEventsBroker",
+    "gpsvc", "KeyIso", "SENS", "Themes", "UserManager", "UsoSvc",
+    "W32Time", "Winmgmt", "LanmanServer", "LanmanWorkstation",
+    "AudioSrv", "Audiosrv", "AudioEndpointBuilder",
+    "WpnService", "TextInputManagementService", "DispBrokerDesktopSvc"
+  ],
+
+  "knownHogs": {
+    "OneDrive":            { "category": "雲端同步", "note": "同步時會持續佔 CPU／磁碟。若不用 OneDrive，可停用開機自啟。", "suggest": "disableStartup" },
+    "Teams":               { "category": "通訊軟體", "note": "Microsoft Teams 背景常駐吃 300MB+ 記憶體。不開會時不需要自啟。", "suggest": "disableStartup" },
+    "ms-teams":            { "category": "通訊軟體", "note": "新版 Teams 背景常駐。", "suggest": "disableStartup" },
+    "Skype":               { "category": "通訊軟體", "note": "背景常駐，若已改用其他工具可停用自啟。", "suggest": "disableStartup" },
+    "Spotify":             { "category": "娛樂", "note": "開機自啟沒必要，要聽再開即可。", "suggest": "disableStartup" },
+    "Steam":               { "category": "遊戲平台", "note": "背景自動更新遊戲會吃滿磁碟與網路、增加發熱。", "suggest": "disableStartup" },
+    "EpicGamesLauncher":   { "category": "遊戲平台", "note": "背景更新吃資源，玩的時候再開。", "suggest": "disableStartup" },
+    "Discord":             { "category": "通訊軟體", "note": "自啟後常駐 200MB+。", "suggest": "disableStartup" },
+    "LINE":                { "category": "通訊軟體", "note": "常駐可接受，但快取會越長越大，可定期清 LINE 快取。", "suggest": "review" },
+    "WeChat":              { "category": "通訊軟體", "note": "常駐吃記憶體，快取成長快。", "suggest": "review" },
+    "CCXProcess":          { "category": "Adobe 背景", "note": "Adobe Creative Cloud 背景程序，非必要。", "suggest": "disableStartup" },
+    "CCLibrary":           { "category": "Adobe 背景", "note": "Adobe 資料庫同步背景程序，非必要。", "suggest": "disableStartup" },
+    "AdobeUpdateService":  { "category": "更新程式", "note": "Adobe 自動更新服務，可改手動。", "suggest": "setServiceManual" },
+    "AGSService":          { "category": "Adobe 背景", "note": "Adobe Genuine Software 檢查服務。", "suggest": "review" },
+    "GoogleUpdater":       { "category": "更新程式", "note": "Google 更新服務，改手動仍可正常更新 Chrome（開啟時觸發）。", "suggest": "review" },
+    "edgeupdate":          { "category": "更新程式", "note": "Edge 更新服務，系統排程仍會定期更新。", "suggest": "review" },
+    "iTunesHelper":        { "category": "Apple", "note": "只有接 iPhone 同步才需要。", "suggest": "disableStartup" },
+    "Dropbox":             { "category": "雲端同步", "note": "同步時吃 CPU／磁碟，不用可停自啟。", "suggest": "disableStartup" },
+    "uTorrent":            { "category": "P2P", "note": "背景做種會長時間吃磁碟與網路、明顯增加發熱。", "suggest": "disableStartup" },
+    "qbittorrent":         { "category": "P2P", "note": "背景做種會長時間吃磁碟與網路。", "suggest": "disableStartup" },
+    "NVIDIA GeForce Experience": { "category": "顯卡工具", "note": "錄影／浮水印功能常駐，玩遊戲不受影響可停自啟（驅動不受影響）。", "suggest": "review" },
+    "RazerCentralService": { "category": "周邊工具", "note": "Razer 周邊軟體常駐服務。", "suggest": "review" },
+    "PhoneExperienceHost": { "category": "系統附加", "note": "「手機連結」背景程序，不用手機同步可停。", "suggest": "review" },
+    "Widgets":             { "category": "系統附加", "note": "Windows 小工具（新聞天氣）背景常駐，可在工作列設定關閉。", "suggest": "manual" },
+    "McAfee":              { "category": "防毒試用版", "note": "預載試用防毒與 Defender 重複，建議整套解除安裝。", "suggest": "uninstall" },
+    "Norton":              { "category": "防毒試用版", "note": "預載試用防毒與 Defender 重複，建議整套解除安裝。", "suggest": "uninstall" },
+    "ASUSOptimization":    { "category": "廠商預載", "note": "廠商工具常駐，多半可改手動。", "suggest": "review" },
+    "HP Support":          { "category": "廠商預載", "note": "廠商支援工具常駐。", "suggest": "review" }
+  },
+
+  "allowedCleanPaths": [
+    "%TEMP%",
+    "%SystemRoot%\\Temp",
+    "%SystemRoot%\\SoftwareDistribution\\Download",
+    "%SystemRoot%\\Minidump",
+    "%LOCALAPPDATA%\\CrashDumps",
+    "%LOCALAPPDATA%\\D3DSCache",
+    "%LOCALAPPDATA%\\NVIDIA\\DXCache",
+    "%LOCALAPPDATA%\\NVIDIA\\GLCache",
+    "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\cache2"
+  ],
+
+  "_瀏覽器說明": "browserProfileRoots 是 cleanBrowserCache 動作允許的瀏覽器設定檔範圍（萬用字元涵蓋所有 Profile）；browserCacheSubdirs 是設定檔底下「只會被清理」的快取子目錄，書籤／密碼／歷史／擴充功能本體絕對不會被碰。",
+  "browserProfileRoots": [
+    "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*",
+    "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*",
+    "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*",
+    "%LOCALAPPDATA%\\Vivaldi\\User Data\\*",
+    "%LOCALAPPDATA%\\Opera Software\\Opera Stable"
+  ],
+  "browserCacheSubdirs": [
+    "Cache",
+    "Code Cache",
+    "GPUCache",
+    "Media Cache",
+    "Service Worker\\CacheStorage",
+    "Service Worker\\ScriptCache"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "_說明": "這是 plan.json 的範例格式。AI Agent 讀完 reports/latest.json 後，把建議動作寫成 sysclean/plan.json，經使用者確認後由 clean.ps1 執行。每個動作都建議附 reason 說明理由。",
+  "createdAt": "2026-07-04 12:00:00",
+  "createdBy": "AI Agent（經使用者核准）",
+  "actions": [
+    { "type": "cleanTemp", "path": "%TEMP%", "reason": "使用者暫存累積 1.2GB" },
+    { "type": "cleanTemp", "path": "%SystemRoot%\\SoftwareDistribution\\Download", "reason": "Windows Update 舊下載快取" },
+    { "type": "cleanBrowserCache", "path": "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default", "reason": "Chrome 快取＋Service Worker 累積 2GB（只清快取子目錄，不碰書籤/密碼/擴充功能）" },
+    { "type": "emptyRecycleBin", "reason": "資源回收筒佔 3GB" },
+    { "type": "disableStartupRegistry", "hive": "HKCU", "key": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "name": "Spotify", "reason": "開機自啟非必要，要聽再開" },
+    { "type": "disableStartupFolder", "path": "C:\\Users\\user\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\某軟體.lnk", "reason": "開機自啟非必要" },
+    { "type": "disableTask", "taskPath": "\\", "taskName": "某第三方更新任務", "reason": "每小時喚醒一次，改手動更新即可" },
+    { "type": "setServiceManual", "name": "AdobeUpdateService", "stop": false, "reason": "更新服務改手動，開 Adobe 時仍會觸發" },
+    { "type": "stopProcess", "name": "CCXProcess", "reason": "本次先釋放記憶體（重開機後由自啟設定決定）" },
+    { "type": "flushDns", "reason": "順手清 DNS 快取" }
+  ]
+}
