@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 <#
-sysclean/scan.ps1 — TEi 系統健檢掃描器（唯讀，絕不更動系統）
+sysclean/scan.ps1 — 個人電腦系統健檢掃描器（唯讀，絕不更動系統）
 
 掃描項目：
   1. 記憶體／CPU／磁碟總覽（含即時 CPU 取樣，找出發熱元兇）
@@ -55,7 +55,7 @@ function Get-FolderSizeMB {
     } catch { return $null }
 }
 
-Write-Host '================ TEi 系統健檢掃描器 ================' -ForegroundColor Cyan
+Write-Host '=============== 個人電腦系統健檢掃描器 ===============' -ForegroundColor Cyan
 Write-Host '（唯讀掃描，不會更動任何系統設定或刪除任何檔案）' -ForegroundColor DarkGray
 
 # ---------- 1. 系統總覽 ----------

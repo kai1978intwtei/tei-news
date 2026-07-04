@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 <#
-sysclean/clean.ps1 — TEi 系統清理執行器（預設乾跑，加 -Apply 才會真的動作）
+sysclean/clean.ps1 — 個人電腦系統清理執行器（預設乾跑，加 -Apply 才會真的動作）
 
 設計原則：
   1. 只執行 plan.json 裡明列的動作 —— 本腳本自己不做任何判斷或猜測
@@ -145,7 +145,7 @@ $actions = @($planObj.actions)
 if ($actions.Count -eq 0) { Write-Log 'plan.json 裡沒有任何動作。' 'Yellow'; exit 0 }
 
 $mode = if ($Apply) { '實際執行' } else { '乾跑預覽（不會更動系統）' }
-Write-Log "=== TEi 系統清理執行器 · 模式：$mode ===" 'Cyan'
+Write-Log "=== 個人電腦系統清理執行器 · 模式：$mode ===" 'Cyan'
 Write-Log "計畫檔：$Plan（$($actions.Count) 個動作）"
 if (-not $isAdmin) { Write-Log '注意：目前非系統管理員權限，系統暫存／服務／HKLM 相關動作可能失敗。' 'Yellow' }
 

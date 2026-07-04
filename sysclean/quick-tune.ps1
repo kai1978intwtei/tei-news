@@ -26,7 +26,7 @@ $ErrorActionPreference = 'Continue'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$taskName  = 'TEi-系統健檢-每週自動保養'
+$taskName  = 'Sysclean-個人電腦-每週自動保養'
 
 # ---------- 排程註冊／移除 ----------
 if ($Unregister) {
@@ -48,7 +48,7 @@ if ($RegisterWeekly) {
         $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
             -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 1)
         Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
-            -Settings $settings -Description 'TEi sysclean 每週自動掃描＋零風險清理' | Out-Null
+            -Settings $settings -Description 'sysclean 個人電腦每週自動掃描＋零風險清理' | Out-Null
         Write-Host "已註冊排程：$taskName（每週日 12:10，僅零風險清理）" -ForegroundColor Green
     } catch {
         Write-Host "排程註冊失敗（可能需要系統管理員權限）：$($_.Exception.Message)" -ForegroundColor Red
@@ -56,7 +56,7 @@ if ($RegisterWeekly) {
     exit 0
 }
 
-Write-Host '================ TEi 一鍵安全保養 ================' -ForegroundColor Cyan
+Write-Host '=============== 個人電腦一鍵安全保養 ===============' -ForegroundColor Cyan
 
 # ---------- 1. 健檢掃描 ----------
 if (-not $SkipScan) {
