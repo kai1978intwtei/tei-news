@@ -6,3 +6,4 @@ sysclean/backups/
 sysclean/logs/
 sysclean/plan.json
 sysclean/plan-auto.json
+sysclean/bridge/

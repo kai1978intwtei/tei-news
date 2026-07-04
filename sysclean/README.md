@@ -42,6 +42,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File sysclean\clean.ps1 -Undo sys
 | `scan.ps1` | 掃描器：唯讀健檢，輸出 `reports/latest.json`（給 AI）與 `reports/latest.html`（給人） |
 | `clean.ps1` | 執行器：只照 `plan.json` 做、預設乾跑、白名單保護、動作前備份、`-Undo` 還原 |
 | `quick-tune.ps1` | 一鍵安全保養：掃描＋自動清零風險暫存快取，可註冊每週排程 |
+| `agent-bridge.ps1` | 代理橋接器：讓不能跑本機命令的 AI（ProjFlow 等）也能交件執行，深度動作仍需你核准（見 `AGENT-GUIDE.md`） |
+| `AGENT-GUIDE.md` | 任何 AI 代理的接入指南（全自動／橋接執行／半自動／純排程四種等級） |
 | `config.json` | 安全設定：受保護程序／服務白名單、常見吃資源軟體知識庫、允許清理路徑 |
 | `plan.sample.json` | 清理計畫格式範例（AI Agent 產生 `plan.json` 時照這個格式） |
 | `report-template.html` | HTML 報告模板 |
