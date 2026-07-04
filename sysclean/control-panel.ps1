@@ -69,7 +69,8 @@ $html = @'
 </head>
 <body>
 <h1>🧹 我的電腦一鍵清潔面板</h1>
-<div class="sub">只有這台電腦自己開得到（localhost）。按鈕執行時請耐心等待，結果會顯示在下方。</div>
+<div class="sub">只有這台電腦自己開得到（localhost）。按鈕執行時請耐心等待，結果會顯示在下方。<br>
+⚠️ 啟動面板的<b>黑色視窗要保持開著</b> —— 那就是面板的引擎，關掉視窗＝面板下線。</div>
 <div class="grid">
   <button onclick="run('tune',this)"><b>🚿 一鍵保養</b><small>零風險：暫存＋全瀏覽器快取＋DNS</small></button>
   <button onclick="run('tunerb',this)"><b>🗑️ 保養＋清回收筒</b><small>同上，連資源回收筒一起清</small></button>
@@ -91,7 +92,10 @@ async function run(key, btn) {
     const r = await fetch('/run/' + key, { method:'POST', headers:{ 'X-Sysclean':'1' } });
     lg.textContent = await r.text();
     st.textContent = r.ok ? '✅ 完成' : '❌ 失敗（見下方訊息）';
-  } catch (e) { st.textContent = '❌ 連線失敗：' + e; }
+  } catch (e) {
+    st.textContent = '❌ 面板引擎已停止（啟動面板的黑色視窗被關掉了）';
+    lg.textContent = '怎麼救：雙擊桌面「一鍵面板」重新啟動（黑色視窗保持開著），然後重新整理本頁再按一次。';
+  }
   btn.disabled = false;
 }
 async function quit(btn) {
@@ -133,34 +137,37 @@ Write-Host "你的網址：$prefix" -ForegroundColor Green
 Write-Host '（只有這台電腦開得到；關閉請在網頁按「關閉面板」或按 Ctrl+C）' -ForegroundColor DarkGray
 if (-not $NoBrowser) { Start-Process $prefix }
 
-$running = $true
-while ($running -and $listener.IsListening) {
-    $ctx = $listener.GetContext()
-    $path = $ctx.Request.Url.AbsolutePath
-    $method = $ctx.Request.HttpMethod
+function Invoke-PanelRequest {
+    param($Context)
+    $path = $Context.Request.Url.AbsolutePath
+    $method = $Context.Request.HttpMethod
 
     if ($method -eq 'GET' -and $path -eq '/') {
-        Send-Text -Context $ctx -Body $html -ContentType 'text/html; charset=utf-8'
-        continue
+        Send-Text -Context $Context -Body $html -ContentType 'text/html; charset=utf-8'
+        return
+    }
+    if ($method -eq 'GET' -and $path -eq '/ping') {
+        Send-Text -Context $Context -Body 'ok'
+        return
     }
     if ($method -eq 'GET' -and $path -eq '/report') {
         $rep = Join-Path $reportsDir 'latest.html'
         if (Test-Path $rep) {
-            Send-Bytes -Context $ctx -Bytes ([System.IO.File]::ReadAllBytes($rep)) -ContentType 'text/html; charset=utf-8'
+            Send-Bytes -Context $Context -Bytes ([System.IO.File]::ReadAllBytes($rep)) -ContentType 'text/html; charset=utf-8'
         } else {
-            Send-Text -Context $ctx -Body '還沒有報告，先按「一鍵健檢」。' -Code 404
+            Send-Text -Context $Context -Body '還沒有報告，先按「一鍵健檢」。' -Code 404
         }
-        continue
+        return
     }
     # 以下全是會執行動作的端點：必須是 POST + 自訂標頭（擋掉惡意網站背景偷按）
-    if ($method -ne 'POST' -or $ctx.Request.Headers['X-Sysclean'] -ne '1') {
-        Send-Text -Context $ctx -Body 'forbidden' -Code 403
-        continue
+    if ($method -ne 'POST' -or $Context.Request.Headers['X-Sysclean'] -ne '1') {
+        Send-Text -Context $Context -Body 'forbidden' -Code 403
+        return
     }
     if ($path -eq '/quit') {
-        Send-Text -Context $ctx -Body '面板關閉中'
-        $running = $false
-        continue
+        Send-Text -Context $Context -Body '面板關閉中'
+        $script:running = $false
+        return
     }
     if ($path -match '^/run/([a-z]+)$' -and $runMap.ContainsKey($Matches[1])) {
         $spec = $runMap[$Matches[1]]
@@ -171,11 +178,23 @@ while ($running -and $listener.IsListening) {
             $sargs = $spec.args
             $log = @(& $target @sargs *>&1 | ForEach-Object { $_.ToString() })
         } catch { $log += "執行錯誤：$($_.Exception.Message)" }
-        Send-Text -Context $ctx -Body ("=== {0} ===`n{1}" -f $spec.label, ($log -join "`n"))
+        Send-Text -Context $Context -Body ("=== {0} ===`n{1}" -f $spec.label, ($log -join "`n"))
         Write-Host "[面板] 完成：$($spec.label)" -ForegroundColor Green
-        continue
+        return
     }
-    Send-Text -Context $ctx -Body 'not found' -Code 404
+    Send-Text -Context $Context -Body 'not found' -Code 404
+}
+
+$running = $true
+while ($running -and $listener.IsListening) {
+    $ctx = $null
+    try { $ctx = $listener.GetContext() } catch { break }
+    # 單一請求出錯絕不讓整個面板掛掉
+    try { Invoke-PanelRequest -Context $ctx }
+    catch {
+        Write-Host "[面板] 處理要求時發生錯誤：$($_.Exception.Message)" -ForegroundColor Red
+        try { Send-Text -Context $ctx -Body "伺服器錯誤：$($_.Exception.Message)" -Code 500 } catch { }
+    }
 }
 
 $listener.Stop()
