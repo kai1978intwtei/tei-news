@@ -13,18 +13,39 @@ function Test-Panel {
 
 Write-Host '=============== 面板修復醫生 ===============' -ForegroundColor Cyan
 
-# ---------- 0. 找到工具位置（找不到就自動下載安裝） ----------
+# ---------- 0. 找到工具位置，並自動更新到最新版 ----------
 $candidates = @(
     (Join-Path (Get-Location).Path 'sysclean'),
     (Get-Location).Path,
     (Join-Path $env:USERPROFILE 'tei-tools\sysclean')
 )
 $sys = $candidates | Where-Object { Test-Path (Join-Path $_ 'control-panel.ps1') } | Select-Object -First 1
-if (-not $sys) {
-    Write-Host '[診斷] 這台電腦還沒有工具，先自動下載安裝…' -ForegroundColor Yellow
-    Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/kai1978intwtei/tei-news/main/sysclean/get.ps1' | Invoke-Expression
-    $sys = $candidates | Where-Object { Test-Path (Join-Path $_ 'control-panel.ps1') } | Select-Object -First 1
-    if (-not $sys) { Write-Host '[失敗] 安裝後仍找不到工具，請把整個畫面訊息貼給 AI。' -ForegroundColor Red; return }
+if (-not $sys) { $sys = Join-Path $env:USERPROFILE 'tei-tools\sysclean' }
+$root = Split-Path -Parent $sys
+
+Write-Host '[更新] 下載最新版工具（報告／備份／設定不會被動到）…' -ForegroundColor Yellow
+try {
+    $tmp = Join-Path $env:TEMP ('sysclean-doc-' + (Get-Date -Format 'yyyyMMddHHmmss'))
+    New-Item -ItemType Directory -Path $tmp -Force | Out-Null
+    $zip = Join-Path $tmp 'repo.zip'
+    Invoke-WebRequest -Uri 'https://github.com/kai1978intwtei/tei-news/archive/refs/heads/main.zip' -OutFile $zip -UseBasicParsing
+    Expand-Archive -Path $zip -DestinationPath $tmp -Force
+    $srcRoot = (Get-ChildItem $tmp -Directory | Where-Object { $_.Name -like 'tei-news-*' } | Select-Object -First 1).FullName
+    New-Item -ItemType Directory -Path $sys -Force | Out-Null
+    Copy-Item -Path (Join-Path $srcRoot 'sysclean\*') -Destination $sys -Recurse -Force
+    if (Test-Path (Join-Path $srcRoot '.claude')) {
+        New-Item -ItemType Directory -Path (Join-Path $root '.claude') -Force | Out-Null
+        Copy-Item -Path (Join-Path $srcRoot '.claude\*') -Destination (Join-Path $root '.claude') -Recurse -Force
+    }
+    if (Test-Path (Join-Path $srcRoot 'CLAUDE.md')) {
+        Copy-Item -Path (Join-Path $srcRoot 'CLAUDE.md') -Destination (Join-Path $root 'CLAUDE.md') -Force
+    }
+    Write-Host '[更新] 已更新到最新版 ✓' -ForegroundColor Green
+} catch {
+    Write-Host "[更新] 下載失敗（$($_.Exception.Message)），改用現有檔案繼續修復" -ForegroundColor Yellow
+}
+if (-not (Test-Path (Join-Path $sys 'control-panel.ps1'))) {
+    Write-Host '[失敗] 找不到工具且無法下載，請把整個畫面訊息貼給 AI。' -ForegroundColor Red; return
 }
 $panel = Join-Path $sys 'control-panel.ps1'
 Write-Host "[診斷] 工具位置：$sys" -ForegroundColor DarkGray
