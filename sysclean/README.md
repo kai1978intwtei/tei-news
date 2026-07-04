@@ -4,6 +4,26 @@
 專門對付：吃記憶體的背景軟體、讓電腦發熱的 CPU 元兇、藏在各處的垃圾檔案、
 非必要的開機自啟與排程任務、暫時用不到的大型軟體。
 
+## 🚀 安裝（在你的電腦上做一次就好）
+
+```powershell
+git pull   # 取得最新版
+```
+然後**雙擊 `sysclean\安裝.bat`**，它會自動：建桌面按鈕、註冊每週自動保養、
+啟用 AI 橋接器、檢查／安裝 Claude Code、跑第一次健檢並打開報告。
+（全部移除：`install.ps1 -Uninstall`）
+
+## 🎛️ 一鍵入口總表
+
+| 你在哪裡 | 怎麼按 | 做什麼 |
+|---|---|---|
+| 桌面 | 雙擊「一鍵保養」 | 零風險清理（暫存＋全瀏覽器快取＋DNS） |
+| 桌面 | 雙擊「一鍵健檢」 | 唯讀掃描＋自動打開報告 |
+| 瀏覽器 | 雙擊「一鍵面板」→ `http://localhost:8377` | 網頁按鈕：保養／健檢／看報告／核准深度清理 |
+| AI 艦隊（Claude Code） | 輸入 `/pc-clean`（可加「快速」或「深度」） | 完整流程：保養→分析→提案→核准→執行→驗證 |
+| 遠端 AI（ProjFlow 等） | 丟 plan.json 進 `bridge\inbox` | 橋接器代為執行（深度動作等你核准） |
+| 不用管 | 每週日 12:10 | 排程自動保養 |
+
 ## 最快用法：對 AI Agent 下一句話
 
 在這個資料夾開 Claude Code，直接說：
@@ -43,6 +63,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File sysclean\clean.ps1 -Undo sys
 | `clean.ps1` | 執行器：只照 `plan.json` 做、預設乾跑、白名單保護、動作前備份、`-Undo` 還原 |
 | `quick-tune.ps1` | 一鍵安全保養：掃描＋自動清零風險暫存快取，可註冊每週排程 |
 | `agent-bridge.ps1` | 代理橋接器：讓不能跑本機命令的 AI（ProjFlow 等）也能交件執行，深度動作仍需你核准（見 `AGENT-GUIDE.md`） |
+| `control-panel.ps1` | 本機網頁面板：`http://localhost:8377` 一鍵清潔按鈕（只有本機能連、防跨站偷按） |
+| `install.ps1` / `安裝.bat` | 一鍵安裝器：桌面按鈕＋排程＋橋接器＋Claude Code 檢查＋首次健檢 |
+| `一鍵健檢/保養/面板.bat` | 桌面雙擊按鈕（安裝器會自動建捷徑） |
 | `AGENT-GUIDE.md` | 任何 AI 代理的接入指南（全自動／橋接執行／半自動／純排程四種等級） |
 | `config.json` | 安全設定：受保護程序／服務白名單、常見吃資源軟體知識庫、允許清理路徑 |
 | `plan.sample.json` | 清理計畫格式範例（AI Agent 產生 `plan.json` 時照這個格式） |
