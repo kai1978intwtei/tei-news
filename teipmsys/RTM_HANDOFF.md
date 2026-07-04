@@ -98,6 +98,9 @@ if (from === 'pmsys' || from === 'projflow') {
 > - **`role` 只認伺服器 `profiles` 表**,不可採信 URL 的 `&role=`;查不到的 email → 待審核佇列,禁止自動建檔。
 > - **未簽章 URL 等同無認證**:`u` / `email` 明碼可被偽造(拼上真 admin 的 email 即可冒充免登入);正式版須改用簽章 token。
 > - 未知 / 未授權一律 `showAccessDenied()`,不可 fallthrough 到任何預設登入。
+> - **登入失敗 ≠ 重新申請**:驗證碼 / 密碼輸錯只能重試或「重寄 / 重設到原信箱」,禁止失敗後彈「重新申請」入口。
+> - **「重新申請」須先 `findByEmail` 去重且不自動放行**:已建檔 → 拒絕(導去登入 / 重設);未建檔 → 待審核,仍須核准。
+>   任何申請路徑都不得 auto-approve。詳見 SYNC_PROJFLOW.md「安全鐵則」第 5、6 點。
 
 ## 六、其它要對齊的規格（與 PMSYS / ProjFlow 一致）
 

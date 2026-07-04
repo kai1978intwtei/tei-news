@@ -84,6 +84,11 @@ if (qp.get('from') === 'pmsys') {
 >   就會被 `signInAs` 當成 admin 免 OTP 登入。正式版必須改用簽章 token(JWT/HMAC)驗證來源。
 > - `signInAs` 前務必再確認 `user` 存在且 `ALLOWED_ROLES.includes(user.role)`(上面已做),
 >   未知 / 未授權一律 `showAccessDenied()`,不可 fallthrough 到任何預設登入。
+> - **登入失敗 ≠ 重新申請**:驗證碼 / 密碼輸錯只能重試或「重寄 / 重設到原信箱」,
+>   **禁止**在失敗後彈「重新申請」入口(否則失敗即另開免驗證入口)。
+> - **「重新申請」須先 `findByEmail` 去重且不自動放行**:email 已建檔 → 拒絕新申請(導去登入 / 重設);
+>   未建檔 → 進待審核,仍須經理 / GM 核准指派 role。任何申請路徑都不得 auto-approve。
+>   詳見 SYNC_PROJFLOW.md「安全鐵則」第 5、6 點。
 
 ## 四、ProjFlow 必須與 PMSYS 對齊的規格
 
