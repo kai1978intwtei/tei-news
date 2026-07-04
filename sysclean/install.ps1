@@ -40,6 +40,7 @@ if ($Uninstall) {
     Write-Host '=== 移除 sysclean 排程與桌面捷徑 ===' -ForegroundColor Cyan
     & (Join-Path $scriptDir 'quick-tune.ps1') -Unregister
     & (Join-Path $scriptDir 'agent-bridge.ps1') -Unregister
+    & (Join-Path $scriptDir 'control-panel.ps1') -UnregisterStartup
     foreach ($n in (@($buttons | ForEach-Object { $_.name }) + 'AI管家')) {
         foreach ($ext in @('lnk', 'bat')) {
             $item = Join-Path $desktop "$n.$ext"
@@ -54,7 +55,7 @@ Write-Host '=============== sysclean 一鍵安裝器 ===============' -Foregroun
 
 # ---------- 1. 桌面按鈕 ----------
 if (-not $NoShortcuts) {
-    Write-Host '[1/5] 建立桌面按鈕…' -ForegroundColor Green
+    Write-Host '[1/6] 建立桌面按鈕…' -ForegroundColor Green
     $ws = $null
     try { $ws = New-Object -ComObject WScript.Shell } catch { }
     foreach ($b in $buttons) {
@@ -114,24 +115,28 @@ if (-not $NoShortcuts) {
             Write-Host '  桌面按鈕完成：AI管家（bat 版，雙擊一樣可用）' -ForegroundColor Green
         } catch { Write-Host "  無法建立 AI管家 按鈕 —— 手動開法：PowerShell 輸入 cd `"$root`" 再輸入 claude" -ForegroundColor Yellow }
     }
-} else { Write-Host '[1/5] 略過桌面按鈕（-NoShortcuts）' -ForegroundColor DarkGray }
+} else { Write-Host '[1/6] 略過桌面按鈕（-NoShortcuts）' -ForegroundColor DarkGray }
 
 # ---------- 2. 每週自動保養 ----------
 if (-not $NoWeekly) {
-    Write-Host '[2/5] 註冊每週自動保養排程…' -ForegroundColor Green
+    Write-Host '[2/6] 註冊每週自動保養排程…' -ForegroundColor Green
     & (Join-Path $scriptDir 'quick-tune.ps1') -RegisterWeekly
-} else { Write-Host '[2/5] 略過每週保養（-NoWeekly）' -ForegroundColor DarkGray }
+} else { Write-Host '[2/6] 略過每週保養（-NoWeekly）' -ForegroundColor DarkGray }
 
 # ---------- 3. 代理橋接器 ----------
 if (-not $NoBridge) {
-    Write-Host '[3/5] 註冊代理橋接器排程（每 10 分鐘處理 AI 交件）…' -ForegroundColor Green
+    Write-Host '[3/6] 註冊代理橋接器排程（每 10 分鐘處理 AI 交件）…' -ForegroundColor Green
     & (Join-Path $scriptDir 'agent-bridge.ps1') -RegisterTask
     Write-Host "  交件資料夾：$(Join-Path $scriptDir 'bridge\inbox')" -ForegroundColor DarkGray
     Write-Host '  （想讓雲端 AI 交件，之後可用 -BridgeDir 改指到 OneDrive 資料夾重新註冊）' -ForegroundColor DarkGray
-} else { Write-Host '[3/5] 略過橋接器（-NoBridge）' -ForegroundColor DarkGray }
+} else { Write-Host '[3/6] 略過橋接器（-NoBridge）' -ForegroundColor DarkGray }
 
-# ---------- 4. Claude Code（讓 AI 真的能在這台電腦執行） ----------
-Write-Host '[4/5] 檢查 Claude Code…' -ForegroundColor Green
+# ---------- 4. 面板開機常駐（localhost:8377 隨時打得開） ----------
+Write-Host '[4/6] 設定一鍵面板開機常駐（背景隱藏執行，網址隨時可開）…' -ForegroundColor Green
+& (Join-Path $scriptDir 'control-panel.ps1') -RegisterStartup
+
+# ---------- 5. Claude Code（讓 AI 真的能在這台電腦執行） ----------
+Write-Host '[5/6] 檢查 Claude Code…' -ForegroundColor Green
 if (Get-Command claude -ErrorAction SilentlyContinue) {
     Write-Host '  Claude Code 已安裝 ✓ 之後在本資料夾開它、輸入 /pc-clean 就是一鍵優化' -ForegroundColor Green
 } else {
@@ -150,11 +155,11 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
     }
 }
 
-# ---------- 5. 第一次健檢 ----------
+# ---------- 6. 第一次健檢 ----------
 if (-not $NoScan) {
-    Write-Host '[5/5] 執行第一次健檢（唯讀，跑完自動打開報告）…' -ForegroundColor Green
+    Write-Host '[6/6] 執行第一次健檢（唯讀，跑完自動打開報告）…' -ForegroundColor Green
     & (Join-Path $scriptDir 'scan.ps1') -OpenReport
-} else { Write-Host '[5/5] 略過第一次健檢（-NoScan）' -ForegroundColor DarkGray }
+} else { Write-Host '[6/6] 略過第一次健檢（-NoScan）' -ForegroundColor DarkGray }
 
 Write-Host ''
 Write-Host '=============== 安裝完成 ===============' -ForegroundColor Cyan
