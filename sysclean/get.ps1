@@ -36,6 +36,10 @@ if (Test-Path (Join-Path $srcRoot '.claude')) {
     New-Item -ItemType Directory -Path $destClaude -Force | Out-Null
     Copy-Item -Path (Join-Path $srcRoot '.claude\*') -Destination $destClaude -Recurse -Force
 }
+# AI 團隊章程（讓本機 AI 開口就是繁中、接令就動手）
+if (Test-Path (Join-Path $srcRoot 'CLAUDE.md')) {
+    Copy-Item -Path (Join-Path $srcRoot 'CLAUDE.md') -Destination (Join-Path $target 'CLAUDE.md') -Force
+}
 
 # 3. 交棒給一鍵安裝器（桌面按鈕＋排程＋橋接器＋Claude Code 檢查＋首次健檢）
 Write-Host '[3/3] 啟動一鍵安裝器…' -ForegroundColor Green
