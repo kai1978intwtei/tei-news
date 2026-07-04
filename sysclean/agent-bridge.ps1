@@ -28,6 +28,7 @@ param(
     [switch]$Once,
     [switch]$Watch,
     [int]$IntervalSeconds = 30,
+    [int]$IntervalMinutes = 2,
     [string]$BridgeDir,
     [switch]$RegisterTask,
     [switch]$Unregister
@@ -46,10 +47,22 @@ foreach ($d in @($BridgeDir, $inbox, $outbox, $pending, $processed)) {
     if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
 }
 $cleanScript = Join-Path $scriptDir 'clean.ps1'
+$scanScript  = Join-Path $scriptDir 'scan.ps1'
+$tuneScript  = Join-Path $scriptDir 'quick-tune.ps1'
+$planScript  = Join-Path $scriptDir 'make-plan.ps1'
 $taskName    = 'Sysclean-AgentBridge'
 
 # 這些動作零風險，橋接器可自動放行；其他動作一律要人核准
 $safeAutoTypes = @('cleanTemp', 'cleanBrowserCache', 'emptyRecycleBin', 'flushDns')
+
+# 手機遙控指令：檔名（去副檔名、去「 (數字)」）對應動作。內容不用管，放進 inbox 就觸發。
+# 中英別名都收，方便手機打字。
+$remoteCommands = @{
+    '保養'       = 'tune';    'tune'    = 'tune';    'clean'   = 'tune'
+    '健檢'       = 'scan';    'scan'    = 'scan';    'check'   = 'scan'
+    '深度預覽'   = 'preview'; 'preview' = 'preview'
+    '深度清理'   = 'deep';    'deep'    = 'deep';    'deepclean' = 'deep'
+}
 
 # ---------- 排程註冊／移除 ----------
 if ($Unregister) {
@@ -67,13 +80,30 @@ if ($RegisterTask) {
         $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
             -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`" -Once -BridgeDir `"$BridgeDir`"" `
             -WorkingDirectory $scriptDir
+        # 確保遙控指令說明檔存在（手機端看得到怎麼用）
+        $howto = Join-Path $BridgeDir '__手機遙控說明.txt'
+        if (-not (Test-Path $howto)) {
+            @(
+                '【手機遙控電腦清潔】怎麼用：',
+                '在手機的 OneDrive App 打開 inbox 資料夾，新增（或上傳）一個檔案，',
+                '檔名決定要做什麼（副檔名 .txt 或 .cmd 都可，內容不用寫）：',
+                '',
+                '  保養.txt      → 一鍵保養（清暫存＋全瀏覽器快取＋DNS，零風險）',
+                '  健檢.txt      → 系統健檢掃描（產生報告）',
+                '  深度預覽.txt  → 依報告產生清理計畫並乾跑預覽（不會真的動）',
+                '  深度清理.txt  → 執行深度清理（可還原）',
+                '',
+                '幾分鐘後，結果會出現在 outbox 資料夾，手機打開就能看。',
+                '（電腦要開著、且已登入。深度清理的所有動作都可在電腦上還原。）'
+            ) | Out-File -FilePath $howto -Encoding utf8
+        }
         $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
-            -RepetitionInterval (New-TimeSpan -Minutes 10)
+            -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes)
         $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries `
             -ExecutionTimeLimit (New-TimeSpan -Hours 1)
         Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
-            -Settings $settings -Description 'sysclean 代理橋接器：每 10 分鐘處理 AI 送來的清理計畫' | Out-Null
-        Write-Host "已註冊排程：$taskName（每 10 分鐘檢查 $inbox）" -ForegroundColor Green
+            -Settings $settings -Description "sysclean 代理橋接器：每 $IntervalMinutes 分鐘處理手機遙控指令與 AI 清理計畫" | Out-Null
+        Write-Host "已註冊排程：$taskName（每 $IntervalMinutes 分鐘檢查 $inbox）" -ForegroundColor Green
     } catch {
         Write-Host "排程註冊失敗（可能需要系統管理員權限）：$($_.Exception.Message)" -ForegroundColor Red
     }
@@ -92,9 +122,68 @@ function Write-BridgeResult {
     } | ConvertTo-Json -Depth 5 | Out-File -FilePath (Join-Path $outbox $resultName) -Encoding utf8
 }
 
+function Write-CmdResult {
+    param([string]$CmdName, [string]$Title, [string[]]$Log)
+    $safe = ($CmdName -replace '[^\w一-鿿\-]', '_')
+    $stampNow = Get-Date -Format 'yyyy-MM-dd HH:mm'
+    $body = @("【$Title】", "完成時間：$stampNow", '', '------ 執行內容 ------') + $Log
+    $body | Out-File -FilePath (Join-Path $outbox "$safe-結果.txt") -Encoding utf8
+}
+
+# 手機遙控指令檔（*.cmd / *.txt）：檔名對應動作，內容不用管
+function Invoke-CommandFiles {
+    $cmdFiles = @(Get-ChildItem -Path $inbox -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -in '.cmd', '.txt' -and $_.Name -ne '__手機遙控說明.txt' })
+    foreach ($f in $cmdFiles) {
+        if (((Get-Date) - $f.LastWriteTime).TotalSeconds -lt 10) { continue }  # 等雲端同步完成
+        # 檔名去副檔名、去 OneDrive 衝突後綴「 (1)」、去空白
+        $base = [System.IO.Path]::GetFileNameWithoutExtension($f.Name)
+        $base = ($base -replace '\s*\(\d+\)\s*$', '').Trim()
+        $cmd  = $remoteCommands[$base]
+        $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+        if (-not $cmd) {
+            Write-CmdResult -CmdName $base -Title "無法辨識的指令：$base" `
+                -Log @("可用指令：保養／健檢／深度預覽／深度清理", "請把檔名改成上面其中一個。")
+            Move-Item -LiteralPath $f.FullName -Destination (Join-Path $processed "$stamp-$($f.Name)") -Force
+            Write-Host "[遙控] 無法辨識的指令檔：$($f.Name)" -ForegroundColor Yellow
+            continue
+        }
+        Write-Host "[遙控] 收到手機指令：$base → $cmd" -ForegroundColor Cyan
+        $log = @()
+        switch ($cmd) {
+            'tune' {
+                $log = @(& $tuneScript *>&1 | ForEach-Object { $_.ToString() })
+                Write-CmdResult -CmdName $base -Title '一鍵保養（零風險清理）' -Log $log
+            }
+            'scan' {
+                $log = @(& $scanScript -NoHtml *>&1 | ForEach-Object { $_.ToString() })
+                Write-CmdResult -CmdName $base -Title '系統健檢掃描' -Log $log
+            }
+            'preview' {
+                $log  = @(& $scanScript -NoHtml *>&1 | ForEach-Object { $_.ToString() })
+                $log += @(& $planScript *>&1 | ForEach-Object { $_.ToString() })
+                $log += '------ 乾跑預覽（不會真的動）------'
+                $log += @(& $cleanScript *>&1 | ForEach-Object { $_.ToString() })
+                Write-CmdResult -CmdName $base -Title '深度清理預覽（未執行）' -Log $log
+            }
+            'deep' {
+                $log  = @(& $scanScript -NoHtml *>&1 | ForEach-Object { $_.ToString() })
+                $log += @(& $planScript *>&1 | ForEach-Object { $_.ToString() })
+                $log += '------ 實際執行（可還原）------'
+                $log += @(& $cleanScript -Apply *>&1 | ForEach-Object { $_.ToString() })
+                Write-CmdResult -CmdName $base -Title '深度清理（已執行，可還原）' -Log $log
+            }
+        }
+        Move-Item -LiteralPath $f.FullName -Destination (Join-Path $processed "$stamp-$($f.Name)") -Force
+        Write-Host "[遙控] 完成：$base（結果已寫到 outbox）" -ForegroundColor Green
+    }
+}
+
 function Invoke-BridgeOnce {
+    Invoke-CommandFiles   # 先處理手機遙控指令檔
+
     $files = @(Get-ChildItem -Path $inbox -Filter '*.json' -File -ErrorAction SilentlyContinue)
-    if ($files.Count -eq 0) { Write-Host "[橋接] inbox 沒有新計畫（$inbox）" -ForegroundColor DarkGray; return }
+    if ($files.Count -eq 0) { Write-Host "[橋接] inbox 沒有新的 JSON 計畫（$inbox）" -ForegroundColor DarkGray; return }
 
     foreach ($f in $files) {
         # 雲端同步可能還沒傳完，剛寫入 10 秒內的檔先跳過、下一輪再處理
