@@ -61,7 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_contact_industry_region
 -- -----------------------------------------------------------------------------
 -- 2. 查詢輔助 view:依產業 / 區域 聚合
 -- -----------------------------------------------------------------------------
-CREATE OR REPLACE VIEW teisale.v_contact_by_industry AS
+CREATE OR REPLACE VIEW teisale.v_contact_by_industry WITH (security_invoker = true) AS
 SELECT
   industry,
   COUNT(*)                                       AS total,
@@ -72,7 +72,7 @@ WHERE industry IS NOT NULL
 GROUP BY industry
 ORDER BY total DESC;
 
-CREATE OR REPLACE VIEW teisale.v_contact_by_region AS
+CREATE OR REPLACE VIEW teisale.v_contact_by_region WITH (security_invoker = true) AS
 SELECT
   region,
   country,
@@ -89,7 +89,7 @@ ORDER BY region, country;
 -- 3. 更新 v_company_overview:加入分類統計欄位
 -- -----------------------------------------------------------------------------
 -- 重建 view (CREATE OR REPLACE VIEW 允許新增欄位)
-CREATE OR REPLACE VIEW teisale.v_company_overview AS
+CREATE OR REPLACE VIEW teisale.v_company_overview WITH (security_invoker = true) AS
 SELECT
   (SELECT count(*) FROM teisale.assistant_task)                                AS assist_total,
   (SELECT count(*) FROM teisale.assistant_task WHERE status != 'done')         AS assist_pending,
@@ -109,6 +109,9 @@ SELECT
   (SELECT count(DISTINCT region)   FROM teisale.contact WHERE region IS NOT NULL)   AS distinct_regions,
   (SELECT count(DISTINCT country)  FROM teisale.contact WHERE country IS NOT NULL)  AS distinct_countries;
 
+
+GRANT SELECT ON teisale.v_contact_by_industry TO authenticated;
+GRANT SELECT ON teisale.v_contact_by_region   TO authenticated;
 
 COMMIT;
 

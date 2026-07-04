@@ -638,7 +638,7 @@
           <input type="text" id="otp-input" maxlength="6" placeholder="000000"
                  class="flex-1 py-3 px-3 mono text-center text-lg tracking-[0.4em] font-semibold"
                  onkeydown="if(event.key==='Enter') verifyOtp()"
-                 oninput="this.value=this.value.replace(/\\D/g,'')">
+                 oninput="this.value=this.value.replace(/\D/g,'')">
           <button onclick="verifyOtp()" class="btn-ink">驗證並登入</button>
         </div>
         <button onclick="backToEmail()" class="mt-3 text-[11px] flex items-center gap-1" style="color: var(--text-3);">
@@ -950,8 +950,16 @@ function displayName(u) {
   return (u && u.enName && String(u.enName).trim()) || (u && u.name) || '';
 }
 
-/* PMSYS 角色允許清單 — 須與 ProjFlow profiles.role 允許清單嚴格一致，避免資料同步混亂 */
-const PMSYS_ALLOWED_ROLES = ['pm', 'pmo'];
+/* HTML 轉義 — 任何來自使用者輸入、URL 參數或跨系統同步的字串，寫入 innerHTML 前都要先跑過這裡 */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+/* PMSYS 角色允許清單 — 須與 ProjFlow profiles.role 允許清單嚴格一致，避免資料同步混亂
+   admin（總經理）三系統皆全權放行，不可擋下（契約 PROJFLOW_HANDOFF §5 / RTM_HANDOFF §7） */
+const PMSYS_ALLOWED_ROLES = ['pm', 'pmo', 'admin'];
 function isAuthorizedForPMSYS(u) { return !!u && PMSYS_ALLOWED_ROLES.includes(u.role); }
 
 /* ============================================================
@@ -1052,8 +1060,8 @@ function login(userId) {
   updateBellBadge();
   // 閒置 60 分鐘自動登出
   idleManager.start();
-  // ProjFlow 同步按鈕與提醒
-  projflowSync.mount();
+  // ProjFlow 同步按鈕與提醒 —— 只有 admin（總經理）看得到，PM 視角隱藏（契約 §4.5）
+  if (currentUser.role === 'admin') projflowSync.mount();
   // 首次登入強制走教學引導
   if (!hasSeenTutorial(currentUser.id)) startTutorial({ forced: true });
 }
@@ -1916,7 +1924,7 @@ function taskRow(t) {
         <i data-lucide="${sm.icon}" class="w-2.5 h-2.5"></i>
       </span>
       <div class="flex-1 min-w-0">
-        <div class="text-[13px] font-medium leading-tight">${t.title}</div>
+        <div class="text-[13px] font-medium leading-tight">${esc(t.title)}</div>
         <div class="text-[11px] mt-0.5" style="color: var(--text-3);">${project?.name} · ${user?.name}</div>
       </div>
       <span class="text-[11px] mono font-medium" style="color: ${dueColor};">${dueText}</span>
@@ -2144,13 +2152,13 @@ function kanbanCard(t) {
     <div onclick="openTaskModal('${t.id}')" class="p-3 rounded-md border cursor-pointer paper-lift" style="border-color: ${isBlocked ? '#E0CCD3' : 'var(--border)'}; background: ${isBlocked ? '#FAF3F6' : 'var(--paper)'};">
       <div class="flex items-start gap-2 mb-2">
         <span class="priority-bar priority-${t.priority} mt-0.5"></span>
-        <div class="text-[12.5px] font-medium leading-tight">${t.title}</div>
+        <div class="text-[12.5px] font-medium leading-tight">${esc(t.title)}</div>
       </div>
       <div class="text-[10.5px] mb-2" style="color: var(--text-3);">${project?.name}</div>
       ${isBlocked && t.blockReason ? `
         <div class="text-[10.5px] mb-2 px-2 py-1.5 rounded flex items-start gap-1.5" style="background: rgba(122,76,102,.08); color: #7A4C66; border-left: 2px solid #7A4C66;">
           <i data-lucide="octagon-alert" class="w-3 h-3 mt-0.5 flex-shrink-0"></i>
-          <span class="leading-snug">${t.blockReason}</span>
+          <span class="leading-snug">${esc(t.blockReason)}</span>
         </div>
       ` : ''}
       <div class="flex items-center justify-between">
@@ -2790,7 +2798,7 @@ function renderTeamPicker() {
           </select>
           <div class="relative">
             <input type="search" id="team-search" placeholder="搜尋姓名 / 職稱 / 部門…"
-                   value="${teamPickerSearch}"
+                   value="${esc(teamPickerSearch)}"
                    oninput="teamPickerSearch=this.value; renderTeamPicker(); setTimeout(()=>document.getElementById('team-search').focus(),0);"
                    class="w-full py-2 pl-9 pr-3 text-[12.5px]">
             <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5" style="color: var(--text-3);"></i>
@@ -3113,8 +3121,8 @@ function messageListRow(m) {
           <span class="text-[12.5px] font-semibold truncate ${m.unread ? '' : ''}" style="color: var(--text);">${user?.name || '系統訊息'}</span>
           ${sourceBadge(m.source)}
         </div>
-        <div class="text-[12px] leading-snug ${m.unread ? 'font-semibold' : ''}" style="color: var(--text);">${m.subject}</div>
-        <div class="text-[11px] mt-1 truncate" style="color: var(--text-3);">${m.preview}</div>
+        <div class="text-[12px] leading-snug ${m.unread ? 'font-semibold' : ''}" style="color: var(--text);">${esc(m.subject)}</div>
+        <div class="text-[11px] mt-1 truncate" style="color: var(--text-3);">${esc(m.preview)}</div>
         <div class="flex items-center gap-2 mt-1.5 text-[10.5px]" style="color: var(--text-3);">
           ${project ? `<span class="mono">${project.code}</span><span>·</span>` : ''}
           <span>${m.time}</span>
@@ -3139,7 +3147,7 @@ function messageDetail(m) {
           ${project ? `<span class="mono text-[10.5px] font-semibold px-1.5 py-0.5 rounded" style="background: var(--bg-subtle); color: var(--text-2);">${project.code}</span>` : ''}
           ${m.synced ? `<span class="text-[10.5px] flex items-center gap-1" style="color: var(--moss);"><i data-lucide="check-check" class="w-3 h-3"></i>已同步</span>` : ''}
         </div>
-        <h2 class="serif text-[16px] font-semibold leading-snug">${m.subject}</h2>
+        <h2 class="serif text-[16px] font-semibold leading-snug">${esc(m.subject)}</h2>
         <div class="flex items-center gap-2 mt-2 text-[11.5px]" style="color: var(--text-3);">
           ${user ? `
             <div class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-semibold" style="background: var(--${DEPTS[user.dept]?.color || 'ink'});">${user.avatar}</div>
@@ -3160,7 +3168,7 @@ function messageDetail(m) {
     </div>
 
     <div class="flex-1 overflow-y-auto px-5 py-4">
-      <p class="text-[13px] leading-relaxed" style="color: var(--text);">${m.preview}</p>
+      <p class="text-[13px] leading-relaxed" style="color: var(--text);">${esc(m.preview)}</p>
       ${project ? `
         <div class="mt-4 p-3 rounded-md flex items-center gap-3" style="background: var(--bg-subtle);">
           <i data-lucide="folder" class="w-4 h-4" style="color: var(--text-3);"></i>
@@ -3242,7 +3250,7 @@ function openTaskModal(taskId) {
               <i data-lucide="${sm.icon}" class="w-3 h-3"></i>${sm.label}
             </span>
           </div>
-          <h2 class="serif text-[18px] font-semibold">${t.title}</h2>
+          <h2 class="serif text-[18px] font-semibold">${esc(t.title)}</h2>
           <div class="text-[12px] mt-1" style="color: var(--text-3);">隸屬：${project?.name}</div>
         </div>
         <button onclick="closeModal()" class="p-2 rounded-md hover:bg-stone-100"><i data-lucide="x" class="w-4 h-4"></i></button>
@@ -3253,7 +3261,7 @@ function openTaskModal(taskId) {
           <i data-lucide="octagon-alert" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: #7A4C66;"></i>
           <div class="flex-1">
             <div class="text-[11px] font-semibold mb-1" style="color: #7A4C66;">卡住原因</div>
-            <div class="text-[12.5px] leading-snug" style="color: var(--text);">${t.blockReason}</div>
+            <div class="text-[12.5px] leading-snug" style="color: var(--text);">${esc(t.blockReason)}</div>
           </div>
         </div>
       ` : ''}
@@ -3509,16 +3517,48 @@ const projflowSync = (() => {
 // ProjFlow 端跳轉網址需帶：?from=projflow&u=<id>（或 &email=<email>）；帶 tutorialDone=1 表示已學過引導
 function ssoLoginFromUrl() {
   const qp = new URLSearchParams(location.search);
-  if (qp.get('from') !== 'projflow') return false;
+  const from = qp.get('from');
+  // 僅接受來自姊妹系統的翻頁（ProjFlow / RTM）；契約要求三邊 from 值一致
+  if (from !== 'projflow' && from !== 'rtm') return false;
+  // 一旦辨識為跨系統翻頁，先清掉網址上的明碼身份參數（避免可被書籤/分享的身份殘留）
+  history.replaceState(null, '', location.pathname);
   const byId = qp.get('u');
   const byEmail = (qp.get('email') || '').toLowerCase();
   const u = USERS.find(x => x.id === byId)
          || USERS.find(x => x.email && x.email.toLowerCase() === byEmail);
-  if (!u) return false;
+  // 未知帳號 / 非專案管理體系 → 顯示拒絕畫面，並回傳 true 讓初始化不再落到原型自動登入
+  if (!u || !isAuthorizedForPMSYS(u)) { showAccessDenied(); return true; }
   if (qp.get('tutorialDone') === '1') markTutorialSeen(u.id); // 跨系統共用「已學過」旗標
-  history.replaceState(null, '', location.pathname);
   login(u.id);
+  // 聊天 deep-link：帶 &chat=<對象 id> 時直接開啟該對話（契約 §4.7）
+  const chatId = qp.get('chat');
+  if (chatId) openChatWith(chatId);
   return true;
+}
+
+/* 跨系統存取遭拒的終端畫面（未知帳號或非 pm/pmo/admin） */
+function showAccessDenied() {
+  const ls = document.getElementById('login-screen');
+  const app = document.getElementById('app');
+  if (app) app.classList.add('hidden');
+  if (ls) ls.classList.add('hidden');
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg,#f5f3ef);z-index:99999;';
+  el.innerHTML = `
+    <div style="max-width:420px;text-align:center;padding:32px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text,#1c1a17);margin-bottom:8px;">非專案管理體系成員</div>
+      <div style="font-size:13px;color:var(--text-3,#8a857d);line-height:1.7;">此帳號無權使用本系統。<br>如需存取請聯絡專案管理辦公室（PMO）。</div>
+    </div>`;
+  document.body.appendChild(el);
+}
+
+/* 依對象 user id 直接開啟對應對話（聊天 deep-link 的落地動作） */
+function openChatWith(userId) {
+  try {
+    showView('messages');
+    const m = MESSAGES.find(x => x.from === userId);
+    if (m) openMessage(m.id);
+  } catch (e) { /* 對話不存在時僅停在訊息中心 */ }
 }
 
 // 初始化
@@ -3540,6 +3580,7 @@ function quickSwitch() {
 /* 翻書頁跳轉到 ProjFlow（同窗、不另開分頁，真正的 180° 翻頁動畫） */
 function flipToProjFlow() {
   if (document.getElementById('flip-running')) return;
+  if (!currentUser) return; // 未登入不翻頁，避免帶錯身份過去
   const overlay = document.createElement('div');
   overlay.id = 'flip-running';
   overlay.className = 'flip-overlay';
@@ -3579,9 +3620,10 @@ function flipToProjFlow() {
   // 預留 300ms 給 Vercel 啟動,動畫結束的瞬間 ProjFlow 多半剛好可以接手
   // 若 Vercel 載入快於 300ms,過渡仍流暢;若慢於 300ms,看到的是已翻好的「ProjFlow 落地頁 + 載入點」
   setTimeout(() => {
-    const base = 'https://pm-system-mauve.vercel.app';
+    const base = 'https://pm-system-mauve.vercel.app/dashboard';
     // SSO 交握（正向）：帶完整身份 + 教學狀態過去，ProjFlow 認得就免再登入、不必再學一次教學
-    const u = currentUser || USERS.find(x => x.id === 'u100');
+    const u = currentUser;
+    if (!u) { document.getElementById('flip-running')?.remove(); return; }
     const qs = new URLSearchParams({
       from: 'pmsys',
       u: u?.id || '',

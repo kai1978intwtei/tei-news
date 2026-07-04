@@ -4089,10 +4089,10 @@
   function attachmentsHtml(atts){
     if(!atts || !atts.length) return '';
     return `<div class="attach-row">
-      ${atts.map(a=>`<a class="attach-link" href="${a.url}" target="_blank" rel="noopener" title="${a.url}">
+      ${atts.map(a=>{const u=safeUrl(a.url);return `<a class="attach-link" href="${escapeHtml(u)}" target="_blank" rel="noopener" title="${escapeHtml(u)}">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-        ${a.name}
-      </a>`).join('')}
+        ${escapeHtml(a.name)}
+      </a>`;}).join('')}
     </div>`;
   }
 
@@ -4289,8 +4289,8 @@
           </div>
           <span class="assist-status ${t.status}">${({pending:'待處理',doing:'處理中',done:'已完成'})[t.status]}</span>
         </div>
-        <div class="ac-title">${t.title}${t.dueAt?' ':''}${dueTagHtml(t.dueAt)}</div>
-        <div class="ac-desc">${t.desc || '(無說明)'}</div>
+        <div class="ac-title">${escapeHtml(t.title)}${t.dueAt?' ':''}${dueTagHtml(t.dueAt)}</div>
+        <div class="ac-desc">${t.desc ? escapeHtml(t.desc) : '(無說明)'}</div>
         ${attachmentsHtml(t.attachments)}
         <div class="ac-foot" style="margin-top:10px;">
           <span>建立 ${t.createdAt}</span>
@@ -4324,9 +4324,9 @@
       const attN = (t.attachments||[]).length;
       return `<div class="row">
         <div>
-          <div style="font-weight:600;font-size:13px;">${t.title} ${dt}</div>
+          <div style="font-weight:600;font-size:13px;">${escapeHtml(t.title)} ${dt}</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-            ${t.desc.slice(0,60)}${t.desc.length>60?'…':''}
+            ${escapeHtml((t.desc||'').slice(0,60))}${(t.desc||'').length>60?'…':''}
             ${attN ? `<span style="margin-left:6px;color:var(--text-sub);">📎 ${attN} 個附件</span>` : ''}
           </div>
         </div>
@@ -4384,11 +4384,11 @@
         // 報關 / EDI 資訊區塊(若有任一欄位填寫過才顯示)
         const hasCustoms = it.customsNo || it.blNo || it.customsDate || it.eta || it.customsDocUrl;
         const customsHtml = hasCustoms ? `<div class="customs-row">
-          ${it.customsNo ? `<span class="cf">報單 ${it.customsNo}</span>` : ''}
-          ${it.blNo     ? `<span class="cf">B/L ${it.blNo}</span>` : ''}
+          ${it.customsNo ? `<span class="cf">報單 ${escapeHtml(it.customsNo)}</span>` : ''}
+          ${it.blNo     ? `<span class="cf">B/L ${escapeHtml(it.blNo)}</span>` : ''}
           ${it.customsDate ? `<span class="cf">報關 ${it.customsDate}</span>` : ''}
           ${it.eta      ? `<span class="cf">ETA ${it.eta}</span>` : ''}
-          ${it.customsDocUrl ? `<a class="cf" href="${it.customsDocUrl}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer;">📎 文件</a>` : ''}
+          ${(()=>{const u=safeUrl(it.customsDocUrl);return u?`<a class="cf" href="${escapeHtml(u)}" target="_blank" rel="noopener" style="text-decoration:none;cursor:pointer;">📎 文件</a>`:'';})()}
           ${renderEdiBadge(it)}
         </div>` : (it.ediStatus ? `<div class="customs-row">${renderEdiBadge(it)}</div>` : '');
 
@@ -4400,8 +4400,8 @@
             <span class="ship-no">${it.id} ‧ ${typeLabel}</span>
             <span class="mode-tag ${it.mode==='sea'?'mode-sea':'mode-air'}">${it.mode==='sea'?'SEA':'AIR'}</span>
           </div>
-          <div class="ship-title">${it.title}</div>
-          <div class="ship-meta">${it.party||'—'} ‧ ${it.port||'—'}</div>
+          <div class="ship-title">${escapeHtml(it.title)}</div>
+          <div class="ship-meta">${escapeHtml(it.party||'—')} ‧ ${escapeHtml(it.port||'—')}</div>
           <div class="ship-meta" style="margin-top:4px;">${requester.emoji} ${requester.name} 派發 ‧ ${it.createdAt.split(' ')[0]}</div>
           ${customsHtml}
           ${isShipping ? `<div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
@@ -4442,8 +4442,8 @@
       const statusColor = ({requested:'pending',booked:'doing',customs:'doing',delivered:'done'})[it.status];
       return `<div class="row">
         <div>
-          <div style="font-weight:600;font-size:13px;">${it.title}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${typeLabel} ‧ ${it.mode==='sea'?'海運':'空運'} ‧ ${it.party||'—'} ‧ ${it.port||'—'}</div>
+          <div style="font-weight:600;font-size:13px;">${escapeHtml(it.title)}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${typeLabel} ‧ ${it.mode==='sea'?'海運':'空運'} ‧ ${escapeHtml(it.party||'—')} ‧ ${escapeHtml(it.port||'—')}</div>
         </div>
         <div class="who">🐳 周船仔</div>
         <span class="assist-status ${statusColor}">${statusLabel}</span>
@@ -4519,9 +4519,9 @@
         <td><span class="kind-pill ${c.kind==='customer'?'kind-customer':'kind-supplier'}">${c.kind==='customer'?'客戶':'供應商'}</span></td>
         <td>${industryChipHtml(c.industry)}</td>
         <td>${regionChipHtml(c.region, c.country)}</td>
-        <td><div style="font-weight:600;">${c.company}</div><div style="font-size:11px;color:var(--text-muted);">${c.person||'—'}</div></td>
-        <td><div>${c.phone||'—'}</div><div style="font-size:11px;color:var(--text-muted);">${c.email||'—'}</div></td>
-        <td style="font-size:12px;color:var(--text-sub);">${c.addr||'—'}</td>
+        <td><div style="font-weight:600;">${escapeHtml(c.company)}</div><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.person||'—')}</div></td>
+        <td><div>${escapeHtml(c.phone||'—')}</div><div style="font-size:11px;color:var(--text-muted);">${escapeHtml(c.email||'—')}</div></td>
+        <td style="font-size:12px;color:var(--text-sub);">${escapeHtml(c.addr||'—')}</td>
         <td style="font-size:12px;">${owner?owner.emoji+' '+owner.name:'—'}</td>
         <td>${canWrite ? `<button class="filter-pill" data-del-contact="${c.id}" style="font-size:10px;padding:3px 8px;color:var(--danger);">刪除</button>` : ''}</td>
       </tr>`;
@@ -5023,7 +5023,12 @@
   }
 
   function escapeHtml(s){
-    return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  // 僅允許 http(s) 連結,擋掉 javascript:/data: 等可執行 scheme;非法時回傳空字串
+  function safeUrl(u){
+    const s = String(u==null?"":u).trim();
+    return /^https?:\/\//i.test(s) ? s : "";
   }
 
   function updateChatBadge(){
@@ -5550,11 +5555,17 @@
     // 同步關鍵字: 含這些字眼的行,優先標記為「可上日報」
     const SYNC_HINT = /(PRJ-\d+|PM|專案|跨部|協作|出貨檔期|交付|交期|規格確認|請\s*PM|協助確認)/;
 
+    // 全形→半形正規化,避免用全形 ＮＴ＄ / 全形數字 / 全形空白繞過機密過濾
+    function normalizeForFilter(s){
+      return String(s).replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+                      .replace(/￥/g, '¥').replace(/　/g, ' ');
+    }
+
     function extract(raw){
       const lines = raw.split(/\n/).map(l => l.trim()).filter(Boolean);
       const synced = [], filtered = [];
       for(const line of lines){
-        if(PROHIBITED.test(line)){
+        if(PROHIBITED.test(normalizeForFilter(line))){
           // 機密行: 截斷顯示前 24 字,讓業務知道哪幾行被擋
           filtered.push(line.substring(0, 24) + (line.length > 24 ? '…' : ''));
         } else {
@@ -5586,11 +5597,11 @@
       const { synced, filtered: filt } = extract(raw);
 
       extracted.innerHTML = synced.length
-        ? synced.map(l => `<div class="line">• ${l.replace(/^[\*\-•]\s*/, '')}</div>`).join('')
+        ? synced.map(l => `<div class="line">• ${escapeHtml(l.replace(/^[\*\-•]\s*/, ''))}</div>`).join('')
         : '<div style="color:var(--text-muted);font-style:italic;">系統未抓到可同步內容 ‧ 請在下方編輯區直接補寫</div>';
 
       filtered.innerHTML = filt.length
-        ? '<span>' + filt.map(s => `「${s}」`).join('、') + '</span>'
+        ? '<span>' + filt.map(s => `「${escapeHtml(s)}」`).join('、') + '</span>'
         : '<span style="color:var(--text-muted);">本次無觸發過濾關鍵字</span>';
 
       editable.value = synced.join('\n');
@@ -5601,20 +5612,38 @@
     backdrop.addEventListener('click', (e) => { if(e.target === backdrop) backdrop.dataset.open = 'false'; });
 
     uploadBtn?.addEventListener('click', () => {
-      const body = (editable.value || '').trim();
-      if(!body){ alert('日報內容不能為空'); return; }
-      const today = new Date().toISOString().slice(0, 10);
+      const edited = (editable.value || '').trim();
+      if(!edited){ alert('日報內容不能為空'); return; }
+      // 破洞修補:上傳前對「實際送出的版本」再過濾一次。
+      // 使用者可能在編輯區補回機密行,若只過濾預覽就會外洩到 ProjFlow。
+      const { synced: safeLines, filtered: blocked } = extract(edited);
+      if(blocked.length){
+        editable.value = safeLines.join('\n');
+        filtered.innerHTML = '<span>' + blocked.map(s => `「${escapeHtml(s)}」`).join('、') + '</span>';
+        alert('偵測到機密內容,下列行已自動移除後才可上傳:\n\n' + blocked.map(s=>'「'+s+'」').join('\n') + '\n\n已更新編輯區,請確認後再按一次「上傳」。');
+        return;
+      }
+      const body = safeLines.join('\n');
+      if(!body){ alert('過濾後無可上傳內容'); return; }
+      // 破洞修補:用本地時區日期,避免台灣(UTC+8)清晨上傳被算成前一天,污染 (email,date) 去重鍵
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      // 破洞修補:身份取自當前登入者 persona(原本 window.__currentPersona 從未定義,
+      // 所有人都掛同一個 sales@tei.com.tw,會誤觸 ProjFlow 端 (email,date) 409 去重)
+      const me = personas[currentUserKey] || {};
+      const myEmail = me.email
+        || (me.en ? me.en.toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.|\.$/g,'') + '@tei.com.tw' : 'sales@tei.com.tw');
       const payload = {
         type: 'daily-report',
         date: today,
-        from: { dept: 'sales', email: (window.__currentPersona?.email) || 'sales@tei.com.tw', name: (window.__currentPersona?.name) || '業務' },
+        from: { dept: 'sales', id: me.id || '', email: myEmail, name: me.name || '業務' },
         body,
-        cross_id: 'dr-' + today + '-' + Math.random().toString(36).slice(2, 8),
+        cross_id: 'dr-' + today + '-' + (me.id ? me.id.slice(0,8) : 'anon'),
       };
       console.log('[ProjFlow Sync] daily-report payload:', payload);
       backdrop.dataset.open = 'false';
       // Demo feedback (正式版改成 POST + toast)
-      alert('✅ 已上傳至 ProjFlow 日報\n\n日期: ' + today + '\n身份: ' + payload.from.name + ' (' + payload.from.dept + ' / ' + payload.from.email + ')\n字數: ' + body.length + '\n\n對方查看 URL:\nhttps://pm-system-mauve.vercel.app/reports/daily/' + today + '?from=salesys');
+      alert('✅ (模擬) 已上傳至 ProjFlow 日報\n\n日期: ' + today + '\n身份: ' + payload.from.name + ' (' + payload.from.dept + ' / ' + payload.from.email + ')\n字數: ' + body.length + '\n\n對方查看 URL:\nhttps://pm-system-mauve.vercel.app/reports/daily/' + today + '?from=salesys');
     });
   })();
 </script>

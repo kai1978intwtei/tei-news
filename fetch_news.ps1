@@ -597,6 +597,16 @@ function HtmlEsc {
     return $s.Replace('&','&amp;').Replace('<','&lt;').Replace('>','&gt;').Replace('"','&quot;').Replace("'",'&#39;')
 }
 
+# 只放行 http/https 連結，擋掉來自外部 RSS/文章的 javascript:/data:/vbscript: 等可執行 scheme
+# （惡意 feed 的 <link> 或 og:image 可能夾帶 javascript:，點擊即在本站網域執行）
+function Sanitize-Url {
+    param([string]$u)
+    if (-not $u) { return '' }
+    $t = $u.Trim()
+    if ($t -match '^https?://') { return $t }
+    return ''
+}
+
 function Get-Score {
     param($Title, $Desc, $Weight, $Pub)
     $text  = ("$Title $Desc").ToLower()
@@ -1794,9 +1804,13 @@ $catGrad  = @{
 function Get-ImgStyle {
     param([string]$img, [string]$cat)
     $grad = $catGrad[$cat]
-    if ($img) {
+    $safeImg = Sanitize-Url $img
+    if ($safeImg) {
+        # 只用通過 http(s) 驗證的圖片 URL，並用 [uri]::EscapeUriString 移除可跳脫 CSS url() 的字元（' ( ) ;）
+        # HtmlEsc 不足以擋 CSS 注入：瀏覽器會先解實體再解 CSS，' 會被還原而閉合 url('...')
+        $cssImg = ([uri]::EscapeUriString($safeImg)).Replace("'","%27").Replace('(','%28').Replace(')','%29')
         # 漸層當後備色，圖片 404 時就會露出漸層，避免空白方塊
-        return "background:$grad;background-image:url('$(HtmlEsc $img)');background-size:cover;background-position:center;background-repeat:no-repeat;"
+        return "background:$grad;background-image:url('$cssImg');background-size:cover;background-position:center;background-repeat:no-repeat;"
     }
     return "background:$grad;"
 }
@@ -1813,6 +1827,10 @@ function Format-Pub {
 function Get-ReadMoreHtml {
     param([string]$url, [string]$lang)
     if (-not $url) { return '' }
+    # 只放行 http(s) 原連結，擋掉惡意 feed 夾帶的 javascript: 等 scheme
+    $safeUrl = Sanitize-Url $url
+    if (-not $safeUrl) { return '' }
+    $url = $safeUrl
     $origEsc = HtmlEsc $url
     # 中文來源 或 Google News wrapper（被翻譯代理空白化）→ 直接開原連結
     $isGoogleNews = $url -match 'news\.google\.com/(rss/)?articles/'
@@ -2251,17 +2269,20 @@ $renBody = $renMenuCard
 if ($renShops.Count -gt 0) {
     foreach ($shop in $renShops) {
         # 優先順序：手動填的 image > 品牌色塊 logo
-        if ($shop.image) {
-            $imgStyle = "background-image:url('$(HtmlEsc $shop.image)');background-size:cover;background-position:center;"
+        $shopImg = Sanitize-Url $shop.image
+        if ($shopImg) {
+            $cssShopImg = ([uri]::EscapeUriString($shopImg)).Replace("'","%27").Replace('(','%28').Replace(')','%29')
+            $imgStyle = "background-image:url('$cssShopImg');background-size:cover;background-position:center;"
             $imgContent = ''
         } else {
             $brand = Get-BrandStyle $shop.name
             $imgStyle = "background:$($brand.bg);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800;letter-spacing:1px;text-shadow:0 2px 8px rgba(0,0,0,0.35);text-align:center;padding:8px;"
             $imgContent = $brand.text
         }
-        $mapsLink = if ($shop.maps) { "<a class=""read-more"" href=""$(HtmlEsc $shop.maps)"" target=""_blank"" rel=""noopener"">📍 Google Maps</a>" } else { '' }
-        $fbLink   = if ($shop.fb)   { "<a class=""read-more-alt"" href=""$(HtmlEsc $shop.fb)"" target=""_blank"" rel=""noopener"">Facebook</a>" } else { '' }
-        $igLink   = if ($shop.ig)   { "<a class=""read-more-alt"" href=""$(HtmlEsc $shop.ig)"" target=""_blank"" rel=""noopener"">Instagram</a>" } else { '' }
+        $mapsU = Sanitize-Url $shop.maps; $fbU = Sanitize-Url $shop.fb; $igU = Sanitize-Url $shop.ig
+        $mapsLink = if ($mapsU) { "<a class=""read-more"" href=""$(HtmlEsc $mapsU)"" target=""_blank"" rel=""noopener"">📍 Google Maps</a>" } else { '' }
+        $fbLink   = if ($fbU)   { "<a class=""read-more-alt"" href=""$(HtmlEsc $fbU)"" target=""_blank"" rel=""noopener"">Facebook</a>" } else { '' }
+        $igLink   = if ($igU)   { "<a class=""read-more-alt"" href=""$(HtmlEsc $igU)"" target=""_blank"" rel=""noopener"">Instagram</a>" } else { '' }
         $renBody += @"
 <details class="mini-tile" open>
   <summary>

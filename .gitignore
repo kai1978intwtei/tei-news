@@ -1,1 +1,7 @@
 _site/
+# 機密金鑰 — 絕不進版控（由 GitHub Actions secret 於執行時寫入）
+.deepl_key
+.github_token
+.github_repo
+# 翻譯快取由 actions/cache 保存，不再提交進 git（避免每 10 分鐘塞一份 ~6.7MB blob 永久膨脹 .git）
+.translate_cache.json

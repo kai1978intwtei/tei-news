@@ -21,7 +21,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # 只取最新 tip（push 迴圈是 reset 到 origin/main），避免每次 clone 整段膨脹歷史
+          fetch-depth: 1
 
       - name: Restore translate cache
         uses: actions/cache@v4
@@ -63,10 +64,12 @@ jobs:
             git reset --hard origin/main
 
             # 把暫存的我方最新檔案還原回工作目錄
+            # index.html 要提交；.translate_cache.json 還原回來只為讓 actions/cache 在 post 步驟保存最新版，
+            # 但不再進 git（已 gitignore），避免每次提交塞一份 ~6.7MB blob
             cp -f /tmp/ours/index.html . 2>/dev/null || true
             cp -f /tmp/ours/.translate_cache.json . 2>/dev/null || true
 
-            git add index.html .translate_cache.json
+            git add index.html
             if git diff --cached --quiet; then
               echo "Remote already up-to-date with our content. No commit needed."
               exit 0

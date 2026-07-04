@@ -22,7 +22,9 @@
 -- 可重複執行不會失敗。
 -- =============================================================================
 
-BEGIN;
+-- 注意:enum 新增值(ALTER TYPE ... ADD VALUE)必須在交易之外先行提交,
+-- 否則同一交易稍後的 seed INSERT 使用新值會觸發 PostgreSQL 55P04
+-- "unsafe use of new value of enum type"。故本段刻意放在交易 BEGIN; 之前(autocommit)。
 
 -- -----------------------------------------------------------------------------
 -- 1. profile_tier enum:擴充 assistant / shipping
@@ -40,6 +42,9 @@ BEGIN
     ALTER TYPE profile_tier ADD VALUE IF NOT EXISTS 'shipping';
   END IF;
 END $$;
+
+-- enum 已在交易外提交,以下 DDL/DML 進入單一交易
+BEGIN;
 
 
 -- -----------------------------------------------------------------------------
@@ -158,7 +163,7 @@ ALTER TABLE teisale.contact        ENABLE ROW LEVEL SECURITY;
 -- 共用:取得當前使用者 tier
 CREATE OR REPLACE FUNCTION teisale.my_tier() RETURNS text AS $$
   SELECT tier::text FROM public.profiles WHERE id = auth.uid()
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public;
 
 
 -- -----------------------------------------------------------------------------
@@ -309,7 +314,7 @@ END $$;
 -- =============================================================================
 -- 8. View ‧ 全公司總覽聚合(GM dashboard 用)
 -- =============================================================================
-CREATE OR REPLACE VIEW teisale.v_company_overview AS
+CREATE OR REPLACE VIEW teisale.v_company_overview WITH (security_invoker = true) AS
 SELECT
   (SELECT count(*) FROM teisale.assistant_task)                                AS assist_total,
   (SELECT count(*) FROM teisale.assistant_task WHERE status != 'done')         AS assist_pending,
@@ -333,7 +338,7 @@ CREATE OR REPLACE FUNCTION teisale.assign_task(
   p_description  text DEFAULT '',
   p_due_at       date DEFAULT NULL,
   p_attachments  jsonb DEFAULT '[]'::jsonb
-) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, teisale AS $$
 DECLARE
   new_id uuid;
   assignee_tier text;
@@ -376,7 +381,7 @@ GRANT EXECUTE ON FUNCTION teisale.assign_task TO authenticated;
 -- 10. RPC ‧ EDI 送單(船務專屬,正式版需替換為實際 gateway 呼叫)
 -- =============================================================================
 CREATE OR REPLACE FUNCTION teisale.submit_edi(p_ship_id uuid) RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, teisale AS $$
 DECLARE
   caller_tier text;
   v_customs_no text;
@@ -417,6 +422,17 @@ VALUES
   ('11111111-1111-1111-1111-000000000002', '楊咪雅', 'Mia Yang',  '業務助理', '業務開發課 SD', '432', 'assistant', '🦋'),
   ('22222222-2222-2222-2222-000000000001', '周船仔', 'Marco Chou', '船務',     '營運支援課 OPS', '441', 'shipping',  '🐳')
 ON CONFLICT (id) DO NOTHING;
+
+
+-- =============================================================================
+-- 11.5 GRANT:Supabase 需明確授權 authenticated 角色,RLS 才會被評估
+--      (未授權時所有存取會在 RLS 之前就被 permission denied 擋下)
+-- =============================================================================
+GRANT USAGE ON SCHEMA teisale TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON teisale.assistant_task TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON teisale.shipping_item  TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON teisale.contact        TO authenticated;
+GRANT SELECT ON teisale.v_company_overview TO authenticated;
 
 
 -- =============================================================================
