@@ -75,6 +75,16 @@ if (qp.get('from') === 'pmsys') {
 }
 ```
 
+> 🔴 **安全鐵則(與 SYNC_PROJFLOW.md「一、識別契約」同一條,務必照做)**
+>
+> - **網域 ≠ 授權**:「是 `@tei-composites.com` 信箱」不代表有權進入。絕不可因公司網域就放行。
+> - **`role` 只認 `profiles` 表**:`findUserByIdOrEmail` 回傳的 `user.role` 必須來自伺服器 DB,
+>   **不可**改用 URL 上的 `&role=`。查不到的 email → 進「待審核」佇列,禁止自動建檔。
+> - **未簽章的 URL 等同無認證**:目前 `u` / `email` 明碼可被任何人偽造 —— 有人拼上**真 admin 的 email**
+>   就會被 `signInAs` 當成 admin 免 OTP 登入。正式版必須改用簽章 token(JWT/HMAC)驗證來源。
+> - `signInAs` 前務必再確認 `user` 存在且 `ALLOWED_ROLES.includes(user.role)`(上面已做),
+>   未知 / 未授權一律 `showAccessDenied()`,不可 fallthrough 到任何預設登入。
+
 ## 四、ProjFlow 必須與 PMSYS 對齊的規格
 
 ### 4.1 PM 角色允許清單

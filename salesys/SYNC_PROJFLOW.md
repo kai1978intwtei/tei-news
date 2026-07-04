@@ -27,7 +27,31 @@ https://pm-system-mauve.vercel.app/dashboard?from=salesys
   &tutorialDone=<0|1>
 ```
 
-ProjFlow 收到後寫進 session:`{ id, email, dept, role }`,**所有 RLS / 頁面 filter 都用這組值**。
+ProjFlow 收到後**只能把 URL 的 `email`（與 `u`）當作「宣稱的身份」**,拿去 `profiles` 表查出**伺服器端**的 `dept` / `role`,再寫進 session。
+
+> 🔴 **安全鐵則(務必照做,這是目前最嚴重的漏洞來源)**
+>
+> **1. 網域 ≠ 授權。** 「是 `@tei-composites.com` 信箱」只代表「可能是同事」,**不代表有權使用系統**。
+> 絕不可因為 email 是公司網域就放行 —— 這正是「不知者用公司信箱就被系統放行」的破洞。
+>
+> **2. `role` / `dept` 一律以伺服器 `profiles` 表為準,禁止採信 URL 帶來的值。**
+> URL 上的 `&role=` `&dept=` 只能當「顯示提示」,**永遠不可寫進 session 當權限**。
+> 否則任何人只要拼一條 `?email=任意@tei-composites.com&role=admin&dept=gm` 就能取得總經理全權。
+>
+> **3. 查不到 profile 的 email → 拒絕進入 + 進「待審核」佇列,禁止自動建檔(auto-provision)。**
+> 新同事首次登入必須由經理/GM 核准並指派 `role` 後才可用;在核准前一律 `showAccessDenied()`。
+>
+> **4. URL 明碼身份只是原型;正式版必須改用「簽章 token(JWT/HMAC)」。**
+> 未簽章的 URL 參數任何人都能偽造 id / email / role,等同無認證。簽章後伺服器才能驗證來源可信。
+>
+> 對應 code(收件端):
+> ```js
+> const claimedEmail = qp.get('email');                 // 只是「宣稱」
+> const profile = await db.profiles.findByEmail(claimedEmail); // 伺服器查真身份
+> if (!profile) return enqueuePendingApproval(claimedEmail);   // 未登錄 → 待審核,不放行
+> if (!ALLOWED_ROLES.includes(profile.role)) return showAccessDenied();
+> session = { id: profile.id, email: profile.email, dept: profile.dept, role: profile.role }; // 用 DB 的值,不是 URL 的
+> ```
 
 ---
 

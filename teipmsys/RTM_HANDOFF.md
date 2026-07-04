@@ -92,6 +92,13 @@ if (from === 'pmsys' || from === 'projflow') {
 }
 ```
 
+> 🔴 **安全鐵則(三系統一致,務必照做)**
+>
+> - **網域 ≠ 授權**:「是公司 `@tei-composites.com` 信箱」不代表有權進入,絕不可因網域就放行。
+> - **`role` 只認伺服器 `profiles` 表**,不可採信 URL 的 `&role=`;查不到的 email → 待審核佇列,禁止自動建檔。
+> - **未簽章 URL 等同無認證**:`u` / `email` 明碼可被偽造(拼上真 admin 的 email 即可冒充免登入);正式版須改用簽章 token。
+> - 未知 / 未授權一律 `showAccessDenied()`,不可 fallthrough 到任何預設登入。
+
 ## 六、其它要對齊的規格（與 PMSYS / ProjFlow 一致）
 
 | 項目 | 規格 |
