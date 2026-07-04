@@ -40,10 +40,10 @@ if ($Uninstall) {
     Write-Host '=== 移除 sysclean 排程與桌面捷徑 ===' -ForegroundColor Cyan
     & (Join-Path $scriptDir 'quick-tune.ps1') -Unregister
     & (Join-Path $scriptDir 'agent-bridge.ps1') -Unregister
-    foreach ($b in $buttons) {
+    foreach ($n in (@($buttons | ForEach-Object { $_.name }) + 'AI管家')) {
         foreach ($ext in @('lnk', 'bat')) {
-            $item = Join-Path $desktop "$($b.name).$ext"
-            if (Test-Path $item) { Remove-Item $item -Force; Write-Host "已移除桌面按鈕：$($b.name).$ext" -ForegroundColor Green }
+            $item = Join-Path $desktop "$n.$ext"
+            if (Test-Path $item) { Remove-Item $item -Force; Write-Host "已移除桌面按鈕：$n.$ext" -ForegroundColor Green }
         }
     }
     Write-Host '移除完成（腳本檔案本身保留，資料夾直接刪掉即可完全清除）。' -ForegroundColor Cyan
@@ -90,6 +90,29 @@ if (-not $NoShortcuts) {
         if (-not $done) {
             Write-Host "  無法放到桌面：$($b.name) —— 可直接雙擊 $scriptDir\$($b.name).bat 使用" -ForegroundColor Yellow
         }
+    }
+
+    # 第四顆：AI管家 —— 打開就是「能溝通、能下令、會動手」的本機 AI（Claude Code）
+    $root = Split-Path -Parent $scriptDir
+    $done = $false
+    if ($ws) {
+        try {
+            $sc = $ws.CreateShortcut((Join-Path $desktop 'AI管家.lnk'))
+            $sc.TargetPath = 'powershell.exe'
+            $sc.Arguments = "-NoProfile -NoExit -Command `"Set-Location '$root'; claude`""
+            $sc.WorkingDirectory = $root
+            $sc.Description = '打開本機 AI 管家（用中文下令，它會真的執行）'
+            $sc.Save()
+            $done = $true
+            Write-Host '  桌面按鈕完成：AI管家（雙擊開啟，直接用中文下令）' -ForegroundColor Green
+        } catch { }
+    }
+    if (-not $done) {
+        try {
+            $lines = @('@echo off', "cd /d `"$root`"", 'claude')
+            Set-Content -Path (Join-Path $desktop 'AI管家.bat') -Value $lines -Encoding Default
+            Write-Host '  桌面按鈕完成：AI管家（bat 版，雙擊一樣可用）' -ForegroundColor Green
+        } catch { Write-Host "  無法建立 AI管家 按鈕 —— 手動開法：PowerShell 輸入 cd `"$root`" 再輸入 claude" -ForegroundColor Yellow }
     }
 } else { Write-Host '[1/5] 略過桌面按鈕（-NoShortcuts）' -ForegroundColor DarkGray }
 
