@@ -1,1 +1,8 @@
 _site/
+
+# sysclean 本機產物（報告/備份/紀錄/自動計畫不進版控）
+sysclean/reports/
+sysclean/backups/
+sysclean/logs/
+sysclean/plan.json
+sysclean/plan-auto.json
