@@ -82,24 +82,35 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 .page{display:none}
 .page.active{display:block}
 
-/* ===== 產出頁面（新聞雜誌式 + Neumorphism） ===== */
-.output-filter{display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 2px}
-.output-filter::-webkit-scrollbar{display:none}
-.filter-pill{padding:10px 20px;border-radius:22px;font-size:14px;font-weight:600;background:var(--bg);border:none;color:var(--text2);cursor:pointer;white-space:nowrap;box-shadow:var(--nm-out-sm);transition:all .2s;flex-shrink:0}
-.filter-pill.active{color:#fff;background:linear-gradient(135deg,#3dba7a,#2ea06a);box-shadow:3px 3px 8px var(--nm-dark)}
+/* ===== 產出頁面（Agent 方塊入口 + 報告列表） ===== */
+.agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
+.agent-tile{border-radius:20px;padding:20px 16px;cursor:pointer;box-shadow:var(--nm-out);transition:box-shadow .2s;-webkit-tap-highlight-color:transparent;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;justify-content:flex-end}
+.agent-tile:active{box-shadow:var(--nm-in)}
+.agent-tile-icon{font-size:28px;margin-bottom:8px}
+.agent-tile-name{font-size:18px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2)}
+.agent-tile-role{font-size:11px;color:rgba(255,255,255,.85);margin-top:2px}
+.agent-tile-count{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;backdrop-filter:blur(4px)}
+.agent-tile-arrow{position:absolute;bottom:14px;right:14px;font-size:18px;color:rgba(255,255,255,.6)}
 
-.news-card{background:var(--bg);border-radius:20px;margin-bottom:14px;box-shadow:var(--nm-out);overflow:hidden;cursor:pointer;transition:box-shadow .2s;-webkit-tap-highlight-color:transparent;position:relative}
+.output-back-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.output-back-btn{width:36px;height:36px;border-radius:50%;background:var(--bg);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--nm-out-sm)}
+.output-back-btn:active{box-shadow:var(--nm-in-sm)}
+.output-agent-label{font-size:17px;font-weight:700}
+.output-date-group{font-size:12px;font-weight:700;color:var(--text3);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.3px}
+
+.news-card{background:var(--bg);border-radius:18px;margin-bottom:12px;box-shadow:var(--nm-out);overflow:hidden;cursor:pointer;transition:box-shadow .2s;-webkit-tap-highlight-color:transparent;position:relative}
 .news-card:active{box-shadow:var(--nm-in)}
-.news-top{display:flex;align-items:center;gap:8px;padding:16px 18px 0}
-.news-agent-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:var(--nm-out-sm)}
-.news-agent-name{font-size:13px;font-weight:600;color:var(--text2)}
+.news-top{display:flex;align-items:center;gap:8px;padding:14px 16px 0}
+.news-urgency{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;text-transform:uppercase}
+.news-urgency.urgent{background:#fef2f2;color:#dc2626}
+.news-urgency.normal{background:#eff6ff;color:#2563eb}
+.news-urgency.low{background:#f5f5f0;color:var(--text3)}
 .news-time{font-size:12px;color:var(--text3);margin-left:auto}
-.news-headline{font-size:18px;font-weight:800;line-height:1.45;padding:10px 18px 6px;color:var(--text);letter-spacing:-.2px}
-.news-summary{font-size:14px;color:var(--text2);line-height:1.6;padding:0 18px 8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.news-tags{display:flex;gap:6px;padding:0 18px 16px;flex-wrap:wrap}
-.news-tag{font-size:11px;padding:4px 10px;border-radius:8px;font-weight:600}
-.news-accent{border-left:5px solid var(--accent)}
-.news-arrow{position:absolute;right:16px;bottom:16px;font-size:16px;color:var(--text3);opacity:.5}
+.news-headline{font-size:17px;font-weight:800;line-height:1.4;padding:8px 16px 4px;color:var(--text);letter-spacing:-.2px}
+.news-summary{font-size:14px;color:var(--text2);line-height:1.6;padding:0 16px 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-tags{display:flex;gap:6px;padding:0 16px 14px;flex-wrap:wrap}
+.news-tag{font-size:11px;padding:3px 9px;border-radius:8px;font-weight:600}
+.news-arrow{position:absolute;right:14px;bottom:14px;font-size:15px;color:var(--text3);opacity:.4}
 
 /* ===== 報告詳情（Neumorphic 雜誌閱讀體驗） ===== */
 .report-overlay{position:fixed;inset:0;z-index:1100;background:var(--bg);transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column}
@@ -253,11 +264,9 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
     <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">每月固定費用對帳</div><div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div></div></div>
   </div>
 
-  <!-- 產出（新聞式） -->
+  <!-- 產出 -->
   <div class="page" id="pageOutput">
-    <div class="page-header">📄 Agent 產出報告</div>
-    <div class="output-filter" id="outputFilter"></div>
-    <div id="newsContainer"></div>
+    <div id="outputContent"></div>
   </div>
 
   <!-- 商機 -->
@@ -311,30 +320,30 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
   document.querySelector('.chat-input').placeholder='向 Agent 說...';
 })();
 
-/* ===== Reports Data ===== */
+/* ===== Reports Data (date + urgency) ===== */
 var REPORTS = [
-  { id:1, agent:'wayne', color:'#3b5998', headline:'碳纖維複合板材 CAE 模擬完成', summary:'三種疊層方案分析結果出爐，推薦 [0/90/±45]s 對稱配置，彎曲剛度可提升 23%', time:'14:32', tags:['CAE','技術'],
+  { id:1, agent:'wayne', color:'#3b5998', date:'2026-07-05', urgency:'urgent', headline:'碳纖維複合板材 CAE 模擬完成', summary:'三種疊層方案分析結果出爐，推薦 [0/90/±45]s 對稱配置，彎曲剛度可提升 23%', time:'14:32', tags:['CAE','技術'],
     detail:'<div class="rpt-section">📊 分析概要</div><p>針對客戶需求的碳纖維複合板材，完成三種疊層方案的有限元分析（FEA）。</p><div class="rpt-section">🔬 三種方案比較</div><div class="rpt-item">方案 A：[0/90]s 交叉疊層<br>→ 彎曲剛度 142 GPa，抗拉 +15%</div><div class="rpt-item">方案 B：[0/90/±45]s 對稱疊層 ⭐<br>→ 彎曲剛度 175 GPa（+23%），多向受力最佳</div><div class="rpt-item">方案 C：[±45]s 斜紋疊層<br>→ 扭轉性能佳，但彎曲剛度僅 128 GPa</div><div class="rpt-highlight">✅ <strong>推薦方案 B</strong>：[0/90/±45]s 對稱疊層<br>彎曲剛度提升 <span class="rpt-number">23%</span>，綜合力學性能最優</div><div class="rpt-section">📋 下一步</div><div class="rpt-item">1. 送交客戶技術確認<br>2. 安排試做 5 片樣板<br>3. 預計 7/15 前完成實測驗證</div>'
   },
-  { id:2, agent:'wayne', color:'#3b5998', headline:'今日營運戰情總覽', summary:'本月營收達標率 68%，15 件產出完成，3 件急件待處理', time:'09:00', tags:['日報','營運'],
+  { id:2, agent:'wayne', color:'#3b5998', date:'2026-07-05', urgency:'normal', headline:'今日營運戰情總覽', summary:'本月營收達標率 68%，15 件產出完成，3 件急件待處理', time:'09:00', tags:['日報','營運'],
     detail:'<div class="rpt-section">📈 營運指標</div><div class="rpt-highlight">本月累計營收 <span class="rpt-number">NT$2,140 萬</span><br>達標率 68% | 較上月同期 +8.3%</div><div class="rpt-section">✅ 今日產出</div><div class="rpt-item">已完成 <strong>15 件</strong>報告與任務<br>剩餘 <strong>3 件</strong>急件待處理</div><div class="rpt-section">⚠️ 注意事項</div><div class="rpt-item">• 大同集團供應商回覆 — 明日截止<br>• 品管部 2 件延遲 — King 已跟進<br>• 台積電報價案 — 等待客戶最終確認</div>'
   },
-  { id:3, agent:'cash', color:'#48bb78', headline:'Q2 財務結算：毛利率站穩 31%', summary:'營收 NT$4,280 萬，毛利率 31.2%（+1.8%），現金流健康', time:'11:15', tags:['財務','季報'],
+  { id:3, agent:'cash', color:'#48bb78', date:'2026-07-05', urgency:'normal', headline:'Q2 財務結算：毛利率站穩 31%', summary:'營收 NT$4,280 萬，毛利率 31.2%（+1.8%），現金流健康', time:'11:15', tags:['財務','季報'],
     detail:'<div class="rpt-section">💰 Q2 損益摘要</div><div class="rpt-highlight">營收 <span class="rpt-number">NT$4,280 萬</span><br>毛利率 31.2%（較上季 +1.8%）</div><div class="rpt-section">📊 關鍵數字</div><div class="rpt-item">• 營業成本：NT$2,945 萬（-2.3%）<br>• 營業費用：NT$680 萬（持平）<br>• 淨利：NT$655 萬<br>• 應收帳款周轉天數：42 天</div><div class="rpt-section">💵 現金流</div><div class="rpt-item">期末現金：NT$1,820 萬<br>短期無資金壓力，建議保留 NT$500 萬作為 Q3 原物料備貨</div><div class="rpt-section">⚠️ 風險提示</div><div class="rpt-item">• 友達光電逾期款 NT$620 萬需加速催收<br>• 碳纖維原料價格微漲 3%，影響下季毛利</div>'
   },
-  { id:4, agent:'cash', color:'#48bb78', headline:'AI 工具成本效益分析', summary:'本月 AI 花費 $8.10 USD，平均每任務 $0.18，投報率極高', time:'08:45', tags:['成本','AI'],
+  { id:4, agent:'cash', color:'#48bb78', date:'2026-07-04', urgency:'low', headline:'AI 工具成本效益分析', summary:'本月 AI 花費 $8.10 USD，平均每任務 $0.18，投報率極高', time:'08:45', tags:['成本','AI'],
     detail:'<div class="rpt-section">🤖 本月 AI 使用成本</div><div class="rpt-highlight">總花費 <span class="rpt-number">$8.10 USD</span>（約 NT$258）</div><div class="rpt-section">📊 成本明細</div><div class="rpt-item">• Claude API — $4.85（60%）<br>• GPT-4 輔助 — $2.25（28%）<br>• 其他工具 — $1.00（12%）</div><div class="rpt-section">📈 效益分析</div><div class="rpt-item">完成任務數：<strong>46 項</strong><br>每項平均成本：<strong>$0.18</strong>（NT$5.6）<br>節省人工估算：<strong>約 120 小時</strong></div><div class="rpt-highlight">✅ 投報率極高：每投入 NT$1 → 省下約 NT$150 人力成本</div>'
   },
-  { id:5, agent:'king', color:'#718096', headline:'團隊週績效：生產部飆升 99%', summary:'整體完成率 87%，生產部表現亮眼 +12%，品管部需關注', time:'08:30', tags:['績效','週報'],
+  { id:5, agent:'king', color:'#718096', date:'2026-07-05', urgency:'urgent', headline:'團隊週績效：生產部飆升 99%', summary:'整體完成率 87%，生產部表現亮眼 +12%，品管部需關注', time:'08:30', tags:['績效','週報'],
     detail:'<div class="rpt-section">📈 整體績效</div><div class="rpt-highlight">團隊完成率 <span class="rpt-number">87%</span>（目標 90%）</div><div class="rpt-section">🏆 部門排名</div><div class="rpt-item">🥇 生產部 — 完成率 99%（+12%↑）<br>🥈 業務部 — 完成率 92%（+5%↑）<br>🥉 研發部 — 完成率 88%（持平）<br>⚠️ 品管部 — 完成率 72%（-8%↓）</div><div class="rpt-section">⚠️ 需關注事項</div><div class="rpt-item">• 品管部 2 件任務延遲，已約談主管<br>• 延遲原因：新產線驗證程序較複雜<br>• 已協調生產部支援，預計下週補回進度</div><div class="rpt-section">👤 個人 Top 3</div><div class="rpt-item">1. 張志豪（業務）95.2 分<br>2. 王大明（生產）93.8 分<br>3. 李芳如（研發）91.5 分</div>'
   },
-  { id:6, agent:'king', color:'#718096', headline:'七月出勤率 93.8%，運作正常', summary:'32 人中 30 人在勤，2 人請假不影響產線', time:'07:50', tags:['出勤','人事'],
+  { id:6, agent:'king', color:'#718096', date:'2026-07-04', urgency:'low', headline:'七月出勤率 93.8%，運作正常', summary:'32 人中 30 人在勤，2 人請假不影響產線', time:'07:50', tags:['出勤','人事'],
     detail:'<div class="rpt-section">📝 今日出勤</div><div class="rpt-highlight">在勤率 <span class="rpt-number">93.8%</span>（30/32 人）</div><div class="rpt-section">🏠 請假名單</div><div class="rpt-item">• 陳小明（生產部）— 特休 1 天<br>• 林美玲（行政部）— 病假，預計休 2 天</div><div class="rpt-section">✅ 影響評估</div><div class="rpt-item">兩位請假人員的工作已由同部門同事代理，不影響產線與行政運作。</div>'
   },
-  { id:7, agent:'sterling', color:'#a0aec0', headline:'商機管道 NT$7,600 萬，加權 $4,510 萬', summary:'4 案追蹤中，台積電案勝率最高 70%，大同案金額最大', time:'10:20', tags:['商機','分析'],
+  { id:7, agent:'sterling', color:'#a0aec0', date:'2026-07-05', urgency:'urgent', headline:'商機管道 NT$7,600 萬，加權 $4,510 萬', summary:'4 案追蹤中，台積電案勝率最高 70%，大同案金額最大', time:'10:20', tags:['商機','分析'],
     detail:'<div class="rpt-section">🎯 管道總覽</div><div class="rpt-highlight">管道總金額 <span class="rpt-number">NT$7,600 萬</span><br>加權營收預估 NT$4,510 萬</div><div class="rpt-section">📊 各案進度</div><div class="rpt-item"><strong>1. 台積電 — 晶圓載具框架</strong><br>金額 NT$1,200 萬 | 報價階段 | 勝率 70%<br>→ 報價已送出，等客戶回覆</div><div class="rpt-item"><strong>2. 大同集團 — 電動車底盤</strong><br>金額 NT$3,500 萬 | 審核中 | 勝率 55%<br>→ 文件已備齊，下週面談</div><div class="rpt-item"><strong>3. Toray — 代工合作</strong><br>金額 NT$800 萬/年 | 初步接洽 | 勝率 40%<br>→ 週五安排視訊</div><div class="rpt-item"><strong>4. Vinfast — 車體結構件</strong><br>金額 NT$2,100 萬 | 樣品測試 | 勝率 60%<br>→ 樣品已寄出，等結果</div>'
   },
-  { id:8, agent:'sterling', color:'#a0aec0', headline:'大同集團供應商文件已備齊', summary:'ISO 證書、財報、產能說明共 12 份文件整理完成，待老闆審閱', time:'09:48', tags:['業務','文件'],
+  { id:8, agent:'sterling', color:'#a0aec0', date:'2026-07-04', urgency:'normal', headline:'大同集團供應商文件已備齊', summary:'ISO 證書、財報、產能說明共 12 份文件整理完成，待老闆審閱', time:'09:48', tags:['業務','文件'],
     detail:'<div class="rpt-section">📋 文件清單</div><div class="rpt-item"><strong>認證文件（4份）</strong><br>• ISO 9001:2015 品質管理<br>• ISO 14001:2015 環境管理<br>• IATF 16949 車用品質<br>• RoHS 合規聲明</div><div class="rpt-item"><strong>財務文件（3份）</strong><br>• 2024 年度財報<br>• 2025 年度財報<br>• 2026 H1 財報（預估）</div><div class="rpt-item"><strong>技術文件（5份）</strong><br>• 產能規劃說明書<br>• 設備清單與廠房照片<br>• 品質管制流程圖<br>• 碳纖維材料規格表<br>• 過往合作實績</div><div class="rpt-highlight">✅ 共 <span class="rpt-number">12</span> 份文件已整理，請老闆審閱後送出</div>'
   }
 ];
@@ -375,29 +384,69 @@ document.querySelectorAll('.nav-item').forEach(function(btn){
     btn.classList.add('active');
     document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
     document.getElementById(btn.dataset.page).classList.add('active');
-    if(btn.dataset.page==='pageOutput') renderOutputPage('all');
+    if(btn.dataset.page==='pageOutput') showOutputGrid();
   });
 });
 
-/* ===== Output / News Page ===== */
-function renderOutputPage(filter){
-  var filterEl=document.getElementById('outputFilter');
-  var pills=[{id:'all',label:'全部'},{id:'wayne',label:'Wayne'},{id:'king',label:'King'},{id:'cash',label:'Cash'},{id:'sterling',label:'Sterling'}];
-  filterEl.innerHTML=pills.map(function(p){
-    return '<button class="filter-pill'+(p.id===filter?' active':'')+'" onclick="renderOutputPage(\''+p.id+'\')">'+p.label+'</button>';
-  }).join('');
+/* ===== Output Page: Agent Grid → Report List ===== */
+var URGENCY_ORDER={urgent:0,normal:1,low:2};
+var URGENCY_LABEL={urgent:'急件',normal:'一般',low:'例行'};
+var TILE_COLORS={wayne:'linear-gradient(135deg,#3b5998,#4a6baf)',king:'linear-gradient(135deg,#718096,#8899ab)',cash:'linear-gradient(135deg,#48bb78,#38a169)',sterling:'linear-gradient(135deg,#a0aec0,#8a9bb0)'};
+var TILE_ICONS={wayne:'👔',king:'👥',cash:'💰',sterling:'🎯'};
 
-  var filtered=filter==='all'?REPORTS:REPORTS.filter(function(r){return r.agent===filter;});
-  var container=document.getElementById('newsContainer');
-  container.innerHTML=filtered.map(function(r){
-    return '<div class="news-card news-accent" style="border-left-color:'+r.color+'" onclick="openReport('+r.id+')">'
-      +'<div class="news-top"><div class="news-agent-dot" style="background:'+r.color+'"></div><div class="news-agent-name">'+AGENTS[r.agent].name+'</div><div class="news-time">'+r.time+'</div></div>'
-      +'<div class="news-headline">'+r.headline+'</div>'
-      +'<div class="news-summary">'+r.summary+'</div>'
-      +'<div class="news-tags">'+r.tags.map(function(t){return '<span class="news-tag" style="background:'+r.color+'18;color:'+r.color+'">'+t+'</span>';}).join('')+'</div>'
-      +'<div class="news-arrow">›</div>'
-      +'</div>';
-  }).join('');
+function showOutputGrid(){
+  var c=document.getElementById('outputContent');
+  var agents=['wayne','king','cash','sterling'];
+  c.innerHTML='<div class="page-header">📄 Agent 產出報告</div><div class="agent-grid">'
+    +agents.map(function(id){
+      var a=AGENTS[id];
+      var cnt=REPORTS.filter(function(r){return r.agent===id;}).length;
+      var urgCnt=REPORTS.filter(function(r){return r.agent===id&&r.urgency==='urgent';}).length;
+      return '<div class="agent-tile" style="background:'+TILE_COLORS[id]+'" onclick="showAgentReports(\''+id+'\')">'
+        +'<div class="agent-tile-count">'+cnt+'</div>'
+        +'<div class="agent-tile-icon">'+TILE_ICONS[id]+'</div>'
+        +'<div class="agent-tile-name">'+a.name+'</div>'
+        +'<div class="agent-tile-role">'+a.role+(urgCnt?' · '+urgCnt+' 急件':'')+'</div>'
+        +'<div class="agent-tile-arrow">›</div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+function showAgentReports(agentId){
+  var a=AGENTS[agentId];
+  var reports=REPORTS.filter(function(r){return r.agent===agentId;});
+  reports.sort(function(a,b){
+    if(a.date!==b.date) return a.date>b.date?-1:1;
+    if(URGENCY_ORDER[a.urgency]!==URGENCY_ORDER[b.urgency]) return URGENCY_ORDER[a.urgency]-URGENCY_ORDER[b.urgency];
+    return a.time>b.time?-1:1;
+  });
+  var grouped={};
+  reports.forEach(function(r){
+    var dk=r.date;
+    if(!grouped[dk]) grouped[dk]=[];
+    grouped[dk].push(r);
+  });
+  var dates=Object.keys(grouped).sort().reverse();
+  var c=document.getElementById('outputContent');
+  var html='<div class="output-back-row"><button class="output-back-btn" onclick="showOutputGrid()">‹</button><div class="output-agent-label" style="color:'+a.color+'">'+a.name+' 的報告</div></div>';
+  dates.forEach(function(dk){
+    var parts=dk.split('-');
+    var label=parseInt(parts[1])+'月'+parseInt(parts[2])+'日';
+    var today=new Date();
+    var tStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    if(dk===tStr) label='今天 '+label;
+    html+='<div class="output-date-group">'+label+'</div>';
+    grouped[dk].forEach(function(r){
+      html+='<div class="news-card" onclick="openReport('+r.id+')">'
+        +'<div class="news-top"><span class="news-urgency '+r.urgency+'">'+URGENCY_LABEL[r.urgency]+'</span><div class="news-time">'+r.time+'</div></div>'
+        +'<div class="news-headline">'+r.headline+'</div>'
+        +'<div class="news-summary">'+r.summary+'</div>'
+        +'<div class="news-tags">'+r.tags.map(function(t){return '<span class="news-tag" style="background:'+r.color+'18;color:'+r.color+'">'+t+'</span>';}).join('')+'</div>'
+        +'<div class="news-arrow">›</div>'
+        +'</div>';
+    });
+  });
+  c.innerHTML=html;
 }
 
 function openReport(id){
