@@ -87,10 +87,10 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 .agent-tile{border-radius:20px;padding:20px 16px;cursor:pointer;box-shadow:var(--nm-out);transition:box-shadow .2s;-webkit-tap-highlight-color:transparent;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;justify-content:flex-end}
 .agent-tile:active{box-shadow:var(--nm-in)}
 .agent-tile-icon{font-size:28px;margin-bottom:8px}
-.agent-tile-name{font-size:18px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2)}
-.agent-tile-role{font-size:11px;color:rgba(255,255,255,.85);margin-top:2px}
-.agent-tile-count{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;backdrop-filter:blur(4px)}
-.agent-tile-arrow{position:absolute;bottom:14px;right:14px;font-size:18px;color:rgba(255,255,255,.6)}
+.agent-tile-name{font-size:18px;font-weight:800;color:var(--text)}
+.agent-tile-role{font-size:11px;color:var(--text2);margin-top:2px}
+.agent-tile-count{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--text2)}
+.agent-tile-arrow{position:absolute;bottom:14px;right:14px;font-size:18px;color:var(--text3);opacity:.5}
 
 .output-back-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .output-back-btn{width:36px;height:36px;border-radius:50%;background:var(--bg);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--nm-out-sm)}
@@ -391,7 +391,7 @@ document.querySelectorAll('.nav-item').forEach(function(btn){
 /* ===== Output Page: Agent Grid → Report List ===== */
 var URGENCY_ORDER={urgent:0,normal:1,low:2};
 var URGENCY_LABEL={urgent:'急件',normal:'一般',low:'例行'};
-var TILE_COLORS={wayne:'linear-gradient(135deg,#3b5998,#4a6baf)',king:'linear-gradient(135deg,#718096,#8899ab)',cash:'linear-gradient(135deg,#48bb78,#38a169)',sterling:'linear-gradient(135deg,#a0aec0,#8a9bb0)'};
+var TILE_COLORS={wayne:'linear-gradient(135deg,#dce4f2,#c8d4ea)',king:'linear-gradient(135deg,#e2dfe8,#d4d0de)',cash:'linear-gradient(135deg,#d5ece2,#c4e2d4)',sterling:'linear-gradient(135deg,#dde5ea,#cdd7df)'};
 var TILE_ICONS={wayne:'👔',king:'👥',cash:'💰',sterling:'🎯'};
 
 function showOutputGrid(){
