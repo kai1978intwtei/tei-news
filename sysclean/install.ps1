@@ -30,9 +30,7 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $desktop   = [Environment]::GetFolderPath('Desktop')
 $buttons   = @(
-    @{ name = '一鍵健檢'; script = 'scan.ps1';          extra = ' -OpenReport' },
-    @{ name = '一鍵保養'; script = 'quick-tune.ps1';    extra = '' },
-    @{ name = '一鍵面板'; script = 'control-panel.ps1'; extra = '' }
+    @{ name = '清潔管家'; script = 'go.ps1';            extra = '' }
 )
 
 # ---------- 移除模式 ----------
