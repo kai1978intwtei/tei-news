@@ -79,8 +79,9 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 .nav-item.active{color:var(--accent);box-shadow:var(--nm-in-sm)}
 .nav-item .nav-icon{font-size:20px;height:22px;display:flex;align-items:center;justify-content:center}
 
-.page{display:none}
+.page{display:block}
 .page.active{display:block}
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--nm-dark),transparent);margin:26px 0 6px;opacity:.5}
 
 /* ===== 產出頁面（Agent 方塊入口 + 報告列表） ===== */
 .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
@@ -290,6 +291,7 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
     </div>
   </div>
 
+  <div class="section-divider"></div>
   <!-- 任務 -->
   <div class="page" id="pageTask">
     <div class="page-header">📋 任務看板</div>
@@ -300,11 +302,13 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
     <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">每月固定費用對帳</div><div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div></div></div>
   </div>
 
+  <div class="section-divider"></div>
   <!-- 產出 -->
   <div class="page" id="pageOutput">
     <div id="outputContent"></div>
   </div>
 
+  <div class="section-divider"></div>
   <!-- 商機 -->
   <div class="page" id="pageOpportunity">
     <div class="page-header">🎯 商機追蹤</div>
@@ -314,13 +318,6 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
     <div class="opp-card" style="border-left-color:#d97706"><div class="opp-company">越南 Vinfast — 車體結構件</div><div class="opp-amount">NT$ 2,100 萬</div><div class="opp-stage">樣品測試中</div><div class="opp-detail">聯絡人：Nguyen | 預計結案：2026/08</div></div>
   </div>
 
-</div>
-
-<div class="bottom-nav">
-  <button class="nav-item active" data-page="pageDashboard"><span class="nav-icon">📊</span><span>戰情</span></button>
-  <button class="nav-item" data-page="pageTask"><span class="nav-icon">📋</span><span>任務</span></button>
-  <button class="nav-item" data-page="pageOutput"><span class="nav-icon">📄</span><span>產出</span></button>
-  <button class="nav-item" data-page="pageOpportunity"><span class="nav-icon">💼</span><span>商機</span></button>
 </div>
 
 <!-- Chat Overlay -->
@@ -433,16 +430,7 @@ var AGENTS = {
 
 var currentAgent=null, chatHistories={};
 
-/* Nav */
-document.querySelectorAll('.nav-item').forEach(function(btn){
-  btn.addEventListener('click',function(){
-    document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-    btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
-    document.getElementById(btn.dataset.page).classList.add('active');
-    if(btn.dataset.page==='pageOutput') showOutputGrid();
-  });
-});
+/* 單頁模式：產出區在載入時直接渲染 */
 
 /* ===== Output Page: Agent Grid → Report List ===== */
 var URGENCY_ORDER={urgent:0,normal:1,low:2};
@@ -611,12 +599,6 @@ function updateNotifBadge(){
   var cnt=notifications.filter(function(n){return n.unread;}).length;
   var badge=document.getElementById('notifBadge');
   badge.textContent=cnt>0?cnt:'';
-  var outputNav=document.querySelector('.nav-item[data-page="pageOutput"]');
-  var existingDot=outputNav.querySelector('.nav-badge');
-  var outputUnread=notifications.filter(function(n){return n.unread&&n.type==='report';}).length;
-  if(outputUnread>0&&!existingDot){
-    var dot=document.createElement('span');dot.className='nav-badge';outputNav.appendChild(dot);
-  }else if(outputUnread===0&&existingDot){existingDot.remove();}
 }
 
 function renderNotifList(){
@@ -645,19 +627,14 @@ function handleNotifClick(id){
   toggleNotifPanel();
   if(n.action){
     if(n.action.type==='report'){
-      var navBtn=document.querySelector('.nav-item[data-page="pageOutput"]');
-      document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-      navBtn.classList.add('active');
-      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
-      document.getElementById('pageOutput').classList.add('active');
       var r=REPORTS.find(function(x){return x.id===n.action.id;});
-      if(r){showAgentReports(r.agent);setTimeout(function(){openReport(n.action.id);},200);}
+      if(r){showAgentReports(r.agent);}
+      var out=document.getElementById('pageOutput');
+      if(out) out.scrollIntoView({behavior:'smooth',block:'start'});
+      setTimeout(function(){openReport(n.action.id);},300);
     }else if(n.action.type==='page'){
-      var navBtn2=document.querySelector('.nav-item[data-page="'+n.action.id+'"]');
-      document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-      navBtn2.classList.add('active');
-      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
-      document.getElementById(n.action.id).classList.add('active');
+      var sec=document.getElementById(n.action.id);
+      if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
     }else if(n.action.type==='chat'){
       openChat(n.agent);
     }
@@ -692,6 +669,7 @@ function simulatePush(){
   setTimeout(simulatePush,next);
 }
 
+showOutputGrid();
 updateNotifBadge();
 setTimeout(simulatePush,8000);
 </script>
