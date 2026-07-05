@@ -27,8 +27,8 @@
   --safe-bot:env(safe-area-inset-bottom,0px);
   --r:18px;
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased}
-body{display:flex;flex-direction:column;padding-top:var(--safe-top);overflow:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 
 .header{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;flex-shrink:0}
 .header-logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#3dba7a,#2ea06a);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;color:#fff;box-shadow:3px 3px 8px var(--nm-dark),-3px -3px 8px var(--nm-light)}
@@ -73,15 +73,14 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top);overflow:hid
 .chat-btn{width:42px;height:42px;border-radius:50%;background:var(--bg);border:none;color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:var(--nm-out-sm);transition:box-shadow .15s}
 .chat-btn:active{box-shadow:var(--nm-in-sm)}
 
-/* Quick Cards — photo style */
-.quick-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:10px 0 16px}
-.quick-card{background:var(--bg);border-radius:var(--r);padding:0;cursor:pointer;transition:box-shadow .2s;box-shadow:var(--nm-out);overflow:hidden;position:relative}
-.quick-card:active{box-shadow:var(--nm-in)}
-.quick-photo{width:100%;height:80px;object-fit:cover;display:block}
-.quick-photo-placeholder{width:100%;height:80px;display:flex;align-items:center;justify-content:center;font-size:36px;background:linear-gradient(135deg,var(--bg),#d0d5dc)}
-.quick-body{padding:10px 12px}
-.quick-label{font-size:13px;font-weight:700}
-.quick-desc{font-size:11px;color:var(--text2);margin-top:2px}
+/* Bottom Nav — neumorphic */
+.bottom-nav{flex-shrink:0;background:var(--bg);display:flex;padding:6px 12px calc(6px + var(--safe-bot));box-shadow:6px -6px 12px var(--nm-dark),-6px -6px 12px var(--nm-light)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;border:none;background:none;-webkit-tap-highlight-color:transparent;transition:all .2s;border-radius:14px;margin:2px}
+.nav-item.active{color:var(--accent);box-shadow:var(--nm-in-sm)}
+.nav-item .nav-icon{font-size:20px;height:22px;display:flex;align-items:center;justify-content:center}
+
+.page{display:none}
+.page.active{display:block}
 
 /* ===== 產出頁面（Agent 方塊入口 + 報告列表） ===== */
 .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
@@ -155,6 +154,13 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top);overflow:hid
 .opp-detail{font-size:12px;color:var(--text2);margin-top:6px}
 
 .page-header{font-size:20px;font-weight:700;margin:8px 0 16px;display:flex;align-items:center;gap:8px}
+
+.quick-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}
+.quick-card{background:var(--bg);border-radius:var(--r);padding:14px;cursor:pointer;transition:box-shadow .2s;box-shadow:var(--nm-out)}
+.quick-card:active{box-shadow:var(--nm-in)}
+.quick-icon{font-size:24px;margin-bottom:6px}
+.quick-label{font-size:13px;font-weight:600}
+.quick-desc{font-size:11px;color:var(--text2);margin-top:3px}
 
 /* Chat Overlay — neumorphic */
 .chat-overlay{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;background:var(--bg);transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);will-change:transform}
@@ -240,105 +246,81 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top);overflow:hid
   <div class="header-right">
     <div class="header-date" id="headerDate"></div>
     <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge"></span></button>
-    <div class="header-avatar"><svg viewBox="0 0 52 52"><defs><clipPath id="hav"><circle cx="26" cy="26" r="26"/></clipPath></defs><g clip-path="url(#hav)"><rect width="52" height="52" fill="#e8edf2"/><ellipse cx="26" cy="52" rx="18" ry="14" fill="#2d3748"/><circle cx="26" cy="22" r="10" fill="#f5d0a9"/><path d="M14 18 Q16 8 26 6 Q36 8 38 18 L36 16 Q34 10 26 8 Q18 10 16 16 Z" fill="#2d1b0e"/><circle cx="22" cy="20" r="1.5" fill="#2d3436"/><circle cx="30" cy="20" r="1.5" fill="#2d3436"/><path d="M23 27 Q26 29 29 27" stroke="#c0846d" stroke-width="0.8" fill="none"/></g></svg></div>
+    <div class="header-avatar"><svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#d4d4c8"/><circle cx="26" cy="18" r="10" fill="#a3a396"/><ellipse cx="26" cy="46" rx="18" ry="14" fill="#a3a396"/></svg></div>
   </div>
 </div>
 
 <div class="main">
 
-  <!-- KPI -->
-  <div class="kpi-row">
-    <div class="kpi-card"><div class="kpi-value">$8.10</div><div class="kpi-label">💰 本月花費</div></div>
-    <div class="kpi-card"><div class="kpi-value">46</div><div class="kpi-label">✅ 任務完成</div></div>
-    <div class="kpi-card"><div class="kpi-value">15</div><div class="kpi-label">📄 今日產出</div></div>
-  </div>
-
-  <!-- AI 特助團隊 -->
-  <div class="section-title"><span class="section-bar"></span>👥 特助室<span class="section-count">1</span></div>
-  <div class="agent-card" onclick="openChat('wayne')">
-    <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 200 200"><defs><clipPath id="cW"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="wSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f7d9b4"/><stop offset="100%" stop-color="#e8c49a"/></linearGradient><linearGradient id="wSuit" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#0f2440"/></linearGradient></defs><g clip-path="url(#cW)"><rect width="200" height="200" fill="#d8e4f0"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#wSuit)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#wSuit)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#fff"/><polygon points="100,155 92,140 108,140" fill="#fff"/><polygon points="100,170 94,145 106,145" fill="#c41e3a"/><circle cx="100" cy="2" r="2" fill="#c41e3a"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="url(#wSkin)"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#e8c49a"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#d4a574"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#3b2314"/><circle cx="119" cy="82" r="3.5" fill="#3b2314"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#3d2b1f" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M109 76 Q118 72 127 76" stroke="#3d2b1f" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M88 110 Q100 118 112 110" stroke="#c0846d" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M92 111 Q100 115 108 111" fill="#d4736d" opacity=".3"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#e8c49a"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#e8c49a"/><path d="M55 55 Q60 25 100 20 Q140 25 145 55 L142 52 Q138 30 100 26 Q62 30 58 52 Z" fill="#2d1b0e"/><path d="M58 55 Q62 42 75 38 L70 55 Z" fill="#2d1b0e"/><path d="M142 55 Q138 42 125 38 L130 55 Z" fill="#2d1b0e"/><path d="M58 55 Q56 60 58 65" stroke="#2d1b0e" stroke-width="3" fill="none"/><path d="M142 55 Q144 60 142 65" stroke="#2d1b0e" stroke-width="3" fill="none"/></g></svg></div><div class="status-dot"></div></div>
-    <div class="agent-info"><div class="agent-name">Wayne</div><div class="agent-role">總經理特助・全程監督</div></div>
-    <button class="chat-btn" onclick="event.stopPropagation();openChat('wayne')">💬</button>
-  </div>
-  <div class="section-title"><span class="section-bar"></span>👥 C-Suite 經營決策<span class="section-count">3</span></div>
-  <div class="agent-card" onclick="openChat('king')">
-    <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 200 200"><defs><clipPath id="cK"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="kSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5d5b5"/><stop offset="100%" stop-color="#e0be96"/></linearGradient><linearGradient id="kSuit" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2d3748"/><stop offset="100%" stop-color="#1a202c"/></linearGradient></defs><g clip-path="url(#cK)"><rect width="200" height="200" fill="#e0dce8"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#kSuit)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#kSuit)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#f0f0f0"/><polygon points="100,155 92,140 108,140" fill="#f0f0f0"/><polygon points="100,170 94,145 106,145" fill="#742a2a"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="url(#kSkin)"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#e0be96"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#caa878"/><rect x="69" y="76" width="26" height="14" rx="5" fill="none" stroke="#8a8a8a" stroke-width="2"/><rect x="105" y="76" width="26" height="14" rx="5" fill="none" stroke="#8a8a8a" stroke-width="2"/><line x1="95" y1="83" x2="105" y2="83" stroke="#8a8a8a" stroke-width="1.5"/><path d="M69 80 L62 78" stroke="#8a8a8a" stroke-width="1.5"/><path d="M131 80 L138 78" stroke="#8a8a8a" stroke-width="1.5"/><rect x="72" y="78" width="20" height="10" rx="4" fill="rgba(200,220,255,.15)"/><rect x="108" y="78" width="20" height="10" rx="4" fill="rgba(200,220,255,.15)"/><ellipse cx="82" cy="83" rx="5" ry="4.5" fill="#fff"/><ellipse cx="118" cy="83" rx="5" ry="4.5" fill="#fff"/><circle cx="83" cy="83" r="3" fill="#3b5530"/><circle cx="119" cy="83" r="3" fill="#3b5530"/><circle cx="84" cy="82" r="1.2" fill="#fff"/><circle cx="120" cy="82" r="1.2" fill="#fff"/><path d="M73 73 Q82 69 91 73" stroke="#777" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M109 73 Q118 69 127 73" stroke="#777" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M88 110 Q100 118 112 110" stroke="#c0846d" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#e0be96"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#e0be96"/><path d="M55 50 Q60 22 100 18 Q140 22 145 50 L142 48 Q138 28 100 24 Q62 28 58 48 Z" fill="#888"/><path d="M58 50 Q56 55 58 60" stroke="#888" stroke-width="3" fill="none"/><path d="M142 50 Q144 55 142 60" stroke="#888" stroke-width="3" fill="none"/><path d="M58 50 Q62 40 72 38 L68 50 Z" fill="#888"/><path d="M142 50 Q138 40 128 38 L132 50 Z" fill="#888"/></g></svg></div><div class="status-dot"></div></div>
-    <div class="agent-info"><div class="agent-name">King</div><div class="agent-role">高級總監（人員管理/績效）</div></div>
-    <button class="chat-btn" onclick="event.stopPropagation();openChat('king')">💬</button>
-  </div>
-  <div class="agent-card" onclick="openChat('cash')">
-    <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 200 200"><defs><clipPath id="cC"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="cSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d4a06a"/><stop offset="100%" stop-color="#c08a52"/></linearGradient><linearGradient id="cSuit" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a4d2e"/><stop offset="100%" stop-color="#0f3320"/></linearGradient></defs><g clip-path="url(#cC)"><rect width="200" height="200" fill="#d5ece2"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#cSuit)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#cSuit)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#fff"/><polygon points="100,155 92,140 108,140" fill="#fff"/><polygon points="100,170 94,145 106,145" fill="#2563eb"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="url(#cSkin)"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#c08a52"/><ellipse cx="100" cy="95" rx="4.5" ry="3" fill="#a8743e"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#1a1a1a"/><circle cx="119" cy="82" r="3.5" fill="#1a1a1a"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M109 76 Q118 72 127 76" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M85 108 Q100 120 115 108" stroke="#8a5a30" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M88 109 Q100 117 112 109" fill="#c0706a" opacity=".35"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#c08a52"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#c08a52"/><path d="M58 48 Q62 28 100 24 Q138 28 142 48 Q138 40 130 38 Q122 44 100 42 Q78 44 70 38 Q62 40 58 48 Z" fill="#1a1a1a"/><path d="M58 48 Q56 52 58 56" stroke="#1a1a1a" stroke-width="3" fill="none"/><path d="M142 48 Q144 52 142 56" stroke="#1a1a1a" stroke-width="3" fill="none"/></g></svg></div><div class="status-dot"></div></div>
-    <div class="agent-info"><div class="agent-name">Cash</div><div class="agent-role">財務長</div></div>
-    <button class="chat-btn" onclick="event.stopPropagation();openChat('cash')">💬</button>
-  </div>
-  <div class="agent-card" onclick="openChat('sterling')">
-    <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 200 200"><defs><clipPath id="cS"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="sSkin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fce4c8"/><stop offset="100%" stop-color="#ecd0a8"/></linearGradient><linearGradient id="sSuit" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a5568"/><stop offset="100%" stop-color="#2d3748"/></linearGradient></defs><g clip-path="url(#cS)"><rect width="200" height="200" fill="#e2e6ea"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#sSuit)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#sSuit)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#f0f0f0"/><polygon points="100,155 92,140 108,140" fill="#f0f0f0"/><polygon points="100,170 94,145 106,145" fill="#d69e2e"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="url(#sSkin)"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#ecd0a8"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#d4b48a"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#4a6741"/><circle cx="119" cy="82" r="3.5" fill="#4a6741"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#a08030" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M109 76 Q118 72 127 76" stroke="#a08030" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M90 110 Q100 116 110 110" stroke="#c0846d" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#ecd0a8"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#ecd0a8"/><path d="M55 48 Q60 20 100 16 Q140 20 145 48 L142 46 Q138 26 100 22 Q62 26 58 46 Z" fill="#c9a64e"/><path d="M58 48 Q62 36 74 34 L70 48 Z" fill="#c9a64e"/><path d="M142 48 Q138 36 126 34 L130 48 Z" fill="#c9a64e"/><path d="M58 48 Q56 54 58 60" stroke="#c9a64e" stroke-width="3" fill="none"/><path d="M142 48 Q144 54 142 60" stroke="#c9a64e" stroke-width="3" fill="none"/><path d="M72 28 Q85 22 100 20 Q100 26 85 30 Z" fill="#dbb860" opacity=".4"/></g></svg></div><div class="status-dot"></div></div>
-    <div class="agent-info"><div class="agent-name">Sterling</div><div class="agent-role">商務參謀</div></div>
-    <button class="chat-btn" onclick="event.stopPropagation();openChat('sterling')">💬</button>
-  </div>
-
-  <!-- 快速指令（含圖片） -->
-  <div class="section-title"><span class="section-bar"></span>⚡ 快速指令</div>
-  <div class="quick-row">
-    <div class="quick-card" onclick="openChat('wayne','今日戰情摘要')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#e8f5ee,#c8e6d5)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><rect x="10" y="8" width="20" height="40" rx="2" fill="#3dba7a" opacity=".8"/><rect x="35" y="18" width="20" height="30" rx="2" fill="#2ea06a" opacity=".7"/><rect x="60" y="5" width="20" height="43" rx="2" fill="#3dba7a" opacity=".9"/><rect x="85" y="12" width="20" height="36" rx="2" fill="#2ea06a" opacity=".6"/><line x1="5" y1="50" x2="115" y2="50" stroke="#3dba7a" stroke-width="1" opacity=".4"/><polyline points="15,35 40,25 65,15 90,20" stroke="#1a6b3a" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="15" cy="35" r="2.5" fill="#1a6b3a"/><circle cx="65" cy="15" r="2.5" fill="#1a6b3a"/></svg></div>
-      <div class="quick-body"><div class="quick-label">今日摘要</div><div class="quick-desc">一鍵瀏覽今日重點</div></div>
+  <!-- 戰情 Dashboard -->
+  <div class="page active" id="pageDashboard">
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="kpi-value">$8.10</div><div class="kpi-label">💰 本月花費</div></div>
+      <div class="kpi-card"><div class="kpi-value">46</div><div class="kpi-label">✅ 任務完成</div></div>
+      <div class="kpi-card"><div class="kpi-value">15</div><div class="kpi-label">📄 今日產出</div></div>
     </div>
-    <div class="quick-card" onclick="openChat('cash','本月財務報告')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#e8f0fe,#c8d8f5)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><circle cx="60" cy="30" r="22" fill="none" stroke="#2563eb" stroke-width="3" opacity=".3"/><path d="M60 8 A22 22 0 0 1 82 30" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/><path d="M82 30 A22 22 0 0 1 60 52" fill="none" stroke="#60a5fa" stroke-width="4" stroke-linecap="round"/><text x="60" y="34" text-anchor="middle" font-size="12" font-weight="800" fill="#2563eb">$</text><rect x="90" y="14" width="20" height="4" rx="2" fill="#2563eb" opacity=".6"/><rect x="90" y="22" width="16" height="4" rx="2" fill="#60a5fa" opacity=".5"/><rect x="90" y="30" width="12" height="4" rx="2" fill="#93c5fd" opacity=".4"/></svg></div>
-      <div class="quick-body"><div class="quick-label">財務快報</div><div class="quick-desc">收支與預算追蹤</div></div>
+    <div class="section-title"><span class="section-bar"></span>👥 特助室<span class="section-count">1</span></div>
+    <div class="agent-card" onclick="openChat('wayne')">
+      <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#3b5998"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#1a365d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#c41e3a"/></svg></div><div class="status-dot"></div></div>
+      <div class="agent-info"><div class="agent-name">Wayne</div><div class="agent-role">總經理特助・全程監督</div></div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('wayne')">💬</button>
     </div>
-    <div class="quick-card" onclick="openChat('king','團隊績效報告')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#eee8f5,#dbd0ea)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><circle cx="35" cy="20" r="8" fill="#718096" opacity=".7"/><circle cx="60" cy="16" r="9" fill="#718096" opacity=".85"/><circle cx="85" cy="20" r="8" fill="#718096" opacity=".7"/><ellipse cx="35" cy="42" rx="12" ry="10" fill="#718096" opacity=".5"/><ellipse cx="60" cy="40" rx="14" ry="12" fill="#718096" opacity=".65"/><ellipse cx="85" cy="42" rx="12" ry="10" fill="#718096" opacity=".5"/><line x1="15" y1="55" x2="105" y2="55" stroke="#718096" stroke-width="1" opacity=".3"/></svg></div>
-      <div class="quick-body"><div class="quick-label">團隊績效</div><div class="quick-desc">人員表現與出勤</div></div>
+    <div class="section-title"><span class="section-bar"></span>👥 C-Suite 經營決策<span class="section-count">3</span></div>
+    <div class="agent-card" onclick="openChat('king')">
+      <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#718096"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#2d3748"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#742a2a"/></svg></div><div class="status-dot"></div></div>
+      <div class="agent-info"><div class="agent-name">King</div><div class="agent-role">高級總監（人員管理/績效）</div></div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('king')">💬</button>
     </div>
-    <div class="quick-card" onclick="openChat('sterling','目前商機分析')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#fef7e8,#fde9c0)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><circle cx="60" cy="30" r="20" fill="none" stroke="#f59e0b" stroke-width="2" opacity=".3"/><circle cx="60" cy="30" r="12" fill="none" stroke="#f59e0b" stroke-width="2" opacity=".5"/><circle cx="60" cy="30" r="4" fill="#f59e0b" opacity=".8"/><line x1="60" y1="30" x2="78" y2="22" stroke="#d97706" stroke-width="2" stroke-linecap="round"/><circle cx="78" cy="22" r="3" fill="#d97706"/><line x1="60" y1="30" x2="45" y2="18" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/><circle cx="45" cy="18" r="2.5" fill="#f59e0b" opacity=".7"/><line x1="60" y1="30" x2="70" y2="48" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/><circle cx="70" cy="48" r="2.5" fill="#fbbf24" opacity=".7"/></svg></div>
-      <div class="quick-body"><div class="quick-label">商機雷達</div><div class="quick-desc">潛在客戶與進度</div></div>
+    <div class="agent-card" onclick="openChat('cash')">
+      <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#48bb78"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#22543d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#2563eb"/></svg></div><div class="status-dot"></div></div>
+      <div class="agent-info"><div class="agent-name">Cash</div><div class="agent-role">財務長</div></div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('cash')">💬</button>
+    </div>
+    <div class="agent-card" onclick="openChat('sterling')">
+      <div class="agent-avatar"><div class="av-circle"><svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#a0aec0"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#4a5568"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#d69e2e"/></svg></div><div class="status-dot"></div></div>
+      <div class="agent-info"><div class="agent-name">Sterling</div><div class="agent-role">商務參謀</div></div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('sterling')">💬</button>
+    </div>
+    <div class="section-title"><span class="section-bar"></span>⚡ 快速指令</div>
+    <div class="quick-row">
+      <div class="quick-card" onclick="openChat('wayne','今日戰情摘要')"><div class="quick-icon">📊</div><div class="quick-label">今日摘要</div><div class="quick-desc">一鍵瀏覽今日重點</div></div>
+      <div class="quick-card" onclick="openChat('cash','本月財務報告')"><div class="quick-icon">💰</div><div class="quick-label">財務快報</div><div class="quick-desc">收支與預算追蹤</div></div>
+      <div class="quick-card" onclick="openChat('king','團隊績效報告')"><div class="quick-icon">👥</div><div class="quick-label">團隊績效</div><div class="quick-desc">人員表現與出勤</div></div>
+      <div class="quick-card" onclick="openChat('sterling','目前商機分析')"><div class="quick-icon">🎯</div><div class="quick-label">商機雷達</div><div class="quick-desc">潛在客戶與進度</div></div>
     </div>
   </div>
 
-  <!-- 急件任務 -->
-  <div class="section-title"><span class="section-bar"></span>📋 待辦任務<span class="section-count">5</span></div>
-  <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">Q3 碳纖維新品報價單</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/08</span></div></div></div>
-  <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">大同集團供應商審核回覆</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/06</span></div></div></div>
-  <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">網站 SEO 關鍵字更新</div><div class="task-meta"><span class="task-tag normal">一般</span><span>已完成</span></div></div></div>
-  <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">越南廠模具驗收進度跟催</div><div class="task-meta"><span class="task-tag normal">一般</span><span>截止：07/12</span></div></div></div>
-  <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">每月固定費用對帳</div><div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div></div></div>
-
-  <!-- Agent 產出報告 -->
-  <div class="section-title"><span class="section-bar"></span>📄 最新產出</div>
-  <div id="outputContent"></div>
-
-  <!-- 商機追蹤 -->
-  <div class="section-title"><span class="section-bar"></span>🎯 商機追蹤</div>
-  <div class="opp-card"><div class="opp-company">台積電 — 晶圓載具碳纖維框架</div><div class="opp-amount">NT$ 1,200 萬</div><div class="opp-stage">報價階段</div><div class="opp-detail">聯絡人：張經理 | 預計結案：2026/08</div></div>
-  <div class="opp-card"><div class="opp-company">大同集團 — 電動車底盤輕量化</div><div class="opp-amount">NT$ 3,500 萬</div><div class="opp-stage">供應商審核中</div><div class="opp-detail">聯絡人：李副總 | 預計結案：2026/09</div></div>
-  <div class="opp-card" style="border-left-color:#2563eb"><div class="opp-company">日本 Toray — 代工合作洽談</div><div class="opp-amount">NT$ 800 萬/年</div><div class="opp-stage">初步接洽</div><div class="opp-detail">聯絡人：田中先生 | 預計結案：2026/10</div></div>
-  <div class="opp-card" style="border-left-color:#d97706"><div class="opp-company">越南 Vinfast — 車體結構件</div><div class="opp-amount">NT$ 2,100 萬</div><div class="opp-stage">樣品測試中</div><div class="opp-detail">聯絡人：Nguyen | 預計結案：2026/08</div></div>
-
-  <!-- ProjFlow 專案管理 & SEO 工具 -->
-  <div class="section-title"><span class="section-bar"></span>🛠 AI 工具箱</div>
-  <div class="quick-row">
-    <div class="quick-card" onclick="openChat('wayne','ProjFlow 專案進度報告')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#f0ebf8,#ddd2f0)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><rect x="10" y="10" width="100" height="8" rx="4" fill="#8b5cf6" opacity=".2"/><rect x="10" y="10" width="62" height="8" rx="4" fill="#8b5cf6" opacity=".7"/><text x="74" y="17" font-size="7" fill="#8b5cf6" font-weight="700">62%</text><rect x="10" y="24" width="100" height="8" rx="4" fill="#a78bfa" opacity=".2"/><rect x="10" y="24" width="45" height="8" rx="4" fill="#a78bfa" opacity=".7"/><text x="57" y="31" font-size="7" fill="#a78bfa" font-weight="700">45%</text><rect x="10" y="38" width="100" height="8" rx="4" fill="#7c3aed" opacity=".2"/><rect x="10" y="38" width="78" height="8" rx="4" fill="#7c3aed" opacity=".7"/><text x="90" y="45" font-size="7" fill="#7c3aed" font-weight="700">78%</text></svg></div>
-      <div class="quick-body"><div class="quick-label">ProjFlow 專案</div><div class="quick-desc">專案進度・里程碑追蹤</div></div>
-    </div>
-    <div class="quick-card" onclick="openChat('wayne','網站 SEO 健檢報告')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><circle cx="40" cy="30" r="18" fill="none" stroke="#ec4899" stroke-width="2.5" opacity=".3"/><path d="M52 42 L68 55" stroke="#ec4899" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="30" r="10" fill="#ec4899" opacity=".12"/><text x="40" y="34" text-anchor="middle" font-size="11" font-weight="800" fill="#ec4899">SEO</text><rect x="75" y="12" width="35" height="5" rx="2" fill="#ec4899" opacity=".5"/><rect x="75" y="22" width="28" height="5" rx="2" fill="#f472b6" opacity=".4"/><rect x="75" y="32" width="22" height="5" rx="2" fill="#f9a8d4" opacity=".3"/></svg></div>
-      <div class="quick-body"><div class="quick-label">SEO 健檢</div><div class="quick-desc">關鍵字排名・流量分析</div></div>
-    </div>
-    <div class="quick-card" onclick="openChat('wayne','AEO/GEO AI 搜尋優化')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#e0f7fa,#b2ebf2)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><rect x="20" y="12" width="30" height="36" rx="4" fill="#06b6d4" opacity=".15"/><circle cx="35" cy="24" r="6" fill="#06b6d4" opacity=".4"/><rect x="26" y="34" width="18" height="3" rx="1" fill="#06b6d4" opacity=".3"/><rect x="26" y="39" width="14" height="3" rx="1" fill="#06b6d4" opacity=".2"/><path d="M55 30 L65 25 L75 28 L85 18 L95 22" stroke="#0891b2" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="85" cy="18" r="2.5" fill="#0891b2"/><text x="77" y="48" text-anchor="middle" font-size="8" font-weight="700" fill="#06b6d4">AI</text></svg></div>
-      <div class="quick-body"><div class="quick-label">AEO/GEO 優化</div><div class="quick-desc">AI 搜尋引擎曝光策略</div></div>
-    </div>
-    <div class="quick-card" onclick="openChat('wayne','競品分析報告')">
-      <div class="quick-photo-placeholder" style="background:linear-gradient(135deg,#fff3e0,#ffe0b2)"><svg viewBox="0 0 120 60" style="width:70%;height:auto"><polygon points="60,6 68,22 86,24 72,36 76,54 60,44 44,54 48,36 34,24 52,22" fill="#f97316" opacity=".15" stroke="#f97316" stroke-width="1.5"/><polygon points="60,14 65,24 76,26 68,33 70,44 60,38 50,44 52,33 44,26 55,24" fill="#f97316" opacity=".35"/><text x="60" y="34" text-anchor="middle" font-size="9" font-weight="800" fill="#ea580c">VS</text></svg></div>
-      <div class="quick-body"><div class="quick-label">競品分析</div><div class="quick-desc">同業動態・市場情報</div></div>
-    </div>
+  <!-- 任務 -->
+  <div class="page" id="pageTask">
+    <div class="page-header">📋 任務看板</div>
+    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">Q3 碳纖維新品報價單</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/08</span></div></div></div>
+    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">大同集團供應商審核回覆</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/06</span></div></div></div>
+    <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">網站 SEO 關鍵字更新</div><div class="task-meta"><span class="task-tag normal">一般</span><span>已完成</span></div></div></div>
+    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">越南廠模具驗收進度跟催</div><div class="task-meta"><span class="task-tag normal">一般</span><span>截止：07/12</span></div></div></div>
+    <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">每月固定費用對帳</div><div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div></div></div>
   </div>
 
-  <div style="height:40px"></div>
+  <!-- 產出 -->
+  <div class="page" id="pageOutput">
+    <div id="outputContent"></div>
+  </div>
+
+  <!-- 商機 -->
+  <div class="page" id="pageOpportunity">
+    <div class="page-header">🎯 商機追蹤</div>
+    <div class="opp-card"><div class="opp-company">台積電 — 晶圓載具碳纖維框架</div><div class="opp-amount">NT$ 1,200 萬</div><div class="opp-stage">報價階段</div><div class="opp-detail">聯絡人：張經理 | 預計結案：2026/08</div></div>
+    <div class="opp-card"><div class="opp-company">大同集團 — 電動車底盤輕量化</div><div class="opp-amount">NT$ 3,500 萬</div><div class="opp-stage">供應商審核中</div><div class="opp-detail">聯絡人：李副總 | 預計結案：2026/09</div></div>
+    <div class="opp-card" style="border-left-color:#2563eb"><div class="opp-company">日本 Toray — 代工合作洽談</div><div class="opp-amount">NT$ 800 萬/年</div><div class="opp-stage">初步接洽</div><div class="opp-detail">聯絡人：田中先生 | 預計結案：2026/10</div></div>
+    <div class="opp-card" style="border-left-color:#d97706"><div class="opp-company">越南 Vinfast — 車體結構件</div><div class="opp-amount">NT$ 2,100 萬</div><div class="opp-stage">樣品測試中</div><div class="opp-detail">聯絡人：Nguyen | 預計結案：2026/08</div></div>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item active" data-page="pageDashboard"><span class="nav-icon">📊</span><span>戰情</span></button>
+  <button class="nav-item" data-page="pageTask"><span class="nav-icon">📋</span><span>任務</span></button>
+  <button class="nav-item" data-page="pageOutput"><span class="nav-icon">📄</span><span>產出</span></button>
+  <button class="nav-item" data-page="pageOpportunity"><span class="nav-icon">💼</span><span>商機</span></button>
 </div>
 
 <!-- Chat Overlay -->
@@ -424,25 +406,25 @@ var REPORTS = [
 
 var AGENTS = {
   wayne:{name:'Wayne',role:'總經理特助・全程監督',color:'#3b5998',
-    avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cW3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="wS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#0f2440"/></linearGradient></defs><g clip-path="url(#cW3)"><rect width="200" height="200" fill="#d8e4f0"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#wS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#wS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#fff"/><polygon points="100,170 94,145 106,145" fill="#c41e3a"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#f7d9b4"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#e8c49a"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#d4a574"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#3b2314"/><circle cx="119" cy="82" r="3.5" fill="#3b2314"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#3d2b1f" stroke-width="2.5" fill="none"/><path d="M109 76 Q118 72 127 76" stroke="#3d2b1f" stroke-width="2.5" fill="none"/><path d="M88 110 Q100 118 112 110" stroke="#c0846d" stroke-width="2" fill="none"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#e8c49a"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#e8c49a"/><path d="M55 55 Q60 25 100 20 Q140 25 145 55 L142 52 Q138 30 100 26 Q62 30 58 52 Z" fill="#2d1b0e"/><path d="M58 55 Q62 42 75 38 L70 55 Z" fill="#2d1b0e"/><path d="M142 55 Q138 42 125 38 L130 55 Z" fill="#2d1b0e"/></g></svg>',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#3b5998"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#1a365d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#c41e3a"/></svg>',
     greeting:'老闆好！我是 Wayne，您的 AI 總經理特助。隨時為您效勞！',
     suggestions:['今日戰情摘要','本週重要待辦','幫我排明天行程'],
-    responses:{'今日戰情摘要':'📊 今日戰情摘要：\n\n1️⃣ 營運：本月累計營收 NT$2,140 萬（達標率 68%）\n2️⃣ 任務：今日完成 15 件，剩餘 3 件急件\n3️⃣ 商機：台積電案最終確認中，大同文件已備齊\n4️⃣ 注意：品管部 2 件延遲，King 已在跟進\n\n建議優先處理大同回覆，截止 07/06。','本週重要待辦':'📋 本週待辦：\n\n🔴 急件\n• Q3 碳纖維報價單（07/08）\n• 大同供應商回覆（07/06）\n\n🟡 一般\n• 越南廠模具跟催\n• Kai-bridge 手機版同步\n\n✅ 已完成\n• SEO 關鍵字更新\n• 固定費用對帳','幫我排明天行程':'📅 明天建議行程：\n\n09:00 — 大同供應商回覆確認\n10:00 — 審閱 Sterling 文件包\n14:00 — 研發部 Q3 新品規格會議','ProjFlow 專案進度報告':'📐 ProjFlow 專案總覽：\n\n🟢 進行中 — 3 個專案\n1. 台積電晶圓載具（62%）→ 報價完成，等客戶\n2. 大同電動車底盤（45%）→ 供應商文件已送\n3. 越南 Vinfast 車體件（78%）→ 樣品測試中\n\n🔴 延遲風險\n• 品管驗證比預期多 5 天\n\n📅 本週里程碑\n• 07/06 大同回覆截止\n• 07/08 Q3 報價單完成','網站 SEO 健檢報告':'🔍 TEI 網站 SEO 健檢：\n\n📊 核心指標\n• Google 排名：「碳纖維 複合材料」第 8 位\n• 月流量：2,840 次（+12%）\n• 跳出率：42%（良好）\n\n✅ 已優化\n• Meta 標題/描述 — 全站更新完成\n• 結構化數據 — Product Schema 已加\n• 頁面速度 — LCP 1.8s（綠燈）\n\n⚠️ 待改善\n• 「碳纖維代工」排名掉到第 15\n• 英文版缺少 hreflang 標記\n• 部落格已 2 個月沒更新','AEO/GEO AI 搜尋優化':'🤖 AEO/GEO 優化報告：\n\n📡 AI 引用狀態\n• ChatGPT：提及 TEI 1/5 次\n• Perplexity：尚未收錄\n• Google AI Overview：未出現\n\n🎯 優化策略\n1. FAQ Schema — 增加 Q&A 結構化數據\n2. 專業內容 — 發布碳纖維技術白皮書\n3. 權威引用 — 爭取產業媒體報導\n4. 數據化 — 加入具體數字（產能、良率）\n\n📋 執行優先序\n🔴 本週：更新 FAQ Schema\n🟡 下週：撰寫白皮書初稿\n🟢 月底：聯繫產業媒體','競品分析報告':'⚔️ 競品情報：\n\n1. 台塑碳纖 🔴\n→ 擴廠 20%，搶高階市場\n→ 對策：加速技術差異化\n\n2. 東麗 Toray 🟢\n→ 尋找台灣代工夥伴\n→ 機會：主動洽談合作\n\n3. 光威複材 🟡\n→ 低價策略搶大陸市場\n→ 影響：不直接衝突，但需監控\n\n💡 建議\n• 與 Toray 合作是最大機會\n• 台積電案是技術門檻護城河\n• 品質認證是我們的核心優勢'}
+    responses:{'今日戰情摘要':'📊 今日戰情摘要：\n\n1️⃣ 營運：本月累計營收 NT$2,140 萬（達標率 68%）\n2️⃣ 任務：今日完成 15 件，剩餘 3 件急件\n3️⃣ 商機：台積電案最終確認中，大同文件已備齊\n4️⃣ 注意：品管部 2 件延遲，King 已在跟進\n\n建議優先處理大同回覆，截止 07/06。','本週重要待辦':'📋 本週待辦：\n\n🔴 急件\n• Q3 碳纖維報價單（07/08）\n• 大同供應商回覆（07/06）\n\n🟡 一般\n• 越南廠模具跟催\n• Kai-bridge 手機版同步\n\n✅ 已完成\n• SEO 關鍵字更新\n• 固定費用對帳','幫我排明天行程':'📅 明天建議行程：\n\n09:00 — 大同供應商回覆確認\n10:00 — 審閱 Sterling 文件包\n14:00 — 研發部 Q3 新品規格會議'}
   },
   king:{name:'King',role:'高級總監（人員管理/績效）',color:'#718096',
-    avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cK3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="kS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2d3748"/><stop offset="100%" stop-color="#1a202c"/></linearGradient></defs><g clip-path="url(#cK3)"><rect width="200" height="200" fill="#e0dce8"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#kS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#kS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#f0f0f0"/><polygon points="100,170 94,145 106,145" fill="#742a2a"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#f5d5b5"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#e0be96"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#caa878"/><rect x="69" y="76" width="26" height="14" rx="5" fill="none" stroke="#8a8a8a" stroke-width="2"/><rect x="105" y="76" width="26" height="14" rx="5" fill="none" stroke="#8a8a8a" stroke-width="2"/><line x1="95" y1="83" x2="105" y2="83" stroke="#8a8a8a" stroke-width="1.5"/><rect x="72" y="78" width="20" height="10" rx="4" fill="rgba(200,220,255,.15)"/><rect x="108" y="78" width="20" height="10" rx="4" fill="rgba(200,220,255,.15)"/><ellipse cx="82" cy="83" rx="5" ry="4.5" fill="#fff"/><ellipse cx="118" cy="83" rx="5" ry="4.5" fill="#fff"/><circle cx="83" cy="83" r="3" fill="#3b5530"/><circle cx="119" cy="83" r="3" fill="#3b5530"/><circle cx="84" cy="82" r="1.2" fill="#fff"/><circle cx="120" cy="82" r="1.2" fill="#fff"/><path d="M73 73 Q82 69 91 73" stroke="#777" stroke-width="2.2" fill="none"/><path d="M109 73 Q118 69 127 73" stroke="#777" stroke-width="2.2" fill="none"/><path d="M88 110 Q100 118 112 110" stroke="#c0846d" stroke-width="2" fill="none"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#e0be96"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#e0be96"/><path d="M55 50 Q60 22 100 18 Q140 22 145 50 L142 48 Q138 28 100 24 Q62 28 58 48 Z" fill="#888"/><path d="M58 50 Q62 40 72 38 L68 50 Z" fill="#888"/><path d="M142 50 Q138 40 128 38 L132 50 Z" fill="#888"/></g></svg>',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#718096"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#2d3748"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#742a2a"/></svg>',
     greeting:'老闆好！我是 King，負責人員管理與績效。需要看團隊狀況嗎？',
     suggestions:['團隊績效報告','誰今天請假','本月考績排名'],
     responses:{'團隊績效報告':'👥 整體完成率 87%\n\n🏆 Top:\n1. 生產部 99%（+12%）\n2. 業務部 92%（+5%）\n3. 研發部 88%\n\n⚠️ 品管部 72%（-8%），已約談。','誰今天請假':'📝 在勤 30/32 人（93.8%）\n\n請假：\n• 陳小明（生產）特休\n• 林美玲（行政）病假 2 天\n\n不影響產線。','本月考績排名':'🥇 張志豪（業務）95.2 分\n🥈 王大明（生產）93.8 分\n🥉 李芳如（研發）91.5 分\n\n品管部平均 78 分需改善。'}
   },
   cash:{name:'Cash',role:'財務長',color:'#48bb78',
-    avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cC3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="cS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a4d2e"/><stop offset="100%" stop-color="#0f3320"/></linearGradient></defs><g clip-path="url(#cC3)"><rect width="200" height="200" fill="#d5ece2"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#cS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#cS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#fff"/><polygon points="100,170 94,145 106,145" fill="#2563eb"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#d4a06a"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#c08a52"/><ellipse cx="100" cy="95" rx="4.5" ry="3" fill="#a8743e"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#1a1a1a"/><circle cx="119" cy="82" r="3.5" fill="#1a1a1a"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#1a1a1a" stroke-width="2.5" fill="none"/><path d="M109 76 Q118 72 127 76" stroke="#1a1a1a" stroke-width="2.5" fill="none"/><path d="M85 108 Q100 120 115 108" stroke="#8a5a30" stroke-width="2.5" fill="none"/><path d="M88 109 Q100 117 112 109" fill="#c0706a" opacity=".35"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#c08a52"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#c08a52"/><path d="M58 48 Q62 28 100 24 Q138 28 142 48 Q138 40 130 38 Q122 44 100 42 Q78 44 70 38 Q62 40 58 48 Z" fill="#1a1a1a"/></g></svg>',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#48bb78"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#22543d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#2563eb"/></svg>',
     greeting:'老闆好！我是 Cash，負責財務與成本管控。需要看報表嗎？',
     suggestions:['本月財務報告','應收帳款狀況','AI 使用成本'],
     responses:{'本月財務報告':'💰 七月快報：\n\n營收 NT$2,140 萬（達標 68%）\n支出 NT$1,476 萬\n毛利 NT$664 萬（31.0%）\n\n大同預付款入帳可衝 79%。','應收帳款狀況':'📋 應收 NT$1,850 萬\n\n🟢 正常：NT$980 萬\n🟡 逾期 30-60 天：NT$620 萬（友達）\n🔴 逾期 60+：NT$250 萬（華碩，法務介入）\n\n建議親電友達。','AI 使用成本':'🤖 $8.10 USD（NT$258）\n\nClaude $4.85 | GPT-4 $2.25 | 其他 $1.00\n每任務 $0.18，投報率極高！'}
   },
   sterling:{name:'Sterling',role:'商務參謀',color:'#a0aec0',
-    avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cS3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="sS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a5568"/><stop offset="100%" stop-color="#2d3748"/></linearGradient></defs><g clip-path="url(#cS3)"><rect width="200" height="200" fill="#e2e6ea"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#sS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#sS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#f0f0f0"/><polygon points="100,170 94,145 106,145" fill="#d69e2e"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#fce4c8"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#ecd0a8"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#d4b48a"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#4a6741"/><circle cx="119" cy="82" r="3.5" fill="#4a6741"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#a08030" stroke-width="2.2" fill="none"/><path d="M109 76 Q118 72 127 76" stroke="#a08030" stroke-width="2.2" fill="none"/><path d="M90 110 Q100 116 110 110" stroke="#c0846d" stroke-width="2" fill="none"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#ecd0a8"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#ecd0a8"/><path d="M55 48 Q60 20 100 16 Q140 20 145 48 L142 46 Q138 26 100 22 Q62 26 58 46 Z" fill="#c9a64e"/><path d="M58 48 Q62 36 74 34 L70 48 Z" fill="#c9a64e"/><path d="M142 48 Q138 36 126 34 L130 48 Z" fill="#c9a64e"/></g></svg>',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#a0aec0"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#4a5568"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#d69e2e"/></svg>',
     greeting:'老闆好！我是 Sterling，負責商務開發。有新商機嗎？',
     suggestions:['目前商機分析','競爭對手動態','下週客戶拜訪建議'],
     responses:{'目前商機分析':'🎯 管道 NT$7,600 萬\n\n1. 台積電 NT$1,200萬 | 報價 | 70%\n2. 大同 NT$3,500萬 | 審核 | 55%\n3. Toray NT$800萬/年 | 接洽 | 40%\n4. Vinfast NT$2,100萬 | 測試 | 60%\n\n加權預估 NT$4,510 萬','競爭對手動態':'🔍 情報：\n\n1. 台塑碳纖：擴廠 20%🔴\n2. 東麗：找代工夥伴🟢\n3. 光威複材：低價搶市🟡\n\n建議加速 Toray 合作。','下週客戶拜訪建議':'📅 下週拜訪：\n\n週一 🔴 大同（李副總）供應商面談\n週三 🟡 友達（王經理）催收\n週五 🟢 Toray 視訊（田中先生）'}
@@ -450,6 +432,17 @@ var AGENTS = {
 };
 
 var currentAgent=null, chatHistories={};
+
+/* Nav */
+document.querySelectorAll('.nav-item').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+    document.getElementById(btn.dataset.page).classList.add('active');
+    if(btn.dataset.page==='pageOutput') showOutputGrid();
+  });
+});
 
 /* ===== Output Page: Agent Grid → Report List ===== */
 var URGENCY_ORDER={urgent:0,normal:1,low:2};
@@ -526,8 +519,6 @@ function openReport(id){
   document.getElementById('reportBody').scrollTop=0;
 }
 function closeReport(){document.getElementById('reportOverlay').classList.remove('open');}
-
-showOutputGrid();
 
 /* ===== Chat ===== */
 function openChat(agentId,autoMsg){
@@ -620,6 +611,12 @@ function updateNotifBadge(){
   var cnt=notifications.filter(function(n){return n.unread;}).length;
   var badge=document.getElementById('notifBadge');
   badge.textContent=cnt>0?cnt:'';
+  var outputNav=document.querySelector('.nav-item[data-page="pageOutput"]');
+  var existingDot=outputNav.querySelector('.nav-badge');
+  var outputUnread=notifications.filter(function(n){return n.unread&&n.type==='report';}).length;
+  if(outputUnread>0&&!existingDot){
+    var dot=document.createElement('span');dot.className='nav-badge';outputNav.appendChild(dot);
+  }else if(outputUnread===0&&existingDot){existingDot.remove();}
 }
 
 function renderNotifList(){
@@ -627,9 +624,8 @@ function renderNotifList(){
   if(notifications.length===0){list.innerHTML='<div class="notif-empty">🔔 沒有通知</div>';return;}
   list.innerHTML=notifications.map(function(n){
     var icon=NOTIF_TYPES[n.type]||'🔔';
-    var agentColor=AGENTS[n.agent]?AGENTS[n.agent].color+'18':'var(--bg)';
     return '<div class="notif-item'+(n.unread?' unread':'')+'" onclick="handleNotifClick('+n.id+')">'
-      +'<div class="notif-dot-wrap" style="background:'+agentColor+'">'+icon+'</div>'
+      +'<div class="notif-dot-wrap" style="background:'+(n.agent&&AGENTS[n.agent]?AGENTS[n.agent].color+'18':'var(--bg)')+'">'+icon+'</div>'
       +'<div class="notif-body"><div class="notif-body-title">'+n.title+'</div><div class="notif-body-text">'+n.text+'</div><div class="notif-body-time">'+n.time+'</div></div>'
       +'</div>';
   }).join('');
@@ -649,8 +645,19 @@ function handleNotifClick(id){
   toggleNotifPanel();
   if(n.action){
     if(n.action.type==='report'){
+      var navBtn=document.querySelector('.nav-item[data-page="pageOutput"]');
+      document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+      navBtn.classList.add('active');
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+      document.getElementById('pageOutput').classList.add('active');
       var r=REPORTS.find(function(x){return x.id===n.action.id;});
-      if(r){setTimeout(function(){openReport(n.action.id);},200);}
+      if(r){showAgentReports(r.agent);setTimeout(function(){openReport(n.action.id);},200);}
+    }else if(n.action.type==='page'){
+      var navBtn2=document.querySelector('.nav-item[data-page="'+n.action.id+'"]');
+      document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+      navBtn2.classList.add('active');
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+      document.getElementById(n.action.id).classList.add('active');
     }else if(n.action.type==='chat'){
       openChat(n.agent);
     }
