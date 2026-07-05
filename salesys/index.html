@@ -200,6 +200,41 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 @keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
 
 .toast{position:fixed;top:calc(20px + var(--safe-top));left:50%;transform:translateX(-50%) translateY(-80px);background:var(--bg);color:var(--text);padding:10px 20px;border-radius:14px;font-size:13px;z-index:2000;transition:transform .3s;border:none;box-shadow:var(--nm-out-lg)}
+
+/* ===== 通知系統 ===== */
+.notif-btn{position:relative;width:38px;height:38px;border-radius:50%;background:var(--bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:var(--nm-out-sm);transition:box-shadow .15s}
+.notif-btn:active{box-shadow:var(--nm-in-sm)}
+.notif-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 1px 3px rgba(220,38,38,.4)}
+.notif-badge:empty{display:none}
+.nav-badge{position:absolute;top:4px;right:50%;transform:translateX(12px);width:8px;height:8px;border-radius:50%;background:#dc2626;box-shadow:0 0 4px rgba(220,38,38,.5)}
+.nav-item{position:relative}
+
+.notif-panel{position:fixed;inset:0;z-index:1200;background:var(--bg);transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column}
+.notif-panel.open{transform:translateY(0)}
+.notif-header{display:flex;align-items:center;gap:10px;padding:calc(14px + var(--safe-top)) 16px 14px;background:var(--bg);flex-shrink:0;box-shadow:0 4px 8px var(--nm-dark)}
+.notif-close{width:36px;height:36px;border-radius:50%;background:var(--bg);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--nm-out-sm)}
+.notif-close:active{box-shadow:var(--nm-in-sm)}
+.notif-title{flex:1;font-size:17px;font-weight:700}
+.notif-clear{font-size:13px;color:var(--accent);font-weight:600;cursor:pointer;background:none;border:none}
+.notif-list{flex:1;overflow-y:auto;padding:12px 14px;-webkit-overflow-scrolling:touch}
+.notif-list::-webkit-scrollbar{display:none}
+.notif-item{background:var(--bg);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:var(--nm-out-sm);display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:box-shadow .15s}
+.notif-item:active{box-shadow:var(--nm-in-sm)}
+.notif-item.unread{border-left:3px solid var(--accent)}
+.notif-dot-wrap{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:var(--nm-in-sm)}
+.notif-body{flex:1;min-width:0}
+.notif-body-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.notif-body-text{font-size:13px;color:var(--text2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.notif-body-time{font-size:11px;color:var(--text3);margin-top:4px}
+.notif-empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:14px}
+
+.push-toast{position:fixed;top:calc(12px + var(--safe-top));left:12px;right:12px;background:var(--bg);border-radius:16px;padding:14px 16px;z-index:2100;box-shadow:var(--nm-out-lg);transform:translateY(-120%);transition:transform .35s cubic-bezier(.32,.72,0,1);display:flex;gap:12px;align-items:center;cursor:pointer}
+.push-toast.show{transform:translateY(0)}
+.push-toast-icon{font-size:24px;flex-shrink:0}
+.push-toast-body{flex:1;min-width:0}
+.push-toast-title{font-size:13px;font-weight:700;margin-bottom:1px}
+.push-toast-text{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.push-toast-time{font-size:10px;color:var(--text3);flex-shrink:0;align-self:flex-start;margin-top:2px}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -210,6 +245,7 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
   <div class="header-text"><h1>Kai's 戰情室</h1><p>隨身商業戰情</p></div>
   <div class="header-right">
     <div class="header-date" id="headerDate"></div>
+    <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge"></span></button>
     <div class="header-avatar"><svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#d4d4c8"/><circle cx="26" cy="18" r="10" fill="#a3a396"/><ellipse cx="26" cy="46" rx="18" ry="14" fill="#a3a396"/></svg></div>
   </div>
 </div>
@@ -309,6 +345,26 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
     <div class="report-hdr-title" id="reportTitle"></div>
   </div>
   <div class="report-body" id="reportBody"></div>
+</div>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-header">
+    <button class="notif-close" onclick="toggleNotifPanel()">‹</button>
+    <div class="notif-title">通知中心</div>
+    <button class="notif-clear" onclick="clearAllNotifs()">全部已讀</button>
+  </div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+
+<!-- Push Toast -->
+<div class="push-toast" id="pushToast">
+  <div class="push-toast-icon" id="pushToastIcon"></div>
+  <div class="push-toast-body">
+    <div class="push-toast-title" id="pushToastTitle"></div>
+    <div class="push-toast-text" id="pushToastText"></div>
+  </div>
+  <div class="push-toast-time">剛剛</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -521,6 +577,123 @@ function generateResponse(text,agent){
 }
 document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
 function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
+
+/* ===== 通知系統 ===== */
+var NOTIF_TYPES={report:'📄',chat:'💬',task:'⚡',system:'🔔'};
+var notifications=[];
+var notifIdCounter=0;
+
+var INITIAL_NOTIFS=[
+  {type:'report',agent:'wayne',title:'Wayne 提交了新報告',text:'碳纖維複合板材 CAE 模擬完成',time:'14:32',unread:true,action:{type:'report',id:1}},
+  {type:'report',agent:'king',title:'King 提交了績效報告',text:'團隊週績效：生產部飆升 99%',time:'08:30',unread:true,action:{type:'report',id:5}},
+  {type:'report',agent:'sterling',title:'Sterling 商機分析更新',text:'商機管道 NT$7,600 萬，加權 $4,510 萬',time:'10:20',unread:true,action:{type:'report',id:7}},
+  {type:'task',agent:'system',title:'急件提醒',text:'大同集團供應商審核回覆 — 明日截止',time:'07:00',unread:true,action:{type:'page',id:'pageTask'}},
+  {type:'report',agent:'cash',title:'Cash 財務報告',text:'Q2 財務結算：毛利率站穩 31%',time:'11:15',unread:false,action:{type:'report',id:3}}
+];
+
+INITIAL_NOTIFS.forEach(function(n){
+  n.id=++notifIdCounter;
+  notifications.push(n);
+});
+
+var PUSH_POOL=[
+  {type:'report',agent:'wayne',title:'Wayne 已完成報告',text:'越南廠模具進度追蹤報告已送出'},
+  {type:'chat',agent:'king',title:'King 傳了訊息',text:'品管部延遲問題已處理，進度恢復中'},
+  {type:'task',agent:'system',title:'任務到期提醒',text:'Q3 碳纖維新品報價單 — 截止 07/08'},
+  {type:'report',agent:'cash',title:'Cash 更新了數據',text:'友達光電逾期款催收進度更新'},
+  {type:'chat',agent:'sterling',title:'Sterling 傳了訊息',text:'Toray 視訊已排定週五下午 3 點'},
+  {type:'report',agent:'wayne',title:'Wayne 日報已送出',text:'今日營運指標全數達標，表現良好'},
+  {type:'task',agent:'system',title:'商機進度更新',text:'台積電案 — 客戶已讀報價，等回覆中'}
+];
+var pushPoolIdx=0;
+
+function updateNotifBadge(){
+  var cnt=notifications.filter(function(n){return n.unread;}).length;
+  var badge=document.getElementById('notifBadge');
+  badge.textContent=cnt>0?cnt:'';
+  var outputNav=document.querySelector('.nav-item[data-page="pageOutput"]');
+  var existingDot=outputNav.querySelector('.nav-badge');
+  var outputUnread=notifications.filter(function(n){return n.unread&&n.type==='report';}).length;
+  if(outputUnread>0&&!existingDot){
+    var dot=document.createElement('span');dot.className='nav-badge';outputNav.appendChild(dot);
+  }else if(outputUnread===0&&existingDot){existingDot.remove();}
+}
+
+function renderNotifList(){
+  var list=document.getElementById('notifList');
+  if(notifications.length===0){list.innerHTML='<div class="notif-empty">🔔 沒有通知</div>';return;}
+  list.innerHTML=notifications.map(function(n){
+    var icon=NOTIF_TYPES[n.type]||'🔔';
+    return '<div class="notif-item'+(n.unread?' unread':'')+'" onclick="handleNotifClick('+n.id+')">'
+      +'<div class="notif-dot-wrap" style="background:'+(n.agent&&AGENTS[n.agent]?AGENTS[n.agent].color+'18':'var(--bg)')+'">'+icon+'</div>'
+      +'<div class="notif-body"><div class="notif-body-title">'+n.title+'</div><div class="notif-body-text">'+n.text+'</div><div class="notif-body-time">'+n.time+'</div></div>'
+      +'</div>';
+  }).join('');
+}
+
+function toggleNotifPanel(){
+  var panel=document.getElementById('notifPanel');
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open')) renderNotifList();
+}
+
+function handleNotifClick(id){
+  var n=notifications.find(function(x){return x.id===id;});
+  if(!n)return;
+  n.unread=false;
+  updateNotifBadge();
+  toggleNotifPanel();
+  if(n.action){
+    if(n.action.type==='report'){
+      var navBtn=document.querySelector('.nav-item[data-page="pageOutput"]');
+      document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+      navBtn.classList.add('active');
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+      document.getElementById('pageOutput').classList.add('active');
+      var r=REPORTS.find(function(x){return x.id===n.action.id;});
+      if(r){showAgentReports(r.agent);setTimeout(function(){openReport(n.action.id);},200);}
+    }else if(n.action.type==='page'){
+      var navBtn2=document.querySelector('.nav-item[data-page="'+n.action.id+'"]');
+      document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+      navBtn2.classList.add('active');
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+      document.getElementById(n.action.id).classList.add('active');
+    }else if(n.action.type==='chat'){
+      openChat(n.agent);
+    }
+  }
+}
+
+function clearAllNotifs(){
+  notifications.forEach(function(n){n.unread=false;});
+  updateNotifBadge();renderNotifList();
+  showToast('已全部標為已讀');
+}
+
+function showPushToast(notif){
+  var icon=NOTIF_TYPES[notif.type]||'🔔';
+  document.getElementById('pushToastIcon').textContent=icon;
+  document.getElementById('pushToastTitle').textContent=notif.title;
+  document.getElementById('pushToastText').textContent=notif.text;
+  var toast=document.getElementById('pushToast');
+  toast.onclick=function(){toast.classList.remove('show');handleNotifClick(notif.id);};
+  toast.classList.add('show');
+  setTimeout(function(){toast.classList.remove('show');},4000);
+}
+
+function simulatePush(){
+  var template=PUSH_POOL[pushPoolIdx%PUSH_POOL.length];
+  pushPoolIdx++;
+  var n={id:++notifIdCounter,type:template.type,agent:template.agent,title:template.title,text:template.text,time:getTime(),unread:true,action:template.type==='chat'?{type:'chat'}:{type:'page',id:'pageOutput'}};
+  notifications.unshift(n);
+  updateNotifBadge();
+  showPushToast(n);
+  var next=25000+Math.random()*35000;
+  setTimeout(simulatePush,next);
+}
+
+updateNotifBadge();
+setTimeout(simulatePush,8000);
 </script>
 </body>
 </html>
