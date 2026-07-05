@@ -82,6 +82,7 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 .page{display:block}
 .page.active{display:block}
 .section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--nm-dark),transparent);margin:26px 0 6px;opacity:.5}
+.empty-state{text-align:center;color:var(--text3);font-size:14px;padding:32px 16px;background:var(--bg);border-radius:var(--r);box-shadow:var(--nm-in-sm)}
 
 /* ===== 產出頁面（Agent 方塊入口 + 報告列表） ===== */
 .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
@@ -256,16 +257,16 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
   <!-- 戰情 Dashboard -->
   <div class="page active" id="pageDashboard">
     <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-value">$8.10</div><div class="kpi-label">💰 本月花費</div></div>
-      <div class="kpi-card"><div class="kpi-value">46</div><div class="kpi-label">✅ 任務完成</div></div>
-      <div class="kpi-card"><div class="kpi-value">15</div><div class="kpi-label">📄 今日產出</div></div>
+      <div class="kpi-card"><div class="kpi-value">$0.00</div><div class="kpi-label">💰 本月花費</div></div>
+      <div class="kpi-card"><div class="kpi-value">0</div><div class="kpi-label">✅ 任務完成</div></div>
+      <div class="kpi-card"><div class="kpi-value">0</div><div class="kpi-label">📄 今日產出</div></div>
     </div>
     <div class="section-title"><span class="section-bar"></span>⚡ 快速指令</div>
     <div class="quick-row">
-      <div class="quick-card" onclick="openChat('wayne','今日戰情摘要')"><div class="quick-icon">📊</div><div class="quick-label">今日摘要</div><div class="quick-desc">一鍵瀏覽今日重點</div></div>
-      <div class="quick-card" onclick="openChat('cash','本月財務報告')"><div class="quick-icon">💰</div><div class="quick-label">財務快報</div><div class="quick-desc">收支與預算追蹤</div></div>
-      <div class="quick-card" onclick="openChat('king','團隊績效報告')"><div class="quick-icon">👥</div><div class="quick-label">團隊績效</div><div class="quick-desc">人員表現與出勤</div></div>
-      <div class="quick-card" onclick="openChat('sterling','目前商機分析')"><div class="quick-icon">🎯</div><div class="quick-label">商機雷達</div><div class="quick-desc">潛在客戶與進度</div></div>
+      <div class="quick-card" onclick="openChat('wayne')"><div class="quick-icon">📊</div><div class="quick-label">今日摘要</div><div class="quick-desc">與 Wayne 對話</div></div>
+      <div class="quick-card" onclick="openChat('cash')"><div class="quick-icon">💰</div><div class="quick-label">財務快報</div><div class="quick-desc">與 Cash 對話</div></div>
+      <div class="quick-card" onclick="openChat('king')"><div class="quick-icon">👥</div><div class="quick-label">團隊績效</div><div class="quick-desc">與 King 對話</div></div>
+      <div class="quick-card" onclick="openChat('sterling')"><div class="quick-icon">🎯</div><div class="quick-label">商機雷達</div><div class="quick-desc">與 Sterling 對話</div></div>
     </div>
     <div class="section-title"><span class="section-bar"></span>👥 特助室<span class="section-count">1</span></div>
     <div class="agent-card" onclick="openChat('wayne')">
@@ -295,11 +296,7 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
   <!-- 任務 -->
   <div class="page" id="pageTask">
     <div class="page-header">📋 任務看板</div>
-    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">Q3 碳纖維新品報價單</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/08</span></div></div></div>
-    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">大同集團供應商審核回覆</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/06</span></div></div></div>
-    <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">網站 SEO 關鍵字更新</div><div class="task-meta"><span class="task-tag normal">一般</span><span>已完成</span></div></div></div>
-    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">越南廠模具驗收進度跟催</div><div class="task-meta"><span class="task-tag normal">一般</span><span>截止：07/12</span></div></div></div>
-    <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">每月固定費用對帳</div><div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div></div></div>
+    <div class="empty-state">目前沒有任務</div>
   </div>
 
   <div class="section-divider"></div>
@@ -312,10 +309,7 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
   <!-- 商機 -->
   <div class="page" id="pageOpportunity">
     <div class="page-header">🎯 商機追蹤</div>
-    <div class="opp-card"><div class="opp-company">台積電 — 晶圓載具碳纖維框架</div><div class="opp-amount">NT$ 1,200 萬</div><div class="opp-stage">報價階段</div><div class="opp-detail">聯絡人：張經理 | 預計結案：2026/08</div></div>
-    <div class="opp-card"><div class="opp-company">大同集團 — 電動車底盤輕量化</div><div class="opp-amount">NT$ 3,500 萬</div><div class="opp-stage">供應商審核中</div><div class="opp-detail">聯絡人：李副總 | 預計結案：2026/09</div></div>
-    <div class="opp-card" style="border-left-color:#2563eb"><div class="opp-company">日本 Toray — 代工合作洽談</div><div class="opp-amount">NT$ 800 萬/年</div><div class="opp-stage">初步接洽</div><div class="opp-detail">聯絡人：田中先生 | 預計結案：2026/10</div></div>
-    <div class="opp-card" style="border-left-color:#d97706"><div class="opp-company">越南 Vinfast — 車體結構件</div><div class="opp-amount">NT$ 2,100 萬</div><div class="opp-stage">樣品測試中</div><div class="opp-detail">聯絡人：Nguyen | 預計結案：2026/08</div></div>
+    <div class="empty-state">目前沒有商機</div>
   </div>
 
 </div>
@@ -374,57 +368,32 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 })();
 
 /* ===== Reports Data (date + urgency) ===== */
-var REPORTS = [
-  { id:1, agent:'wayne', color:'#3b5998', date:'2026-07-05', urgency:'urgent', headline:'碳纖維複合板材 CAE 模擬完成', summary:'三種疊層方案分析結果出爐，推薦 [0/90/±45]s 對稱配置，彎曲剛度可提升 23%', time:'14:32', tags:['CAE','技術'],
-    detail:'<div class="rpt-section">📊 分析概要</div><p>針對客戶需求的碳纖維複合板材，完成三種疊層方案的有限元分析（FEA）。</p><div class="rpt-section">🔬 三種方案比較</div><div class="rpt-item">方案 A：[0/90]s 交叉疊層<br>→ 彎曲剛度 142 GPa，抗拉 +15%</div><div class="rpt-item">方案 B：[0/90/±45]s 對稱疊層 ⭐<br>→ 彎曲剛度 175 GPa（+23%），多向受力最佳</div><div class="rpt-item">方案 C：[±45]s 斜紋疊層<br>→ 扭轉性能佳，但彎曲剛度僅 128 GPa</div><div class="rpt-highlight">✅ <strong>推薦方案 B</strong>：[0/90/±45]s 對稱疊層<br>彎曲剛度提升 <span class="rpt-number">23%</span>，綜合力學性能最優</div><div class="rpt-section">📋 下一步</div><div class="rpt-item">1. 送交客戶技術確認<br>2. 安排試做 5 片樣板<br>3. 預計 7/15 前完成實測驗證</div>'
-  },
-  { id:2, agent:'wayne', color:'#3b5998', date:'2026-07-05', urgency:'normal', headline:'今日營運戰情總覽', summary:'本月營收達標率 68%，15 件產出完成，3 件急件待處理', time:'09:00', tags:['日報','營運'],
-    detail:'<div class="rpt-section">📈 營運指標</div><div class="rpt-highlight">本月累計營收 <span class="rpt-number">NT$2,140 萬</span><br>達標率 68% | 較上月同期 +8.3%</div><div class="rpt-section">✅ 今日產出</div><div class="rpt-item">已完成 <strong>15 件</strong>報告與任務<br>剩餘 <strong>3 件</strong>急件待處理</div><div class="rpt-section">⚠️ 注意事項</div><div class="rpt-item">• 大同集團供應商回覆 — 明日截止<br>• 品管部 2 件延遲 — King 已跟進<br>• 台積電報價案 — 等待客戶最終確認</div>'
-  },
-  { id:3, agent:'cash', color:'#48bb78', date:'2026-07-05', urgency:'normal', headline:'Q2 財務結算：毛利率站穩 31%', summary:'營收 NT$4,280 萬，毛利率 31.2%（+1.8%），現金流健康', time:'11:15', tags:['財務','季報'],
-    detail:'<div class="rpt-section">💰 Q2 損益摘要</div><div class="rpt-highlight">營收 <span class="rpt-number">NT$4,280 萬</span><br>毛利率 31.2%（較上季 +1.8%）</div><div class="rpt-section">📊 關鍵數字</div><div class="rpt-item">• 營業成本：NT$2,945 萬（-2.3%）<br>• 營業費用：NT$680 萬（持平）<br>• 淨利：NT$655 萬<br>• 應收帳款周轉天數：42 天</div><div class="rpt-section">💵 現金流</div><div class="rpt-item">期末現金：NT$1,820 萬<br>短期無資金壓力，建議保留 NT$500 萬作為 Q3 原物料備貨</div><div class="rpt-section">⚠️ 風險提示</div><div class="rpt-item">• 友達光電逾期款 NT$620 萬需加速催收<br>• 碳纖維原料價格微漲 3%，影響下季毛利</div>'
-  },
-  { id:4, agent:'cash', color:'#48bb78', date:'2026-07-04', urgency:'low', headline:'AI 工具成本效益分析', summary:'本月 AI 花費 $8.10 USD，平均每任務 $0.18，投報率極高', time:'08:45', tags:['成本','AI'],
-    detail:'<div class="rpt-section">🤖 本月 AI 使用成本</div><div class="rpt-highlight">總花費 <span class="rpt-number">$8.10 USD</span>（約 NT$258）</div><div class="rpt-section">📊 成本明細</div><div class="rpt-item">• Claude API — $4.85（60%）<br>• GPT-4 輔助 — $2.25（28%）<br>• 其他工具 — $1.00（12%）</div><div class="rpt-section">📈 效益分析</div><div class="rpt-item">完成任務數：<strong>46 項</strong><br>每項平均成本：<strong>$0.18</strong>（NT$5.6）<br>節省人工估算：<strong>約 120 小時</strong></div><div class="rpt-highlight">✅ 投報率極高：每投入 NT$1 → 省下約 NT$150 人力成本</div>'
-  },
-  { id:5, agent:'king', color:'#718096', date:'2026-07-05', urgency:'urgent', headline:'團隊週績效：生產部飆升 99%', summary:'整體完成率 87%，生產部表現亮眼 +12%，品管部需關注', time:'08:30', tags:['績效','週報'],
-    detail:'<div class="rpt-section">📈 整體績效</div><div class="rpt-highlight">團隊完成率 <span class="rpt-number">87%</span>（目標 90%）</div><div class="rpt-section">🏆 部門排名</div><div class="rpt-item">🥇 生產部 — 完成率 99%（+12%↑）<br>🥈 業務部 — 完成率 92%（+5%↑）<br>🥉 研發部 — 完成率 88%（持平）<br>⚠️ 品管部 — 完成率 72%（-8%↓）</div><div class="rpt-section">⚠️ 需關注事項</div><div class="rpt-item">• 品管部 2 件任務延遲，已約談主管<br>• 延遲原因：新產線驗證程序較複雜<br>• 已協調生產部支援，預計下週補回進度</div><div class="rpt-section">👤 個人 Top 3</div><div class="rpt-item">1. 張志豪（業務）95.2 分<br>2. 王大明（生產）93.8 分<br>3. 李芳如（研發）91.5 分</div>'
-  },
-  { id:6, agent:'king', color:'#718096', date:'2026-07-04', urgency:'low', headline:'七月出勤率 93.8%，運作正常', summary:'32 人中 30 人在勤，2 人請假不影響產線', time:'07:50', tags:['出勤','人事'],
-    detail:'<div class="rpt-section">📝 今日出勤</div><div class="rpt-highlight">在勤率 <span class="rpt-number">93.8%</span>（30/32 人）</div><div class="rpt-section">🏠 請假名單</div><div class="rpt-item">• 陳小明（生產部）— 特休 1 天<br>• 林美玲（行政部）— 病假，預計休 2 天</div><div class="rpt-section">✅ 影響評估</div><div class="rpt-item">兩位請假人員的工作已由同部門同事代理，不影響產線與行政運作。</div>'
-  },
-  { id:7, agent:'sterling', color:'#a0aec0', date:'2026-07-05', urgency:'urgent', headline:'商機管道 NT$7,600 萬，加權 $4,510 萬', summary:'4 案追蹤中，台積電案勝率最高 70%，大同案金額最大', time:'10:20', tags:['商機','分析'],
-    detail:'<div class="rpt-section">🎯 管道總覽</div><div class="rpt-highlight">管道總金額 <span class="rpt-number">NT$7,600 萬</span><br>加權營收預估 NT$4,510 萬</div><div class="rpt-section">📊 各案進度</div><div class="rpt-item"><strong>1. 台積電 — 晶圓載具框架</strong><br>金額 NT$1,200 萬 | 報價階段 | 勝率 70%<br>→ 報價已送出，等客戶回覆</div><div class="rpt-item"><strong>2. 大同集團 — 電動車底盤</strong><br>金額 NT$3,500 萬 | 審核中 | 勝率 55%<br>→ 文件已備齊，下週面談</div><div class="rpt-item"><strong>3. Toray — 代工合作</strong><br>金額 NT$800 萬/年 | 初步接洽 | 勝率 40%<br>→ 週五安排視訊</div><div class="rpt-item"><strong>4. Vinfast — 車體結構件</strong><br>金額 NT$2,100 萬 | 樣品測試 | 勝率 60%<br>→ 樣品已寄出，等結果</div>'
-  },
-  { id:8, agent:'sterling', color:'#a0aec0', date:'2026-07-04', urgency:'normal', headline:'大同集團供應商文件已備齊', summary:'ISO 證書、財報、產能說明共 12 份文件整理完成，待老闆審閱', time:'09:48', tags:['業務','文件'],
-    detail:'<div class="rpt-section">📋 文件清單</div><div class="rpt-item"><strong>認證文件（4份）</strong><br>• ISO 9001:2015 品質管理<br>• ISO 14001:2015 環境管理<br>• IATF 16949 車用品質<br>• RoHS 合規聲明</div><div class="rpt-item"><strong>財務文件（3份）</strong><br>• 2024 年度財報<br>• 2025 年度財報<br>• 2026 H1 財報（預估）</div><div class="rpt-item"><strong>技術文件（5份）</strong><br>• 產能規劃說明書<br>• 設備清單與廠房照片<br>• 品質管制流程圖<br>• 碳纖維材料規格表<br>• 過往合作實績</div><div class="rpt-highlight">✅ 共 <span class="rpt-number">12</span> 份文件已整理，請老闆審閱後送出</div>'
-  }
-];
+var REPORTS = [];
 
 var AGENTS = {
   wayne:{name:'Wayne',role:'總經理特助・全程監督',color:'#3b5998',
     avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cW3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="wS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1e3a5f"/><stop offset="100%" stop-color="#0f2440"/></linearGradient></defs><g clip-path="url(#cW3)"><rect width="200" height="200" fill="#d8e4f0"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#wS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#wS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#fff"/><polygon points="100,170 94,145 106,145" fill="#c41e3a"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#f7d9b4"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#e8c49a"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#d4a574"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#3b2314"/><circle cx="119" cy="82" r="3.5" fill="#3b2314"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#3d2b1f" stroke-width="2.5" fill="none"/><path d="M109 76 Q118 72 127 76" stroke="#3d2b1f" stroke-width="2.5" fill="none"/><path d="M88 110 Q100 118 112 110" stroke="#c0846d" stroke-width="2" fill="none"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#e8c49a"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#e8c49a"/><path d="M55 55 Q60 25 100 20 Q140 25 145 55 L142 52 Q138 30 100 26 Q62 30 58 52 Z" fill="#2d1b0e"/><path d="M58 55 Q62 42 75 38 L70 55 Z" fill="#2d1b0e"/><path d="M142 55 Q138 42 125 38 L130 55 Z" fill="#2d1b0e"/></g></svg>',
     greeting:'老闆好！我是 Wayne，您的 AI 總經理特助。隨時為您效勞！',
-    suggestions:['今日戰情摘要','本週重要待辦','幫我排明天行程'],
-    responses:{'今日戰情摘要':'📊 今日戰情摘要：\n\n1️⃣ 營運：本月累計營收 NT$2,140 萬（達標率 68%）\n2️⃣ 任務：今日完成 15 件，剩餘 3 件急件\n3️⃣ 商機：台積電案最終確認中，大同文件已備齊\n4️⃣ 注意：品管部 2 件延遲，King 已在跟進\n\n建議優先處理大同回覆，截止 07/06。','本週重要待辦':'📋 本週待辦：\n\n🔴 急件\n• Q3 碳纖維報價單（07/08）\n• 大同供應商回覆（07/06）\n\n🟡 一般\n• 越南廠模具跟催\n• Kai-bridge 手機版同步\n\n✅ 已完成\n• SEO 關鍵字更新\n• 固定費用對帳','幫我排明天行程':'📅 明天建議行程：\n\n09:00 — 大同供應商回覆確認\n10:00 — 審閱 Sterling 文件包\n14:00 — 研發部 Q3 新品規格會議'}
+    suggestions:[],
+    responses:{}
   },
   king:{name:'King',role:'高級總監（人員管理/績效）',color:'#718096',
     avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cK3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="kS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2d3748"/><stop offset="100%" stop-color="#1a202c"/></linearGradient></defs><g clip-path="url(#cK3)"><rect width="200" height="200" fill="#e0dce8"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#kS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#kS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#f0f0f0"/><polygon points="100,170 94,145 106,145" fill="#742a2a"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#f5d5b5"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#e0be96"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#caa878"/><rect x="69" y="76" width="26" height="14" rx="5" fill="none" stroke="#8a8a8a" stroke-width="2"/><rect x="105" y="76" width="26" height="14" rx="5" fill="none" stroke="#8a8a8a" stroke-width="2"/><line x1="95" y1="83" x2="105" y2="83" stroke="#8a8a8a" stroke-width="1.5"/><rect x="72" y="78" width="20" height="10" rx="4" fill="rgba(200,220,255,.15)"/><rect x="108" y="78" width="20" height="10" rx="4" fill="rgba(200,220,255,.15)"/><ellipse cx="82" cy="83" rx="5" ry="4.5" fill="#fff"/><ellipse cx="118" cy="83" rx="5" ry="4.5" fill="#fff"/><circle cx="83" cy="83" r="3" fill="#3b5530"/><circle cx="119" cy="83" r="3" fill="#3b5530"/><circle cx="84" cy="82" r="1.2" fill="#fff"/><circle cx="120" cy="82" r="1.2" fill="#fff"/><path d="M73 73 Q82 69 91 73" stroke="#777" stroke-width="2.2" fill="none"/><path d="M109 73 Q118 69 127 73" stroke="#777" stroke-width="2.2" fill="none"/><path d="M88 110 Q100 118 112 110" stroke="#c0846d" stroke-width="2" fill="none"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#e0be96"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#e0be96"/><path d="M55 50 Q60 22 100 18 Q140 22 145 50 L142 48 Q138 28 100 24 Q62 28 58 48 Z" fill="#888"/><path d="M58 50 Q62 40 72 38 L68 50 Z" fill="#888"/><path d="M142 50 Q138 40 128 38 L132 50 Z" fill="#888"/></g></svg>',
     greeting:'老闆好！我是 King，負責人員管理與績效。需要看團隊狀況嗎？',
-    suggestions:['團隊績效報告','誰今天請假','本月考績排名'],
-    responses:{'團隊績效報告':'👥 整體完成率 87%\n\n🏆 Top:\n1. 生產部 99%（+12%）\n2. 業務部 92%（+5%）\n3. 研發部 88%\n\n⚠️ 品管部 72%（-8%），已約談。','誰今天請假':'📝 在勤 30/32 人（93.8%）\n\n請假：\n• 陳小明（生產）特休\n• 林美玲（行政）病假 2 天\n\n不影響產線。','本月考績排名':'🥇 張志豪（業務）95.2 分\n🥈 王大明（生產）93.8 分\n🥉 李芳如（研發）91.5 分\n\n品管部平均 78 分需改善。'}
+    suggestions:[],
+    responses:{}
   },
   cash:{name:'Cash',role:'財務長',color:'#48bb78',
     avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cC3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="cS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a4d2e"/><stop offset="100%" stop-color="#0f3320"/></linearGradient></defs><g clip-path="url(#cC3)"><rect width="200" height="200" fill="#d5ece2"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#cS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#cS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#fff"/><polygon points="100,170 94,145 106,145" fill="#2563eb"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#d4a06a"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#c08a52"/><ellipse cx="100" cy="95" rx="4.5" ry="3" fill="#a8743e"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#1a1a1a"/><circle cx="119" cy="82" r="3.5" fill="#1a1a1a"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#1a1a1a" stroke-width="2.5" fill="none"/><path d="M109 76 Q118 72 127 76" stroke="#1a1a1a" stroke-width="2.5" fill="none"/><path d="M85 108 Q100 120 115 108" stroke="#8a5a30" stroke-width="2.5" fill="none"/><path d="M88 109 Q100 117 112 109" fill="#c0706a" opacity=".35"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#c08a52"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#c08a52"/><path d="M58 48 Q62 28 100 24 Q138 28 142 48 Q138 40 130 38 Q122 44 100 42 Q78 44 70 38 Q62 40 58 48 Z" fill="#1a1a1a"/></g></svg>',
     greeting:'老闆好！我是 Cash，負責財務與成本管控。需要看報表嗎？',
-    suggestions:['本月財務報告','應收帳款狀況','AI 使用成本'],
-    responses:{'本月財務報告':'💰 七月快報：\n\n營收 NT$2,140 萬（達標 68%）\n支出 NT$1,476 萬\n毛利 NT$664 萬（31.0%）\n\n大同預付款入帳可衝 79%。','應收帳款狀況':'📋 應收 NT$1,850 萬\n\n🟢 正常：NT$980 萬\n🟡 逾期 30-60 天：NT$620 萬（友達）\n🔴 逾期 60+：NT$250 萬（華碩，法務介入）\n\n建議親電友達。','AI 使用成本':'🤖 $8.10 USD（NT$258）\n\nClaude $4.85 | GPT-4 $2.25 | 其他 $1.00\n每任務 $0.18，投報率極高！'}
+    suggestions:[],
+    responses:{}
   },
   sterling:{name:'Sterling',role:'商務參謀',color:'#a0aec0',
     avatarSvg:'<svg viewBox="0 0 200 200"><defs><clipPath id="cS3"><circle cx="100" cy="100" r="100"/></clipPath><linearGradient id="sS2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a5568"/><stop offset="100%" stop-color="#2d3748"/></linearGradient></defs><g clip-path="url(#cS3)"><rect width="200" height="200" fill="#e2e6ea"/><ellipse cx="100" cy="210" rx="80" ry="60" fill="url(#sS2)"/><path d="M60 155 L80 140 100 155 120 140 140 155 140 210 60 210Z" fill="url(#sS2)"/><path d="M80 140 L100 155 120 140 120 170 80 170Z" fill="#f0f0f0"/><polygon points="100,170 94,145 106,145" fill="#d69e2e"/><ellipse cx="100" cy="88" rx="42" ry="48" fill="#fce4c8"/><ellipse cx="100" cy="100" rx="12" ry="8" fill="#ecd0a8"/><ellipse cx="100" cy="95" rx="4" ry="2.5" fill="#d4b48a"/><ellipse cx="82" cy="82" rx="7" ry="5.5" fill="#fff"/><ellipse cx="118" cy="82" rx="7" ry="5.5" fill="#fff"/><circle cx="83" cy="82" r="3.5" fill="#4a6741"/><circle cx="119" cy="82" r="3.5" fill="#4a6741"/><circle cx="84" cy="81" r="1.5" fill="#fff"/><circle cx="120" cy="81" r="1.5" fill="#fff"/><path d="M73 76 Q82 72 91 76" stroke="#a08030" stroke-width="2.2" fill="none"/><path d="M109 76 Q118 72 127 76" stroke="#a08030" stroke-width="2.2" fill="none"/><path d="M90 110 Q100 116 110 110" stroke="#c0846d" stroke-width="2" fill="none"/><ellipse cx="58" cy="90" rx="8" ry="12" fill="#ecd0a8"/><ellipse cx="142" cy="90" rx="8" ry="12" fill="#ecd0a8"/><path d="M55 48 Q60 20 100 16 Q140 20 145 48 L142 46 Q138 26 100 22 Q62 26 58 46 Z" fill="#c9a64e"/><path d="M58 48 Q62 36 74 34 L70 48 Z" fill="#c9a64e"/><path d="M142 48 Q138 36 126 34 L130 48 Z" fill="#c9a64e"/></g></svg>',
     greeting:'老闆好！我是 Sterling，負責商務開發。有新商機嗎？',
-    suggestions:['目前商機分析','競爭對手動態','下週客戶拜訪建議'],
-    responses:{'目前商機分析':'🎯 管道 NT$7,600 萬\n\n1. 台積電 NT$1,200萬 | 報價 | 70%\n2. 大同 NT$3,500萬 | 審核 | 55%\n3. Toray NT$800萬/年 | 接洽 | 40%\n4. Vinfast NT$2,100萬 | 測試 | 60%\n\n加權預估 NT$4,510 萬','競爭對手動態':'🔍 情報：\n\n1. 台塑碳纖：擴廠 20%🔴\n2. 東麗：找代工夥伴🟢\n3. 光威複材：低價搶市🟡\n\n建議加速 Toray 合作。','下週客戶拜訪建議':'📅 下週拜訪：\n\n週一 🔴 大同（李副總）供應商面談\n週三 🟡 友達（王經理）催收\n週五 🟢 Toray 視訊（田中先生）'}
+    suggestions:[],
+    responses:{}
   }
 };
 
@@ -554,14 +523,9 @@ function sendUserMessage(text){
 function generateResponse(text,agent){
   var l=text.toLowerCase();
   if(l.indexOf('你好')>=0||l.indexOf('嗨')>=0||l.indexOf('hi')>=0||l.indexOf('在嗎')>=0||l.indexOf('hello')>=0)
-    return '在的！老闆好～ 我是 '+agent.name+'，隨時為您服務！\n\n目前一切正常，有什麼需要處理的嗎？';
-  if(l.indexOf('謝謝')>=0||l.indexOf('辛苦')>=0) return '不客氣！有需要隨時叫我，24 小時待命！';
-  if(l.indexOf('業績')>=0||l.indexOf('營收')>=0||l.indexOf('銷售')>=0)
-    return '📊 本月營收 NT$2,140 萬（達標 68%）\n較上月 +8.3%\n\n主要貢獻：碳纖維訂單穩定、台積電案進行中\n大同預付款入帳可衝 79%！';
-  if(l.indexOf('忙')>=0||l.indexOf('狀況')>=0||l.indexOf('報告')>=0||l.indexOf('怎麼樣')>=0)
-    return '目前順利！\n\n✅ 正常運作中\n📊 今日 15 件完成\n⏳ 3 件急件待處理\n\n節奏不錯，老闆放心！';
-  if(l.indexOf('幫')>=0||l.indexOf('處理')>=0) return '收到！馬上處理，完成後向您回報。';
-  return '收到！讓我查一下。\n\n目前資料顯示各項指標正常。需要更細的方向請告訴我，我立刻深入調查。';
+    return '在的！老闆好～ 我是 '+agent.name+'，隨時為您服務！';
+  if(l.indexOf('謝謝')>=0||l.indexOf('辛苦')>=0) return '不客氣！有需要隨時叫我。';
+  return '收到！請提供相關資料，我立刻幫您處理。';
 }
 document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
 function showToast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2000);}
@@ -571,28 +535,14 @@ var NOTIF_TYPES={report:'📄',chat:'💬',task:'⚡',system:'🔔'};
 var notifications=[];
 var notifIdCounter=0;
 
-var INITIAL_NOTIFS=[
-  {type:'report',agent:'wayne',title:'Wayne 提交了新報告',text:'碳纖維複合板材 CAE 模擬完成',time:'14:32',unread:true,action:{type:'report',id:1}},
-  {type:'report',agent:'king',title:'King 提交了績效報告',text:'團隊週績效：生產部飆升 99%',time:'08:30',unread:true,action:{type:'report',id:5}},
-  {type:'report',agent:'sterling',title:'Sterling 商機分析更新',text:'商機管道 NT$7,600 萬，加權 $4,510 萬',time:'10:20',unread:true,action:{type:'report',id:7}},
-  {type:'task',agent:'system',title:'急件提醒',text:'大同集團供應商審核回覆 — 明日截止',time:'07:00',unread:true,action:{type:'page',id:'pageTask'}},
-  {type:'report',agent:'cash',title:'Cash 財務報告',text:'Q2 財務結算：毛利率站穩 31%',time:'11:15',unread:false,action:{type:'report',id:3}}
-];
+var INITIAL_NOTIFS=[];
 
 INITIAL_NOTIFS.forEach(function(n){
   n.id=++notifIdCounter;
   notifications.push(n);
 });
 
-var PUSH_POOL=[
-  {type:'report',agent:'wayne',title:'Wayne 已完成報告',text:'越南廠模具進度追蹤報告已送出'},
-  {type:'chat',agent:'king',title:'King 傳了訊息',text:'品管部延遲問題已處理，進度恢復中'},
-  {type:'task',agent:'system',title:'任務到期提醒',text:'Q3 碳纖維新品報價單 — 截止 07/08'},
-  {type:'report',agent:'cash',title:'Cash 更新了數據',text:'友達光電逾期款催收進度更新'},
-  {type:'chat',agent:'sterling',title:'Sterling 傳了訊息',text:'Toray 視訊已排定週五下午 3 點'},
-  {type:'report',agent:'wayne',title:'Wayne 日報已送出',text:'今日營運指標全數達標，表現良好'},
-  {type:'task',agent:'system',title:'商機進度更新',text:'台積電案 — 客戶已讀報價，等回覆中'}
-];
+var PUSH_POOL=[];
 var pushPoolIdx=0;
 
 function updateNotifBadge(){
@@ -659,6 +609,7 @@ function showPushToast(notif){
 }
 
 function simulatePush(){
+  if(!PUSH_POOL.length) return;
   var template=PUSH_POOL[pushPoolIdx%PUSH_POOL.length];
   pushPoolIdx++;
   var n={id:++notifIdCounter,type:template.type,agent:template.agent,title:template.title,text:template.text,time:getTime(),unread:true,action:template.type==='chat'?{type:'chat'}:{type:'page',id:'pageOutput'}};
@@ -671,7 +622,6 @@ function simulatePush(){
 
 showOutputGrid();
 updateNotifBadge();
-setTimeout(simulatePush,8000);
 </script>
 </body>
 </html>
