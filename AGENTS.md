@@ -104,3 +104,28 @@
 - 這則回覆有沒有可以刪掉一半而不損失資訊的部分？
 
 詳細驗證流程見 `.claude/skills/verify-done/SKILL.md`（跨 AI 皆可閱讀遵循）。
+
+## 六、Hook 強制執行（僅 Claude Code，誠實揭露能力邊界）
+
+`.claude/settings.json` 已掛上兩個 hook，把部分規則從「文件約定」升級為
+「harness 強制執行」：
+
+1. **Stop hook**（`.claude/hooks/check-completion-report.sh`）：每次要結束回合時，
+   若工作目錄有未提交變更卻找不到三種狀態標記之一，或回覆出現禁用模糊措辭
+   （大致完成／應該沒問題／基本上好了／差不多了／理論上可以），會擋下並要求
+   補正。
+2. **SessionStart hook**（`.claude/hooks/session-start-reminder.sh`）：每次新
+   session 開始注入本規則摘要進 context。
+
+**能力邊界（誠實告知，不誇大）**：
+- 這兩個 hook 都是純文字／正則比對，**不是語意理解**。Stop hook 只能檢查
+  「格式對不對、有沒有出現禁用字」，**檢查不出「內容是不是真的」**——AI 仍可
+  貼上 `✅ 已完成（已驗證）` 卻其實沒有真的驗證，hook 無法識破。
+- 「工作目錄是否有未提交變更」是粗略判斷，不是精準比對「這一輪」改了什麼。
+- Hook 只對 **Claude Code** 有效；Gemini CLI、Copilot 等其他 AI 不受此 hook
+  約束，仍只能依賴它們各自讀取 `GEMINI.md` / `.github/copilot-instructions.md`
+  自願遵守。
+- 若要更高的可信度（例如用 LLM 語意判斷回覆是否真的有驗證），可以改用
+  `type: "agent"` 或 `type: "prompt"` 的 hook，但每次結束回合都會多花 token
+  與時間，與第三章「省 token」原則衝突，故目前預設不採用，留給使用者自行
+  評估是否要加開。
