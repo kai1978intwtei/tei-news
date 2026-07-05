@@ -54,10 +54,13 @@ if [ "$DIRTY" = "true" ] && [ "$HAS_STATUS" = "false" ]; then
   exit 0
 fi
 
-# 禁用模糊措辭（純關鍵字比對，抓不到語意，只能抓這幾個字面詞）
+# 禁用模糊措辭（純關鍵字比對，抓不到語意，只能抓這幾個字面詞）。
+# 先剔除反引號包住的片段（``` 圍欄或 `行內` 引用），避免「引用禁用詞清單來
+# 說明規則」被誤判成「真的拿來搪塞」。這只是機械式排除，仍抓不到語意。
 BANNED_PATTERN='大致完成|應該沒問題|基本上好了|差不多了|理論上可以'
-if echo "$LAST_TEXT" | grep -qP "$BANNED_PATTERN"; then
-  MATCHED="$(echo "$LAST_TEXT" | grep -oP "$BANNED_PATTERN" | sort -u | paste -sd ' ' -)"
+TEXT_FOR_BANNED_CHECK="$(echo "$LAST_TEXT" | perl -0777 -pe 's/```.*?```//gs; s/`[^`]*`//g' 2>/dev/null || echo "$LAST_TEXT")"
+if echo "$TEXT_FOR_BANNED_CHECK" | grep -qP "$BANNED_PATTERN"; then
+  MATCHED="$(echo "$TEXT_FOR_BANNED_CHECK" | grep -oP "$BANNED_PATTERN" | sort -u | paste -sd ' ' -)"
   jq -n --arg m "$MATCHED" '{
     decision: "block",
     reason: ("回覆中出現規則禁止的模糊措辭：" + $m + "。請改用實際驗證結果重新措辭（三種狀態標記＋具體證據），不得用模糊詞蒙混。")
