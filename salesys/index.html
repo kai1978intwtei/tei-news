@@ -4,166 +4,166 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a1628">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f6f1">
 <title>Kai's 戰情室</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0a1628;--card:#141e33;--card2:#1a2740;
-  --accent:#00e5a0;--accent2:#00b8ff;--accent3:#ff6b6b;
-  --text:#e8ecf2;--text2:#8899b0;--text3:#5a6d85;
+  --bg:#f6f6f1;
+  --card:#ffffff;
+  --card-border:#e8e8e3;
+  --accent:#3dba7a;
+  --accent-dark:#2ea06a;
+  --accent-light:#e8f8f0;
+  --text:#1a1a1a;
+  --text2:#6b7280;
+  --text3:#9ca3af;
+  --shadow:0 1px 4px rgba(0,0,0,.06);
+  --shadow-md:0 2px 8px rgba(0,0,0,.08);
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
-  --nav-h:64px;
+  --radius:16px;
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
-body{display:flex;flex-direction:column;padding-top:var(--safe-top);padding-bottom:var(--safe-bot)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
 
 /* Header */
-.header{display:flex;align-items:center;gap:10px;padding:12px 16px 8px;flex-shrink:0}
-.header-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#0a1628}
-.header-text h1{font-size:18px;font-weight:700;letter-spacing:.3px}
-.header-text p{font-size:11px;color:var(--text2);margin-top:1px}
+.header{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;flex-shrink:0}
+.header-logo{width:38px;height:38px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+.header-text h1{font-size:18px;font-weight:700;color:var(--text)}
+.header-text p{font-size:11px;color:var(--text3);margin-top:1px}
 .header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-.header-icon{width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;border:none;cursor:pointer}
-.header-icon:active{background:var(--card)}
+.header-date{font-size:12px;color:var(--text3);text-align:right}
+.header-avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--card-border)}
+.header-avatar svg{width:100%;height:100%}
 
-/* Main scroll area */
+/* Main scroll */
 .main{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 14px 16px;-webkit-overflow-scrolling:touch}
 .main::-webkit-scrollbar{display:none}
 
 /* KPI Row */
-.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 16px}
-.kpi-card{background:var(--card);border-radius:14px;padding:14px 12px;text-align:center;position:relative;overflow:hidden}
-.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.kpi-card:nth-child(1)::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
-.kpi-card:nth-child(2)::before{background:linear-gradient(90deg,var(--accent2),#a78bfa)}
-.kpi-card:nth-child(3)::before{background:linear-gradient(90deg,#f59e0b,var(--accent3))}
-.kpi-label{font-size:11px;color:var(--text2);margin-bottom:4px}
-.kpi-value{font-size:22px;font-weight:700}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 16px}
+.kpi-card{background:var(--card);border-radius:var(--radius);padding:16px 12px;box-shadow:var(--shadow)}
+.kpi-value{font-size:24px;font-weight:700;margin-bottom:4px}
 .kpi-card:nth-child(1) .kpi-value{color:var(--accent)}
-.kpi-card:nth-child(2) .kpi-value{color:var(--accent2)}
-.kpi-card:nth-child(3) .kpi-value{color:#f59e0b}
-.kpi-unit{font-size:12px;color:var(--text2);margin-top:2px}
+.kpi-card:nth-child(2) .kpi-value{color:var(--text)}
+.kpi-card:nth-child(3) .kpi-value{color:var(--text)}
+.kpi-label{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px}
 
-/* Section titles */
-.section-title{font-size:13px;font-weight:600;color:var(--text2);margin:16px 0 10px;display:flex;align-items:center;gap:6px}
-.section-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--accent)}
+/* Section */
+.section-title{font-size:14px;font-weight:600;color:var(--text2);margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.section-bar{width:3px;height:16px;border-radius:2px;background:var(--accent)}
+.section-count{font-size:12px;color:var(--text3);margin-left:4px}
 
 /* Agent Cards */
-.agent-card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .15s,background .15s;border:1px solid transparent}
-.agent-card:active{transform:scale(.98);background:var(--card2)}
-.agent-card.highlight{border-color:rgba(0,229,160,.25)}
+.agent-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.agent-card:active{transform:scale(.98)}
 .agent-avatar{position:relative;flex-shrink:0}
-.agent-avatar .avatar{width:50px;height:50px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff}
-.agent-avatar .status-dot{position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;border:2.5px solid var(--card);background:var(--accent);box-shadow:0 0 6px rgba(0,229,160,.6)}
+.agent-avatar .av-circle{width:52px;height:52px;border-radius:50%;overflow:hidden;background:#e0e0d8}
+.agent-avatar .av-circle svg{width:100%;height:100%}
+.agent-avatar .status-dot{position:absolute;bottom:2px;right:2px;width:12px;height:12px;border-radius:50%;border:2.5px solid var(--card);background:var(--accent)}
 .agent-info{flex:1;min-width:0}
-.agent-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px}
-.agent-name .badge{font-size:9px;background:rgba(0,229,160,.15);color:var(--accent);padding:2px 6px;border-radius:4px;font-weight:500}
-.agent-role{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.agent-status{font-size:11px;color:var(--accent);margin-top:4px;display:flex;align-items:center;gap:4px}
-.agent-status .pulse{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.agent-action{flex-shrink:0}
-.chat-btn{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0a1628;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s;box-shadow:0 2px 8px rgba(0,229,160,.3)}
-.chat-btn:active{transform:scale(.9)}
+.agent-name{font-size:16px;font-weight:600}
+.agent-role{font-size:13px;color:var(--text2);margin-top:2px}
+.chat-btn{width:40px;height:40px;border-radius:50%;background:var(--bg);border:1px solid var(--card-border);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-btn:active{background:var(--card-border)}
 
-/* Quick Actions */
+/* Bottom Nav */
+.bottom-nav{flex-shrink:0;background:var(--card);border-top:1px solid var(--card-border);display:flex;padding:4px 12px calc(4px + var(--safe-bot));border-radius:20px 20px 0 0;box-shadow:0 -2px 8px rgba(0,0,0,.04)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;border:none;background:none;-webkit-tap-highlight-color:transparent;transition:color .2s;border-radius:12px}
+.nav-item.active{color:var(--accent);background:var(--accent-light)}
+.nav-item .nav-icon{font-size:20px;height:22px;display:flex;align-items:center;justify-content:center}
+
+/* Pages */
+.page{display:none}
+.page.active{display:block}
+
+/* Chat Overlay */
+.chat-overlay{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;background:#ece5dd;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);will-change:transform}
+.chat-overlay.open{transform:translateX(0)}
+
+.chat-header{display:flex;align-items:center;gap:10px;padding:calc(10px + var(--safe-top)) 12px 10px;background:var(--accent);color:#fff;flex-shrink:0}
+.chat-back{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chat-back:active{background:rgba(255,255,255,.25)}
+.chat-hdr-avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.3)}
+.chat-hdr-avatar svg{width:100%;height:100%}
+.chat-hdr-info{flex:1}
+.chat-hdr-name{font-size:16px;font-weight:600}
+.chat-hdr-role{font-size:11px;opacity:.85}
+
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;background:#ece5dd}
+.chat-messages::-webkit-scrollbar{display:none}
+
+.chat-msg{max-width:82%;display:flex;flex-direction:column}
+.chat-msg.agent{align-self:flex-start}
+.chat-msg.user{align-self:flex-end}
+.chat-bubble{padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.55;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.chat-msg.agent .chat-bubble{background:#fff;border-top-left-radius:2px;color:var(--text)}
+.chat-msg.user .chat-bubble{background:#dcf8c6;border-top-right-radius:2px;color:var(--text)}
+.chat-time{font-size:10px;color:var(--text3);margin-top:3px;padding:0 4px}
+.chat-msg.user .chat-time{text-align:right}
+.chat-msg.user .chat-time::after{content:' ✓✓';color:var(--accent)}
+
+.chat-suggestions{padding:6px 14px;display:flex;gap:8px;flex-wrap:wrap;background:#ece5dd}
+.sug-btn{background:#fff;border:1px solid var(--card-border);border-radius:20px;padding:7px 14px;font-size:12px;color:var(--accent-dark);cursor:pointer;white-space:nowrap;box-shadow:var(--shadow)}
+.sug-btn:active{background:var(--accent-light)}
+
+.chat-input-bar{display:flex;align-items:center;gap:8px;padding:8px 12px calc(8px + var(--safe-bot));background:#f0ebe4;flex-shrink:0}
+.chat-input{flex:1;background:#fff;border:1px solid var(--card-border);border-radius:22px;padding:10px 16px;font-size:14px;color:var(--text);outline:none;font-family:inherit}
+.chat-input::placeholder{color:var(--text3)}
+.chat-input:focus{border-color:var(--accent)}
+.chat-send{width:42px;height:42px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .1s}
+.chat-send:active{transform:scale(.9)}
+
+/* Typing dots */
+.typing-indicator{display:flex;gap:4px;padding:8px 12px;align-items:center;background:#fff;border-radius:12px;border-top-left-radius:2px;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.typing-indicator span{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:typing 1.4s infinite}
+.typing-indicator span:nth-child(2){animation-delay:.2s}
+.typing-indicator span:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+/* Task Page */
+.task-item{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)}
+.task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:12px}
+.task-check.done{border-color:var(--accent);background:var(--accent);color:#fff}
+.task-title{font-size:14px;font-weight:500}
+.task-meta{font-size:11px;color:var(--text2);margin-top:3px;display:flex;gap:8px}
+.task-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500}
+.task-tag.urgent{background:#fef2f2;color:#dc2626}
+.task-tag.normal{background:#eff6ff;color:#2563eb}
+.task-tag.low{background:#f5f5f4;color:var(--text2)}
+
+/* Output Page */
+.output-card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.output-title{font-size:14px;font-weight:600}
+.output-time{font-size:11px;color:var(--text3)}
+.output-content{font-size:13px;color:var(--text2);line-height:1.5}
+.output-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.output-tag{font-size:10px;background:var(--accent-light);color:var(--accent-dark);padding:3px 8px;border-radius:6px}
+
+/* Opportunity Page */
+.opp-card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:10px;border-left:3px solid var(--accent);box-shadow:var(--shadow)}
+.opp-company{font-size:15px;font-weight:600}
+.opp-amount{font-size:18px;font-weight:700;color:var(--accent);margin:4px 0}
+.opp-stage{display:inline-block;font-size:11px;background:var(--accent-light);color:var(--accent-dark);padding:3px 10px;border-radius:6px}
+.opp-detail{font-size:12px;color:var(--text2);margin-top:6px}
+
+.page-header{font-size:20px;font-weight:700;margin:8px 0 16px;display:flex;align-items:center;gap:8px}
+
+/* Quick actions */
 .quick-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0}
-.quick-card{background:var(--card);border-radius:14px;padding:14px;cursor:pointer;transition:transform .15s}
+.quick-card{background:var(--card);border-radius:var(--radius);padding:14px;cursor:pointer;transition:transform .15s;box-shadow:var(--shadow)}
 .quick-card:active{transform:scale(.97)}
 .quick-icon{font-size:24px;margin-bottom:6px}
 .quick-label{font-size:13px;font-weight:600}
 .quick-desc{font-size:11px;color:var(--text2);margin-top:3px}
 
-/* Bottom Nav */
-.bottom-nav{flex-shrink:0;background:var(--card);border-top:1px solid rgba(255,255,255,.06);display:flex;padding:6px 0 calc(6px + var(--safe-bot))}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;transition:color .2s;border:none;background:none;-webkit-tap-highlight-color:transparent}
-.nav-item.active{color:var(--accent)}
-.nav-item .nav-icon{font-size:20px;height:22px;display:flex;align-items:center;justify-content:center}
-.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px rgba(0,229,160,.5))}
-
-/* Chat Overlay */
-.chat-overlay{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;background:var(--bg);transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);will-change:transform}
-.chat-overlay.open{transform:translateX(0)}
-.chat-header{display:flex;align-items:center;gap:10px;padding:calc(12px + var(--safe-top)) 14px 10px;background:var(--card);border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
-.chat-back{width:36px;height:36px;border-radius:50%;background:var(--card2);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.chat-back:active{background:var(--bg)}
-.chat-agent-info{flex:1}
-.chat-agent-name{font-size:15px;font-weight:600}
-.chat-agent-status{font-size:11px;color:var(--accent);display:flex;align-items:center;gap:4px}
-.chat-agent-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
-
-.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
-.chat-messages::-webkit-scrollbar{display:none}
-.chat-msg{max-width:82%;display:flex;flex-direction:column}
-.chat-msg.agent{align-self:flex-start}
-.chat-msg.user{align-self:flex-end}
-.chat-bubble{padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;word-break:break-word}
-.chat-msg.agent .chat-bubble{background:var(--card2);border-bottom-left-radius:4px;color:var(--text)}
-.chat-msg.user .chat-bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0a1628;border-bottom-right-radius:4px;font-weight:500}
-.chat-time{font-size:10px;color:var(--text3);margin-top:3px;padding:0 4px}
-.chat-msg.user .chat-time{text-align:right}
-
-.chat-suggestions{padding:6px 14px;display:flex;gap:8px;flex-wrap:wrap}
-.sug-btn{background:var(--card2);border:1px solid rgba(0,229,160,.2);border-radius:20px;padding:7px 14px;font-size:12px;color:var(--accent);cursor:pointer;white-space:nowrap}
-.sug-btn:active{background:var(--card)}
-
-.chat-input-bar{display:flex;align-items:center;gap:8px;padding:10px 14px calc(10px + var(--safe-bot));background:var(--card);border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
-.chat-input{flex:1;background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:10px 16px;font-size:14px;color:var(--text);outline:none;font-family:inherit}
-.chat-input::placeholder{color:var(--text3)}
-.chat-input:focus{border-color:rgba(0,229,160,.3)}
-.chat-send{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0a1628;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .1s}
-.chat-send:active{transform:scale(.9)}
-.chat-send:disabled{opacity:.4}
-
-/* Typing indicator */
-.typing-indicator{display:flex;gap:4px;padding:10px 14px;align-items:center}
-.typing-indicator span{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:typing 1.4s infinite}
-.typing-indicator span:nth-child(2){animation-delay:.2s}
-.typing-indicator span:nth-child(3){animation-delay:.4s}
-@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
-
 /* Toast */
-.toast{position:fixed;top:calc(20px + var(--safe-top));left:50%;transform:translateX(-50%) translateY(-80px);background:var(--card2);color:var(--text);padding:10px 20px;border-radius:12px;font-size:13px;z-index:2000;transition:transform .3s;border:1px solid rgba(0,229,160,.2);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast{position:fixed;top:calc(20px + var(--safe-top));left:50%;transform:translateX(-50%) translateY(-80px);background:var(--card);color:var(--text);padding:10px 20px;border-radius:12px;font-size:13px;z-index:2000;transition:transform .3s;border:1px solid var(--card-border);box-shadow:var(--shadow-md)}
 .toast.show{transform:translateX(-50%) translateY(0)}
-
-/* Page containers */
-.page{display:none}
-.page.active{display:block}
-
-/* Task Page */
-.task-item{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
-.task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.task-check.done{border-color:var(--accent);background:var(--accent);color:#0a1628;font-size:12px}
-.task-content{flex:1}
-.task-title{font-size:14px;font-weight:500}
-.task-meta{font-size:11px;color:var(--text2);margin-top:3px;display:flex;gap:8px}
-.task-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500}
-.task-tag.urgent{background:rgba(255,107,107,.15);color:var(--accent3)}
-.task-tag.normal{background:rgba(0,184,255,.15);color:var(--accent2)}
-.task-tag.low{background:rgba(138,138,138,.15);color:var(--text2)}
-
-/* Output Page */
-.output-card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px}
-.output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.output-title{font-size:14px;font-weight:600}
-.output-time{font-size:11px;color:var(--text2)}
-.output-content{font-size:13px;color:var(--text2);line-height:1.5}
-.output-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.output-tag{font-size:10px;background:rgba(0,229,160,.1);color:var(--accent);padding:3px 8px;border-radius:6px}
-
-/* Opportunity Page */
-.opp-card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)}
-.opp-company{font-size:15px;font-weight:600}
-.opp-amount{font-size:18px;font-weight:700;color:var(--accent);margin:4px 0}
-.opp-stage{display:inline-block;font-size:11px;background:rgba(0,229,160,.15);color:var(--accent);padding:3px 10px;border-radius:6px;margin-top:4px}
-.opp-detail{font-size:12px;color:var(--text2);margin-top:6px}
-
-/* Empty state for pages */
-.page-header{font-size:20px;font-weight:700;margin:8px 0 16px;display:flex;align-items:center;gap:8px}
 </style>
 </head>
 <body>
@@ -176,101 +176,99 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top);padding-bott
     <p>隨身商業戰情</p>
   </div>
   <div class="header-right">
-    <button class="header-icon" onclick="showToast('通知中心開發中')">🔔</button>
-    <button class="header-icon" onclick="showToast('設定開發中')">⚙️</button>
+    <div class="header-date" id="headerDate"></div>
+    <div class="header-avatar">
+      <svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#d4d4c8"/><circle cx="26" cy="18" r="10" fill="#a3a396"/><ellipse cx="26" cy="46" rx="18" ry="14" fill="#a3a396"/></svg>
+    </div>
   </div>
 </div>
 
-<!-- Main scrollable area -->
+<!-- Main -->
 <div class="main">
 
-  <!-- Page: 戰情 (Dashboard) -->
+  <!-- Dashboard -->
   <div class="page active" id="pageDashboard">
-    <!-- KPI Row -->
     <div class="kpi-row">
       <div class="kpi-card">
-        <div class="kpi-label">本月花費</div>
-        <div class="kpi-value">$7.55</div>
-        <div class="kpi-unit">USD</div>
+        <div class="kpi-value">$8.10</div>
+        <div class="kpi-label">💰 本月花費</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">任務完成</div>
         <div class="kpi-value">46</div>
-        <div class="kpi-unit">項</div>
+        <div class="kpi-label">✅ 任務完成</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">今日產出</div>
-        <div class="kpi-value">11</div>
-        <div class="kpi-unit">件</div>
+        <div class="kpi-value">15</div>
+        <div class="kpi-label">📄 今日產出</div>
       </div>
     </div>
 
     <!-- 特助室 -->
-    <div class="section-title">特助室</div>
-    <div class="agent-card highlight" onclick="openChat('wayne')">
+    <div class="section-title">
+      <span class="section-bar"></span>👥 特助室<span class="section-count">1</span>
+    </div>
+    <div class="agent-card" onclick="openChat('wayne')">
       <div class="agent-avatar">
-        <div class="avatar" style="background:linear-gradient(135deg,#1a365d,#2d5a8e)">W</div>
+        <div class="av-circle">
+          <svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#3b5998"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#1a365d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#c41e3a"/></svg>
+        </div>
         <div class="status-dot"></div>
       </div>
       <div class="agent-info">
-        <div class="agent-name">Wayne <span class="badge">AI 特助</span></div>
+        <div class="agent-name">Wayne</div>
         <div class="agent-role">總經理特助・全程監督</div>
-        <div class="agent-status"><span class="pulse"></span>線上待命中</div>
       </div>
-      <div class="agent-action">
-        <button class="chat-btn" onclick="event.stopPropagation();openChat('wayne')">💬</button>
-      </div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('wayne')">💬</button>
     </div>
 
     <!-- C-Suite -->
-    <div class="section-title">C-Suite 經營決策</div>
+    <div class="section-title">
+      <span class="section-bar"></span>👥 C-Suite 經營決策<span class="section-count">3</span>
+    </div>
     <div class="agent-card" onclick="openChat('king')">
       <div class="agent-avatar">
-        <div class="avatar" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">K</div>
+        <div class="av-circle">
+          <svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#718096"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#2d3748"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#742a2a"/></svg>
+        </div>
         <div class="status-dot"></div>
       </div>
       <div class="agent-info">
         <div class="agent-name">King</div>
-        <div class="agent-role">高級總監 人員管理/績效</div>
-        <div class="agent-status"><span class="pulse"></span>線上待命中</div>
+        <div class="agent-role">高級總監（人員管理/績效）</div>
       </div>
-      <div class="agent-action">
-        <button class="chat-btn" onclick="event.stopPropagation();openChat('king')">💬</button>
-      </div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('king')">💬</button>
     </div>
 
     <div class="agent-card" onclick="openChat('cash')">
       <div class="agent-avatar">
-        <div class="avatar" style="background:linear-gradient(135deg,#059669,#34d399)">C</div>
+        <div class="av-circle">
+          <svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#48bb78"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#22543d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#2563eb"/></svg>
+        </div>
         <div class="status-dot"></div>
       </div>
       <div class="agent-info">
         <div class="agent-name">Cash</div>
         <div class="agent-role">財務長</div>
-        <div class="agent-status"><span class="pulse"></span>線上待命中</div>
       </div>
-      <div class="agent-action">
-        <button class="chat-btn" onclick="event.stopPropagation();openChat('cash')">💬</button>
-      </div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('cash')">💬</button>
     </div>
 
     <div class="agent-card" onclick="openChat('sterling')">
       <div class="agent-avatar">
-        <div class="avatar" style="background:linear-gradient(135deg,#d97706,#fbbf24)">S</div>
+        <div class="av-circle">
+          <svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#a0aec0"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#4a5568"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#d69e2e"/></svg>
+        </div>
         <div class="status-dot"></div>
       </div>
       <div class="agent-info">
         <div class="agent-name">Sterling</div>
         <div class="agent-role">商務參謀</div>
-        <div class="agent-status"><span class="pulse"></span>線上待命中</div>
       </div>
-      <div class="agent-action">
-        <button class="chat-btn" onclick="event.stopPropagation();openChat('sterling')">💬</button>
-      </div>
+      <button class="chat-btn" onclick="event.stopPropagation();openChat('sterling')">💬</button>
     </div>
 
     <!-- Quick Actions -->
-    <div class="section-title">快速指令</div>
+    <div class="section-title"><span class="section-bar"></span>⚡ 快速指令</div>
     <div class="quick-row">
       <div class="quick-card" onclick="openChat('wayne','今日戰情摘要')">
         <div class="quick-icon">📊</div>
@@ -295,372 +293,246 @@ body{display:flex;flex-direction:column;padding-top:var(--safe-top);padding-bott
     </div>
   </div>
 
-  <!-- Page: 任務 -->
+  <!-- 任務 -->
   <div class="page" id="pageTask">
     <div class="page-header">📋 任務看板</div>
-    <div class="task-item">
-      <div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''">
-      </div>
-      <div class="task-content">
-        <div class="task-title">Q3 碳纖維新品報價單</div>
-        <div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/08</span></div>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''">
-      </div>
-      <div class="task-content">
-        <div class="task-title">大同集團供應商審核回覆</div>
-        <div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/06</span></div>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-check done">✓</div>
-      <div class="task-content">
-        <div class="task-title">網站 SEO 關鍵字更新</div>
-        <div class="task-meta"><span class="task-tag normal">一般</span><span>已完成</span></div>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''">
-      </div>
-      <div class="task-content">
-        <div class="task-title">越南廠模具驗收進度跟催</div>
-        <div class="task-meta"><span class="task-tag normal">一般</span><span>截止：07/12</span></div>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-check done">✓</div>
-      <div class="task-content">
-        <div class="task-title">每月固定費用對帳</div>
-        <div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div>
-      </div>
-    </div>
-    <div class="task-item">
-      <div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''">
-      </div>
-      <div class="task-content">
-        <div class="task-title">Kai-bridge 系統手機版同步</div>
-        <div class="task-meta"><span class="task-tag normal">一般</span><span>截止：07/10</span></div>
-      </div>
-    </div>
+    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">Q3 碳纖維新品報價單</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/08</span></div></div></div>
+    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">大同集團供應商審核回覆</div><div class="task-meta"><span class="task-tag urgent">急件</span><span>截止：07/06</span></div></div></div>
+    <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">網站 SEO 關鍵字更新</div><div class="task-meta"><span class="task-tag normal">一般</span><span>已完成</span></div></div></div>
+    <div class="task-item"><div class="task-check" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"></div><div><div class="task-title">越南廠模具驗收進度跟催</div><div class="task-meta"><span class="task-tag normal">一般</span><span>截止：07/12</span></div></div></div>
+    <div class="task-item"><div class="task-check done">✓</div><div><div class="task-title">每月固定費用對帳</div><div class="task-meta"><span class="task-tag low">例行</span><span>已完成</span></div></div></div>
   </div>
 
-  <!-- Page: 產出 -->
+  <!-- 產出 -->
   <div class="page" id="pageOutput">
     <div class="page-header">📄 今日產出</div>
-    <div class="output-card">
-      <div class="output-header">
-        <div class="output-title">碳纖維複合板材 CAE 模擬報告</div>
-        <div class="output-time">14:32</div>
-      </div>
-      <div class="output-content">完成三種疊層方案的有限元分析，推薦 [0/90/±45]s 對稱疊層配置，彎曲剛度提升 23%。</div>
-      <div class="output-tags"><span class="output-tag">CAE</span><span class="output-tag">Wayne</span></div>
-    </div>
-    <div class="output-card">
-      <div class="output-header">
-        <div class="output-title">Q2 財務結算摘要</div>
-        <div class="output-time">11:15</div>
-      </div>
-      <div class="output-content">營收 NT$4,280 萬，毛利率 31.2%（較上季 +1.8%），應收帳款周轉天數 42 天。</div>
-      <div class="output-tags"><span class="output-tag">財務</span><span class="output-tag">Cash</span></div>
-    </div>
-    <div class="output-card">
-      <div class="output-header">
-        <div class="output-title">大同集團供應商資格文件</div>
-        <div class="output-time">09:48</div>
-      </div>
-      <div class="output-content">已整理 ISO 9001/14001 證書、近三年財報、產能說明書共 12 份文件，待老闆審閱。</div>
-      <div class="output-tags"><span class="output-tag">業務</span><span class="output-tag">Sterling</span></div>
-    </div>
-    <div class="output-card">
-      <div class="output-header">
-        <div class="output-title">團隊週績效分析</div>
-        <div class="output-time">08:30</div>
-      </div>
-      <div class="output-content">本週任務完成率 87%，Top performer: 生產部 +12%，需關注：品管部延遲 2 件。</div>
-      <div class="output-tags"><span class="output-tag">績效</span><span class="output-tag">King</span></div>
-    </div>
+    <div class="output-card"><div class="output-header"><div class="output-title">碳纖維複合板材 CAE 模擬報告</div><div class="output-time">14:32</div></div><div class="output-content">完成三種疊層方案的有限元分析，推薦 [0/90/±45]s 配置，彎曲剛度提升 23%。</div><div class="output-tags"><span class="output-tag">CAE</span><span class="output-tag">Wayne</span></div></div>
+    <div class="output-card"><div class="output-header"><div class="output-title">Q2 財務結算摘要</div><div class="output-time">11:15</div></div><div class="output-content">營收 NT$4,280 萬，毛利率 31.2%（較上季 +1.8%），應收帳款周轉天數 42 天。</div><div class="output-tags"><span class="output-tag">財務</span><span class="output-tag">Cash</span></div></div>
+    <div class="output-card"><div class="output-header"><div class="output-title">大同集團供應商資格文件</div><div class="output-time">09:48</div></div><div class="output-content">已整理 ISO 9001/14001 證書、近三年財報、產能說明書共 12 份文件。</div><div class="output-tags"><span class="output-tag">業務</span><span class="output-tag">Sterling</span></div></div>
+    <div class="output-card"><div class="output-header"><div class="output-title">團隊週績效分析</div><div class="output-time">08:30</div></div><div class="output-content">本週任務完成率 87%，Top performer: 生產部 +12%，需關注：品管部延遲 2 件。</div><div class="output-tags"><span class="output-tag">績效</span><span class="output-tag">King</span></div></div>
   </div>
 
-  <!-- Page: 商機 -->
+  <!-- 商機 -->
   <div class="page" id="pageOpportunity">
     <div class="page-header">🎯 商機追蹤</div>
-    <div class="opp-card">
-      <div class="opp-company">台積電 — 晶圓載具碳纖維框架</div>
-      <div class="opp-amount">NT$ 1,200 萬</div>
-      <div class="opp-stage">報價階段</div>
-      <div class="opp-detail">聯絡人：張經理 | 預計結案：2026/08</div>
-    </div>
-    <div class="opp-card">
-      <div class="opp-company">大同集團 — 電動車底盤輕量化</div>
-      <div class="opp-amount">NT$ 3,500 萬</div>
-      <div class="opp-stage">供應商審核中</div>
-      <div class="opp-detail">聯絡人：李副總 | 預計結案：2026/09</div>
-    </div>
-    <div class="opp-card" style="border-left-color:var(--accent2)">
-      <div class="opp-company">日本 Toray — 代工合作洽談</div>
-      <div class="opp-amount">NT$ 800 萬/年</div>
-      <div class="opp-stage">初步接洽</div>
-      <div class="opp-detail">聯絡人：田中先生 | 預計結案：2026/10</div>
-    </div>
-    <div class="opp-card" style="border-left-color:#f59e0b">
-      <div class="opp-company">越南 Vinfast — 車體結構件</div>
-      <div class="opp-amount">NT$ 2,100 萬</div>
-      <div class="opp-stage">樣品測試中</div>
-      <div class="opp-detail">聯絡人：Nguyen | 預計結案：2026/08</div>
-    </div>
+    <div class="opp-card"><div class="opp-company">台積電 — 晶圓載具碳纖維框架</div><div class="opp-amount">NT$ 1,200 萬</div><div class="opp-stage">報價階段</div><div class="opp-detail">聯絡人：張經理 | 預計結案：2026/08</div></div>
+    <div class="opp-card"><div class="opp-company">大同集團 — 電動車底盤輕量化</div><div class="opp-amount">NT$ 3,500 萬</div><div class="opp-stage">供應商審核中</div><div class="opp-detail">聯絡人：李副總 | 預計結案：2026/09</div></div>
+    <div class="opp-card" style="border-left-color:#2563eb"><div class="opp-company">日本 Toray — 代工合作洽談</div><div class="opp-amount">NT$ 800 萬/年</div><div class="opp-stage">初步接洽</div><div class="opp-detail">聯絡人：田中先生 | 預計結案：2026/10</div></div>
+    <div class="opp-card" style="border-left-color:#d97706"><div class="opp-company">越南 Vinfast — 車體結構件</div><div class="opp-amount">NT$ 2,100 萬</div><div class="opp-stage">樣品測試中</div><div class="opp-detail">聯絡人：Nguyen | 預計結案：2026/08</div></div>
   </div>
 
 </div>
 
-<!-- Bottom Navigation -->
+<!-- Bottom Nav -->
 <div class="bottom-nav">
-  <button class="nav-item active" data-page="pageDashboard">
-    <span class="nav-icon">📡</span>
-    <span>戰情</span>
-  </button>
-  <button class="nav-item" data-page="pageTask">
-    <span class="nav-icon">📋</span>
-    <span>任務</span>
-  </button>
-  <button class="nav-item" data-page="pageOutput">
-    <span class="nav-icon">📄</span>
-    <span>產出</span>
-  </button>
-  <button class="nav-item" data-page="pageOpportunity">
-    <span class="nav-icon">🎯</span>
-    <span>商機</span>
-  </button>
+  <button class="nav-item active" data-page="pageDashboard"><span class="nav-icon">📊</span><span>戰情</span></button>
+  <button class="nav-item" data-page="pageTask"><span class="nav-icon">📋</span><span>任務</span></button>
+  <button class="nav-item" data-page="pageOutput"><span class="nav-icon">📄</span><span>產出</span></button>
+  <button class="nav-item" data-page="pageOpportunity"><span class="nav-icon">💼</span><span>商機</span></button>
 </div>
 
 <!-- Chat Overlay -->
 <div class="chat-overlay" id="chatOverlay">
   <div class="chat-header">
-    <button class="chat-back" onclick="closeChat()">←</button>
-    <div class="chat-agent-info">
-      <div class="chat-agent-name" id="chatAgentName"></div>
-      <div class="chat-agent-status"><span class="pulse"></span>線上</div>
+    <button class="chat-back" onclick="closeChat()">‹</button>
+    <div class="chat-hdr-avatar" id="chatHdrAvatar"></div>
+    <div class="chat-hdr-info">
+      <div class="chat-hdr-name" id="chatHdrName"></div>
+      <div class="chat-hdr-role" id="chatHdrRole"></div>
     </div>
-    <div class="chat-agent-avatar" id="chatAgentAvatar"></div>
   </div>
   <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-suggestions" id="chatSuggestions"></div>
   <div class="chat-input-bar">
-    <input class="chat-input" id="chatInput" placeholder="輸入訊息..." autocomplete="off">
+    <input class="chat-input" id="chatInput" autocomplete="off">
     <button class="chat-send" id="chatSendBtn" onclick="sendMessage()">➤</button>
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-const AGENTS = {
+(function(){
+  var d = new Date();
+  var weekdays = ['週日','週一','週二','週三','週四','週五','週六'];
+  document.getElementById('headerDate').textContent = (d.getMonth()+1)+'月'+d.getDate()+'日'+weekdays[d.getDay()];
+  document.querySelector('.chat-input').placeholder = '向 Agent 說...';
+})();
+
+var AGENTS = {
   wayne: {
-    name: 'Wayne',
-    role: '總經理特助・全程監督',
-    color: 'linear-gradient(135deg,#1a365d,#2d5a8e)',
-    letter: 'W',
-    greeting: '老闆好！我是 Wayne，您的 AI 總經理特助。今天有什麼需要我協助的嗎？',
-    suggestions: ['今日戰情摘要', '本週重要待辦', '幫我排明天行程'],
-    responses: {
-      '今日戰情摘要': '📊 今日戰情摘要：\n\n1️⃣ 營運：本月累計營收 NT$2,140 萬（達標率 68%）\n2️⃣ 任務：今日完成 11 件，剩餘 3 件急件待處理\n3️⃣ 商機：台積電報價案進入最終確認，大同供應商審核文件已備齊\n4️⃣ 注意：品管部有 2 件延遲，King 已在跟進\n\n建議優先處理大同集團的回覆，截止日在 07/06。需要我幫您準備嗎？',
-      '本週重要待辦': '📋 本週重要待辦：\n\n🔴 急件（2件）\n• Q3 碳纖維新品報價單（07/08 截止）\n• 大同集團供應商審核回覆（07/06 截止）\n\n🟡 一般（2件）\n• 越南廠模具驗收進度跟催\n• Kai-bridge 系統手機版同步\n\n✅ 已完成（2件）\n• 網站 SEO 關鍵字更新\n• 每月固定費用對帳\n\n本週完成率目前 33%，需要加快腳步！',
-      '幫我排明天行程': '📅 明天建議行程（07/05 週六）：\n\n由於明天是週末，建議只處理急件：\n\n09:00 — 大同集團供應商回覆最終確認\n10:00 — 審閱 Sterling 準備的文件包\n\n其餘事項建議週一處理。老闆要加班的話我會全程陪同！😊',
-      default: '收到！讓我幫您處理。\n\n我已經記錄您的需求，正在分析中...\n\n根據目前的狀況：\n• 營運數據都在掌控中\n• 今日已產出 11 件報告\n• 商機管道共追蹤 4 案\n\n還有什麼需要我特別關注的嗎？'
+    name:'Wayne', role:'總經理特助・全程監督',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#3b5998"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#1a365d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#c41e3a"/></svg>',
+    greeting:'老闆好！我是 Wayne，您的 AI 總經理特助。隨時為您效勞！',
+    suggestions:['今日戰情摘要','本週重要待辦','幫我排明天行程'],
+    responses:{
+      '今日戰情摘要':'📊 今日戰情摘要：\n\n1️⃣ 營運：本月累計營收 NT$2,140 萬（達標率 68%）\n2️⃣ 任務：今日完成 15 件，剩餘 3 件急件待處理\n3️⃣ 商機：台積電報價案進入最終確認，大同供應商審核文件已備齊\n4️⃣ 注意：品管部有 2 件延遲，King 已在跟進\n\n建議優先處理大同集團的回覆，截止日在 07/06。需要我幫您準備嗎？',
+      '本週重要待辦':'📋 本週重要待辦：\n\n🔴 急件（2件）\n• Q3 碳纖維新品報價單（07/08 截止）\n• 大同集團供應商審核回覆（07/06 截止）\n\n🟡 一般（2件）\n• 越南廠模具驗收進度跟催\n• Kai-bridge 系統手機版同步\n\n✅ 已完成（2件）\n• 網站 SEO 關鍵字更新\n• 每月固定費用對帳\n\n本週完成率目前 40%，需要加快腳步！',
+      '幫我排明天行程':'📅 明天行程建議：\n\n09:00 — 大同集團供應商回覆最終確認\n10:00 — 審閱 Sterling 準備的文件包\n14:00 — 與研發部討論 Q3 新品規格\n\n其餘事項建議順延處理。老闆要加班的話我會全程陪同！'
     }
   },
   king: {
-    name: 'King',
-    role: '高級總監 人員管理/績效',
-    color: 'linear-gradient(135deg,#7c3aed,#a78bfa)',
-    letter: 'K',
-    greeting: '老闆好！我是 King，負責人員管理與績效追蹤。需要查看團隊狀況嗎？',
-    suggestions: ['團隊績效報告', '誰今天請假', '本月考績排名'],
-    responses: {
-      '團隊績效報告': '👥 團隊績效週報：\n\n📈 整體完成率：87%（目標 90%）\n\n🏆 Top Performers：\n1. 生產部 — 完成率 99%（+12%↑）\n2. 業務部 — 完成率 92%（+5%↑）\n3. 研發部 — 完成率 88%（持平）\n\n⚠️ 需關注：\n• 品管部 — 2 件任務延遲，已約談部門主管\n• 行政部 — 人力缺口 1 名，建議啟動招募\n\n建議：品管部的延遲跟新產線驗證有關，非人員問題，已協調增援。',
-      '誰今天請假': '📝 今日出勤狀況：\n\n全公司 32 人，今日在勤 30 人\n\n🏠 請假（2人）：\n• 陳小明（生產部）— 特休，明天回\n• 林美玲（行政部）— 病假，預計休 2 天\n\n🕐 出勤率：93.8%\n\n一切正常，沒有影響產線運作。',
-      '本月考績排名': '📊 七月份考績排名（截至目前）：\n\n🥇 張志豪（業務部）— 95.2 分\n  └ 新客戶開發 3 家，達成率 120%\n🥈 王大明（生產部）— 93.8 分\n  └ 產線良率提升至 98.5%\n🥉 李芳如（研發部）— 91.5 分\n  └ 碳纖維新配方通過測試\n\n⚠️ 待改善：\n• 品管部整體需加強（平均 78 分）\n\n建議月中做一次 1-on-1，要幫您安排嗎？',
-      default: '收到！我來查看人員相關資料。\n\n目前團隊整體狀況良好：\n• 在勤率 93.8%\n• 任務完成率 87%\n• 本月離職率 0%\n\n如果您需要更細的分析，請告訴我要看哪個部門或哪位同仁。'
+    name:'King', role:'高級總監（人員管理/績效）',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#718096"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#2d3748"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#742a2a"/></svg>',
+    greeting:'老闆好！我是 King，負責人員管理與績效追蹤。需要查看團隊狀況嗎？',
+    suggestions:['團隊績效報告','誰今天請假','本月考績排名'],
+    responses:{
+      '團隊績效報告':'👥 團隊績效週報：\n\n📈 整體完成率：87%（目標 90%）\n\n🏆 Top Performers：\n1. 生產部 — 完成率 99%（+12%↑）\n2. 業務部 — 完成率 92%（+5%↑）\n3. 研發部 — 完成率 88%（持平）\n\n⚠️ 需關注：\n• 品管部 — 2 件任務延遲，已約談部門主管\n• 行政部 — 人力缺口 1 名，建議啟動招募\n\n建議：品管延遲跟新產線驗證有關，已協調增援。',
+      '誰今天請假':'📝 今日出勤狀況：\n\n全公司 32 人，今日在勤 30 人\n\n🏠 請假（2人）：\n• 陳小明（生產部）— 特休\n• 林美玲（行政部）— 病假，預計休 2 天\n\n🕐 出勤率：93.8%，一切正常。',
+      '本月考績排名':'📊 七月份考績排名：\n\n🥇 張志豪（業務部）— 95.2 分\n🥈 王大明（生產部）— 93.8 分\n🥉 李芳如（研發部）— 91.5 分\n\n⚠️ 待改善：品管部整體 78 分\n\n建議月中做一次 1-on-1，要幫您安排嗎？'
     }
   },
   cash: {
-    name: 'Cash',
-    role: '財務長',
-    color: 'linear-gradient(135deg,#059669,#34d399)',
-    letter: 'C',
-    greeting: '老闆好！我是 Cash，負責財務與成本管控。需要看財務報表嗎？',
-    suggestions: ['本月財務報告', '應收帳款狀況', 'AI 使用成本'],
-    responses: {
-      '本月財務報告': '💰 七月財務快報：\n\n📈 營收：NT$ 2,140 萬（達標率 68%）\n📉 支出：NT$ 1,476 萬\n💵 毛利：NT$ 664 萬（毛利率 31.0%）\n\n📊 與上月比較：\n• 營收 +8.3%\n• 毛利率 -0.2%（原物料微漲）\n• 人事成本持平\n\n💡 重點提醒：\n• 大同集團預付款 NT$350 萬若本月入帳，達標率可達 79%\n• 越南廠模具費用 NT$85 萬已支付\n\n現金流健康，短期無壓力。',
-      '應收帳款狀況': '📋 應收帳款明細：\n\n總計：NT$ 1,850 萬\n\n🟢 正常（30天內）：NT$ 980 萬\n• 鴻海精密 — NT$450 萬（07/15 到期）\n• 光寶科技 — NT$320 萬（07/20 到期）\n• 其他 — NT$210 萬\n\n🟡 逾期（30-60天）：NT$ 620 萬\n• 友達光電 — NT$620 萬（已催款 2 次）\n\n🔴 逾期（60天+）：NT$ 250 萬\n• 華碩電腦 — NT$250 萬（法務已介入）\n\n⚠️ 友達那筆建議老闆親自打一通電話，效果會比較好。',
-      'AI 使用成本': '🤖 AI 工具使用成本（本月）：\n\n總計：$7.55 USD（約 NT$240）\n\n明細：\n• Claude API — $4.20（56%）\n• GPT-4 輔助 — $2.35（31%）\n• 其他 AI 工具 — $1.00（13%）\n\n📈 趨勢：較上月 $5.82 增加 30%\n原因：本月多了 CAE 模擬分析的 AI 輔助\n\n💡 以成本效益來看，$7.55 換來 46 項任務完成，每項平均成本約 $0.16（NT$5），非常划算！',
-      default: '收到！讓我查看財務資料。\n\n目前財務概況：\n• 本月營收 NT$2,140 萬\n• 現金部位充足\n• 無逾期應付款\n\n如果您需要特定的財務分析或報表，請告訴我細項。'
+    name:'Cash', role:'財務長',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#48bb78"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#22543d"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#2563eb"/></svg>',
+    greeting:'老闆好！我是 Cash，負責財務與成本管控。需要看報表嗎？',
+    suggestions:['本月財務報告','應收帳款狀況','AI 使用成本'],
+    responses:{
+      '本月財務報告':'💰 七月財務快報：\n\n📈 營收：NT$ 2,140 萬（達標率 68%）\n📉 支出：NT$ 1,476 萬\n💵 毛利：NT$ 664 萬（毛利率 31.0%）\n\n📊 與上月比較：\n• 營收 +8.3%\n• 毛利率 -0.2%（原物料微漲）\n\n💡 重點：大同預付款 NT$350 萬若本月入帳，達標率可衝到 79%。\n現金流健康，短期無壓力。',
+      '應收帳款狀況':'📋 應收帳款明細：\n\n總計：NT$ 1,850 萬\n\n🟢 正常（30天內）：NT$ 980 萬\n🟡 逾期（30-60天）：NT$ 620 萬\n  └ 友達光電 — 已催款 2 次\n🔴 逾期（60天+）：NT$ 250 萬\n  └ 華碩電腦 — 法務已介入\n\n⚠️ 友達建議老闆親自打一通電話。',
+      'AI 使用成本':'🤖 AI 工具成本（本月）：\n\n總計：$8.10 USD（約 NT$258）\n\n明細：\n• Claude API — $4.85（60%）\n• GPT-4 輔助 — $2.25（28%）\n• 其他工具 — $1.00（12%）\n\n每項任務平均成本 $0.18（NT$5.6），非常划算！'
     }
   },
   sterling: {
-    name: 'Sterling',
-    role: '商務參謀',
-    color: 'linear-gradient(135deg,#d97706,#fbbf24)',
-    letter: 'S',
-    greeting: '老闆好！我是 Sterling，負責商務開發與客戶關係。有新的商機要追蹤嗎？',
-    suggestions: ['目前商機分析', '競爭對手動態', '下週客戶拜訪建議'],
-    responses: {
-      '目前商機分析': '🎯 商機管道總覽：\n\n管道總金額：NT$ 7,600 萬\n\n📊 各階段分布：\n\n1️⃣ 台積電 — 晶圓載具碳纖維框架\n   💰 NT$1,200 萬 | 📍報價階段 | ⏰ 預計 08 月\n   → 勝率 70%，報價已送出等回覆\n\n2️⃣ 大同集團 — 電動車底盤輕量化\n   💰 NT$3,500 萬 | 📍供應商審核中 | ⏰ 預計 09 月\n   → 勝率 55%，文件已備齊待審\n\n3️⃣ Toray — 代工合作\n   💰 NT$800 萬/年 | 📍初步接洽 | ⏰ 預計 10 月\n   → 勝率 40%，下週安排視訊\n\n4️⃣ Vinfast — 車體結構件\n   💰 NT$2,100 萬 | 📍樣品測試 | ⏰ 預計 08 月\n   → 勝率 60%，樣品已寄出\n\n加權營收預估：NT$ 4,510 萬',
-      '競爭對手動態': '🔍 競爭對手情報：\n\n1️⃣ 台塑碳纖（最大對手）\n   • 近期動態：擴廠 20%，越南設新產線\n   • 威脅等級：🔴 高\n   • 我們的優勢：客製化速度、小量多樣\n\n2️⃣ 日本東麗（Toray）\n   • 近期動態：尋找台灣代工夥伴（機會！）\n   • 關係：🟢 合作洽談中\n\n3️⃣ 中國光威複材\n   • 近期動態：低價搶市，但品質堪慮\n   • 威脅等級：🟡 中\n   • 對策：強調 ISO 認證與品質穩定性\n\n💡 建議：加速 Toray 代工合作，可形成策略聯盟抵禦台塑的規模優勢。',
-      '下週客戶拜訪建議': '📅 下週客戶拜訪建議：\n\n週一（07/07）\n• 🔴 大同集團 — 李副總\n  目的：供應商審核面談\n  準備：帶品質報告 + 工廠照片\n\n週三（07/09）\n• 🟡 友達光電 — 採購王經理\n  目的：催收 NT$620 萬逾期款\n  策略：帶下一批訂單優惠方案\n\n週五（07/11）\n• 🟢 Toray 視訊會議 — 田中先生\n  目的：代工合作細節\n  準備：產能規劃簡報 + 報價\n\n要我幫您準備拜訪簡報嗎？',
-      default: '收到！讓我分析商務資訊。\n\n目前商務概況：\n• 追蹤商機 4 案，總金額 NT$7,600 萬\n• 加權預估營收 NT$4,510 萬\n• 本月預計結案：台積電案\n\n如果您有新的客戶線索或想討論策略，隨時告訴我！'
+    name:'Sterling', role:'商務參謀',
+    avatarSvg:'<svg viewBox="0 0 52 52"><rect width="52" height="52" fill="#a0aec0"/><circle cx="26" cy="17" r="9" fill="#f5d0a9"/><rect x="14" y="28" width="24" height="24" rx="4" fill="#4a5568"/><rect x="22" y="28" width="8" height="6" fill="#fff"/><polygon points="26,34 22,28 30,28" fill="#d69e2e"/></svg>',
+    greeting:'老闆好！我是 Sterling，負責商務開發與客戶關係。有新商機嗎？',
+    suggestions:['目前商機分析','競爭對手動態','下週客戶拜訪建議'],
+    responses:{
+      '目前商機分析':'🎯 商機管道總覽：\n\n管道總金額：NT$ 7,600 萬\n\n1️⃣ 台積電 — NT$1,200 萬 | 報價階段 | 勝率 70%\n2️⃣ 大同集團 — NT$3,500 萬 | 供應商審核 | 勝率 55%\n3️⃣ Toray — NT$800 萬/年 | 初步接洽 | 勝率 40%\n4️⃣ Vinfast — NT$2,100 萬 | 樣品測試 | 勝率 60%\n\n加權營收預估：NT$ 4,510 萬',
+      '競爭對手動態':'🔍 競爭對手情報：\n\n1️⃣ 台塑碳纖：擴廠 20%，威脅🔴高\n   → 我們優勢：客製化速度\n2️⃣ 東麗（Toray）：找台灣代工🟢合作中\n3️⃣ 光威複材：低價搶市，品質堪慮🟡中\n\n💡 加速 Toray 合作可形成聯盟抵禦台塑。',
+      '下週客戶拜訪建議':'📅 下週拜訪建議：\n\n週一 — 🔴 大同集團（李副總）\n  供應商審核面談\n週三 — 🟡 友達光電（王經理）\n  催收 NT$620 萬逾期款\n週五 — 🟢 Toray 視訊（田中先生）\n  代工合作細節\n\n要我準備拜訪簡報嗎？'
     }
   }
 };
 
-let currentAgent = null;
-let chatHistories = {};
+var currentAgent = null;
+var chatHistories = {};
 
-// Bottom nav
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
     btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
     document.getElementById(btn.dataset.page).classList.add('active');
   });
 });
 
-function openChat(agentId, autoMsg) {
+function openChat(agentId, autoMsg){
   currentAgent = agentId;
-  const agent = AGENTS[agentId];
-  document.getElementById('chatAgentName').textContent = agent.name + ' — ' + agent.role;
-  const av = document.getElementById('chatAgentAvatar');
-  av.style.background = agent.color;
-  av.textContent = agent.letter;
+  var agent = AGENTS[agentId];
+  document.getElementById('chatHdrName').textContent = agent.name;
+  document.getElementById('chatHdrRole').textContent = agent.role;
+  document.getElementById('chatHdrAvatar').innerHTML = agent.avatarSvg;
+  document.querySelector('.chat-input').placeholder = '向 ' + agent.name + ' 說...';
 
-  if (!chatHistories[agentId]) {
-    chatHistories[agentId] = [{ role: 'agent', text: agent.greeting, time: getTime() }];
+  if(!chatHistories[agentId]){
+    chatHistories[agentId] = [{role:'agent', text:agent.greeting, time:getTime()}];
   }
-
   renderMessages();
   renderSuggestions();
-
   document.getElementById('chatOverlay').classList.add('open');
-  document.getElementById('chatInput').focus();
 
-  if (autoMsg) {
-    setTimeout(() => { sendUserMessage(autoMsg); }, 400);
+  if(autoMsg){
+    setTimeout(function(){ sendUserMessage(autoMsg); }, 400);
   }
 }
 
-function closeChat() {
+function closeChat(){
   document.getElementById('chatOverlay').classList.remove('open');
   currentAgent = null;
 }
 
-function renderMessages() {
-  const container = document.getElementById('chatMessages');
-  const msgs = chatHistories[currentAgent] || [];
-  container.innerHTML = msgs.map(m => `
-    <div class="chat-msg ${m.role}">
-      <div class="chat-bubble">${formatText(m.text)}</div>
-      <div class="chat-time">${m.time}</div>
-    </div>
-  `).join('');
-  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+function renderMessages(){
+  var c = document.getElementById('chatMessages');
+  var msgs = chatHistories[currentAgent] || [];
+  c.innerHTML = msgs.map(function(m){
+    return '<div class="chat-msg '+m.role+'"><div class="chat-bubble">'+formatText(m.text)+'</div><div class="chat-time">'+m.time+'</div></div>';
+  }).join('');
+  requestAnimationFrame(function(){ c.scrollTop = c.scrollHeight; });
 }
 
-function renderSuggestions() {
-  const agent = AGENTS[currentAgent];
-  const container = document.getElementById('chatSuggestions');
-  container.innerHTML = agent.suggestions.map(s =>
-    `<button class="sug-btn" onclick="sendUserMessage('${s}')">${s}</button>`
-  ).join('');
+function renderSuggestions(){
+  var agent = AGENTS[currentAgent];
+  var c = document.getElementById('chatSuggestions');
+  c.innerHTML = agent.suggestions.map(function(s){
+    return '<button class="sug-btn" onclick="sendUserMessage(\''+s.replace(/'/g,"\\'") +'\')">'+s+'</button>';
+  }).join('');
 }
 
-function formatText(text) {
-  return text.replace(/\n/g, '<br>');
+function formatText(t){ return t.replace(/\n/g,'<br>'); }
+
+function getTime(){
+  var d = new Date();
+  var h = d.getHours(), m = d.getMinutes();
+  var ampm = h < 12 ? '上午' : '下午';
+  var h12 = h % 12 || 12;
+  return ampm + (h12 < 10 ? '0' : '') + h12 + ':' + (m < 10 ? '0' : '') + m;
 }
 
-function getTime() {
-  const d = new Date();
-  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-}
-
-function sendMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text) return;
+function sendMessage(){
+  var input = document.getElementById('chatInput');
+  var text = input.value.trim();
+  if(!text) return;
   input.value = '';
   sendUserMessage(text);
 }
 
-function sendUserMessage(text) {
-  if (!currentAgent) return;
-  const agent = AGENTS[currentAgent];
+function sendUserMessage(text){
+  if(!currentAgent) return;
+  var agent = AGENTS[currentAgent];
 
-  chatHistories[currentAgent].push({ role: 'user', text, time: getTime() });
+  chatHistories[currentAgent].push({role:'user', text:text, time:getTime()});
   renderMessages();
-
   document.getElementById('chatSuggestions').innerHTML = '';
 
-  const msgContainer = document.getElementById('chatMessages');
-  const typingDiv = document.createElement('div');
-  typingDiv.className = 'chat-msg agent';
-  typingDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-  msgContainer.appendChild(typingDiv);
-  msgContainer.scrollTop = msgContainer.scrollHeight;
+  var mc = document.getElementById('chatMessages');
+  var td = document.createElement('div');
+  td.className = 'chat-msg agent';
+  td.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+  mc.appendChild(td);
+  mc.scrollTop = mc.scrollHeight;
 
-  const delay = 800 + Math.random() * 1200;
-  setTimeout(() => {
-    typingDiv.remove();
-
-    let response = agent.responses[text] || agent.responses.default;
-    response = personalizeResponse(response, text, agent);
-
-    chatHistories[currentAgent].push({ role: 'agent', text: response, time: getTime() });
+  var delay = 800 + Math.random() * 1200;
+  setTimeout(function(){
+    td.remove();
+    var response = agent.responses[text] || generateResponse(text, agent);
+    chatHistories[currentAgent].push({role:'agent', text:response, time:getTime()});
     renderMessages();
     renderSuggestions();
   }, delay);
 }
 
-function personalizeResponse(baseResponse, userText, agent) {
-  if (AGENTS[currentAgent].responses[userText]) return baseResponse;
-
-  const lower = userText.toLowerCase();
-  const name = agent.name;
-
-  if (lower.includes('你好') || lower.includes('嗨') || lower.includes('hi') || lower.includes('hello')) {
-    return `嗨！老闆好～ 我是 ${name}，隨時為您服務！\n\n目前我這邊一切正常運作中。有什麼需要我處理的嗎？`;
+function generateResponse(text, agent){
+  var lower = text.toLowerCase();
+  if(lower.indexOf('你好')>=0||lower.indexOf('嗨')>=0||lower.indexOf('hi')>=0||lower.indexOf('hello')>=0||lower.indexOf('在嗎')>=0||lower.indexOf('在？')>=0){
+    return '在的！老闆好～ 我是 '+agent.name+'，隨時為您服務！\n\n目前一切正常運作中，有什麼需要我處理的嗎？';
   }
-  if (lower.includes('謝謝') || lower.includes('感謝') || lower.includes('辛苦')) {
-    return `不客氣！這是我應該做的 😊\n\n老闆有任何需要隨時叫我，我 24 小時待命！`;
+  if(lower.indexOf('謝謝')>=0||lower.indexOf('感謝')>=0||lower.indexOf('辛苦')>=0){
+    return '不客氣！這是我應該做的～\n\n老闆有任何需要隨時叫我，我 24 小時待命！';
   }
-  if (lower.includes('業績') || lower.includes('營收') || lower.includes('銷售')) {
-    return `📊 目前業績狀況：\n\n本月營收 NT$2,140 萬，達標率 68%\n較上月同期 +8.3%\n\n主要貢獻：\n• 碳纖維板材訂單穩定出貨\n• 新客戶台積電案有望本月結案\n\n月底前如果大同預付款入帳，有機會達標率衝到 79%！`;
+  if(lower.indexOf('業績')>=0||lower.indexOf('營收')>=0||lower.indexOf('銷售')>=0){
+    return '📊 目前業績狀況：\n\n本月營收 NT$2,140 萬，達標率 68%\n較上月同期 +8.3%\n\n主要貢獻：\n• 碳纖維板材訂單穩定出貨\n• 新客戶台積電案有望本月結案\n\n月底前如果大同預付款入帳，達標率可衝到 79%！';
   }
-  if (lower.includes('忙') || lower.includes('狀況') || lower.includes('怎麼樣')) {
-    return `目前一切順利！讓我快速報告：\n\n✅ 正常運作中\n📊 今日已處理 11 件任務\n⏳ 剩餘 3 件急件待處理\n\n整體來看節奏不錯，按照計畫在走。老闆放心！`;
+  if(lower.indexOf('忙')>=0||lower.indexOf('狀況')>=0||lower.indexOf('怎麼樣')>=0||lower.indexOf('報告')>=0){
+    return '目前一切順利！快速報告：\n\n✅ 正常運作中\n📊 今日已處理 15 件任務\n⏳ 剩餘 3 件急件待處理\n\n整體節奏不錯，按計畫在走。老闆放心！';
   }
-
-  return baseResponse;
+  if(lower.indexOf('幫')>=0||lower.indexOf('處理')>=0||lower.indexOf('做')>=0){
+    return '收到！我馬上處理。\n\n我會在完成後向您回報結果。還有其他需要一起處理的嗎？';
+  }
+  return '收到！讓我分析一下。\n\n根據目前的資料：\n• 各項營運指標正常\n• 今日已產出 15 件報告\n• 商機管道追蹤 4 案\n\n如果需要更詳細的資訊，請告訴我具體方向，我立刻調查。';
 }
 
-document.getElementById('chatInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+document.getElementById('chatInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
 });
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
+function showToast(msg){
+  var t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  setTimeout(function(){ t.classList.remove('show'); }, 2000);
 }
-
-document.addEventListener('touchmove', e => {
-  if (document.getElementById('chatOverlay').classList.contains('open')) {
-    const messages = document.getElementById('chatMessages');
-    if (!messages.contains(e.target)) e.preventDefault();
-  }
-}, { passive: false });
 </script>
 </body>
 </html>
