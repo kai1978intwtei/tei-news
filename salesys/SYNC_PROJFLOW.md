@@ -212,12 +212,18 @@ ProjFlow 新增專案 stakeholder → POST /sync/contacts → 業務系統收到
 // 業務介面開任務
 const task = {
   title: '請 PM 確認 Q4 出貨檔期',
+  desc: '附上 Q4 出貨明細，請確認 7/1 前檔期',  // ← 必帶:任務說明內容(收件端要顯示)
   target_dept: 'pm',                          // ← 關鍵欄位
   target_email: 'pm-lead@tei.com.tw',
   from_dept: 'sales',
   from_email: currentUser.email,
+  from_name: currentUser.name,                // ← 收件端顯示「誰請你協辦」
   due_date: '2026-07-01',
+  attachments: [                              // ← 必帶:附件(可空陣列),收件端要能開
+    { name: 'Q4出貨明細', url: 'https://drive.google.com/...' },
+  ],
   kind: 'pm-related',                         // ← 同步 flag
+  status: 'pending',                          // pending | doing | done
   cross_id: generateUUID(),
 };
 
@@ -225,6 +231,10 @@ if (task.kind === 'pm-related') {
   await syncToProjFlow(task);                 // ← 推到 ProjFlow
 }
 ```
+
+> ⚠️ **常見漏帶欄位(協辦任務「點不進去/沒說明/不能夾檔」的根因)**:
+> 早期 payload 只帶 `title` 就同步,收件端因此只看得到一行標題、點不進去、也沒有附件。
+> **`desc`、`attachments`、`from_name` 三者一律必帶**(附件可為空陣列 `[]`,但欄位要在)。
 
 ### 4.2 ProjFlow 端的工作檯收件
 
@@ -245,6 +255,18 @@ if (task.kind === 'internal') {
   // 不呼叫 syncToProjFlow
 }
 ```
+
+### 4.4 收件端 UI 契約(協辦卡片必做,否則就是目前「看不到內容/不能編輯」的 bug)
+
+協辦任務卡片在**兩邊**(ProjFlow 與業務系統)都必須滿足:
+
+1. **卡片可點入看詳情** —— 卡片本身要能點開,展開後顯示 `title` + `desc` 全文 + `attachments` + `from_name`/`due_date`/`status`。只顯示一行標題卻點不進去 = bug。
+2. **派發方與被指派方雙方都看得到完整內容** —— 收件匣 filter 是 `to_dept/to_email === me`(被指派方) **或** `from_email === me`(派發方);兩種身分都要 render 出同一張卡片的完整內容,不可只有一方看得到。
+3. **可下載附件** —— `attachments[]` 逐項渲染為可點的連結(僅放行 `https?://`;其餘 scheme 不可點,防 `javascript:` 注入)。
+4. **派發方在 `status !== 'done'` 前可編輯** —— 可改 `title`/`desc`/`attachments`/`due_date`;編輯後以 `cross_id` 為主鍵 `PATCH /sync/tasks/<cross_id>`,兩邊同步更新(last-write-wins by `updated_at`)。任務標記 `done` 後鎖定不可編輯。
+5. **空說明的處理** —— `desc` 為空時顯示「(無說明)」而非讓卡片看起來壞掉/點不進去。
+
+> 對應目前回報的三個現象:「無法按進去」→ 違反第 1 點;「沒看到其他說明」→ 違反第 1、5 點(desc 沒帶或沒顯示);「無法再編輯」→ 違反第 4 點;「想夾帶檔案」→ 違反第 3 點(且 payload 要帶 `attachments`,見 §4.1)。
 
 ---
 

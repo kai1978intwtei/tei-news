@@ -4293,10 +4293,13 @@
         <div class="ac-desc">${t.desc ? escapeHtml(t.desc) : '(無說明)'}</div>
         ${attachmentsHtml(t.attachments)}
         <div class="ac-foot" style="margin-top:10px;">
-          <span>建立 ${t.createdAt}</span>
-          ${isAssistant ? `<button class="filter-pill" data-task="${t.id}" data-next="${t.status==='pending'?'doing':t.status==='doing'?'done':'pending'}">
-            ${t.status==='pending'?'開始處理':t.status==='doing'?'標記完成':'重新開啟'}
-          </button>` : ''}
+          <span>建立 ${t.createdAt}${t.updatedAt?` ‧ 已編輯 ${t.updatedAt}`:''}</span>
+          <span style="display:inline-flex;gap:6px;">
+            ${(!isAssistant && !isExec && t.requestedBy===currentKey && t.status!=='done') ? `<button class="filter-pill" data-edit-task="${t.id}">編輯</button>` : ''}
+            ${isAssistant ? `<button class="filter-pill" data-task="${t.id}" data-next="${t.status==='pending'?'doing':t.status==='doing'?'done':'pending'}">
+              ${t.status==='pending'?'開始處理':t.status==='doing'?'標記完成':'重新開啟'}
+            </button>` : ''}
+          </span>
         </div>
       </div>`;
     }).join("");
@@ -4307,6 +4310,10 @@
         const t = assistantTasks.find(x=>x.id===btn.dataset.task);
         if(t){ t.status = btn.dataset.next; renderAssist(currentKey); renderOverview(); renderMyAssistOnPersonal(currentUserKey); }
       });
+    });
+    // 派發人可編輯自己派出、未完成的任務
+    grid.querySelectorAll("button[data-edit-task]").forEach(btn=>{
+      btn.addEventListener("click",()=> openInviteAssist(btn.dataset.editTask));
     });
   }
 
@@ -4322,12 +4329,14 @@
       const a = personas[t.assignedTo];
       const dt = dueTagHtml(t.dueAt);
       const attN = (t.attachments||[]).length;
-      return `<div class="row">
+      const editable = t.status !== 'done';
+      return `<div class="row"${editable?` data-edit-task="${t.id}" style="cursor:pointer;" title="點擊編輯此協辦任務"`:''}>
         <div>
           <div style="font-weight:600;font-size:13px;">${escapeHtml(t.title)} ${dt}</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
             ${escapeHtml((t.desc||'').slice(0,60))}${(t.desc||'').length>60?'…':''}
             ${attN ? `<span style="margin-left:6px;color:var(--text-sub);">📎 ${attN} 個附件</span>` : ''}
+            ${editable ? `<span style="margin-left:6px;color:var(--accent,#2563eb);">✎ 編輯</span>` : ''}
           </div>
         </div>
         <div class="who">${a.emoji} ${a.name}</div>
@@ -4335,6 +4344,9 @@
         <div style="font-size:11px;color:var(--text-muted);">${t.createdAt.split(' ')[1]||''}</div>
       </div>`;
     }).join("");
+    list.querySelectorAll('[data-edit-task]').forEach(row=>{
+      row.addEventListener('click', ()=> openInviteAssist(row.dataset.editTask));
+    });
   }
 
   // ----- 船務作業頁 -----
@@ -4580,12 +4592,38 @@
 
   // ----- Modal: 邀請業助 -----
   const iaBackdrop = $("inviteAssistBackdrop");
-  function openInviteAssist(){ iaBackdrop.dataset.open = "true"; }
+  // 跨系統穩定 ID(契約要求每筆協辦任務帶 cross_id,三系統共用才能對得上)
+  function genCrossId(){
+    try { return crypto.randomUUID(); }
+    catch(e){ return 'xid-' + nowStr().replace(/\D/g,'') + '-' + (uid++); }
+  }
+  let editingTaskId = null;  // null=新增;有值=編輯該任務
+  function openInviteAssist(taskId){
+    editingTaskId = taskId || null;
+    const h3 = iaBackdrop.querySelector('h3');
+    if(editingTaskId){
+      const t = assistantTasks.find(x=>x.id===editingTaskId);
+      if(t){
+        $("iaAssignee").value = t.assignedTo;
+        $("iaTitle").value = t.title;
+        $("iaDesc").value = t.desc || '';
+        $("iaDueAt").value = t.dueAt || '';
+        $("iaAttach").value = (t.attachments||[]).map(a=>a.name?`${a.name} | ${a.url}`:a.url).join('\n');
+      }
+      if(h3) h3.textContent = '編輯協辦任務';
+      $("iaSubmit").textContent = '儲存變更';
+    } else {
+      if(h3) h3.textContent = '邀請業務助理協助';
+      $("iaSubmit").textContent = '送出任務';
+    }
+    iaBackdrop.dataset.open = "true";
+  }
   function closeInviteAssist(){
     iaBackdrop.dataset.open = "false";
+    editingTaskId = null;
     ["iaTitle","iaDesc","iaDueAt","iaAttach"].forEach(id=>$(id).value="");
   }
-  $("inviteAssistBtn").addEventListener("click", openInviteAssist);
+  $("inviteAssistBtn").addEventListener("click", ()=>openInviteAssist());
   $("iaCancel").addEventListener("click", closeInviteAssist);
   $("iaSubmit").addEventListener("click", ()=>{
     const title = $("iaTitle").value.trim();
@@ -4593,8 +4631,25 @@
     const assignee = $("iaAssignee").value;
     const dueAt = $("iaDueAt").value || null;
     const attachments = parseAttachments($("iaAttach").value);
+    // 編輯模式:更新既有任務(僅未完成可編輯),不新增
+    if(editingTaskId){
+      const t = assistantTasks.find(x=>x.id===editingTaskId);
+      if(t && t.status !== 'done'){
+        t.assignedTo = assignee; t.title = title;
+        t.desc = $("iaDesc").value.trim(); t.dueAt = dueAt; t.attachments = attachments;
+        t.updatedAt = nowStr();
+      }
+      closeInviteAssist();
+      renderMyAssistOnPersonal(currentUserKey);
+      renderAssist(currentUserKey);
+      renderOverview();
+      renderTeamFull();
+      return;
+    }
     assistantTasks.push({
       id: nextId(),
+      crossId: genCrossId(),
+      kind: 'pm-related',
       requestedBy: currentUserKey,
       assignedTo: assignee,
       title,
