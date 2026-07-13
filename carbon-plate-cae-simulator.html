@@ -49,6 +49,74 @@
   }
   body { height: 100vh; width: 100vw; }
 
+  /* Keep the dense engineering toolbar usable on smaller laptops. The
+     controls remain on one line and can be scrolled horizontally instead of
+     being compressed into unreadable labels. */
+  header {
+    min-width: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(34, 211, 238, 0.45) transparent;
+  }
+  header::-webkit-scrollbar { height: 4px; }
+  header::-webkit-scrollbar-track { background: transparent; }
+  header::-webkit-scrollbar-thumb {
+    background: rgba(34, 211, 238, 0.40);
+    border-radius: 999px;
+  }
+  @media (max-width: 1180px) {
+    header {
+      gap: 12px;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+    }
+    header > div { flex-shrink: 0; }
+    #mainGrid {
+      gap: 8px !important;
+      padding: 8px !important;
+    }
+    #hudMouseHint { display: none; }
+  }
+
+  /* Respect the operating-system accessibility preference and avoid the
+     animated aurora becoming distracting during long analysis sessions. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ===== SIMPLE / ADVANCED WORKSPACE =====
+     The simulator remains fully capable, but first load now exposes only the
+     controls needed to run and read a simulation. Advanced engineering tools
+     are one explicit click away and no data or calculation path is removed. */
+  body.simple-ui #btnLang,
+  body.simple-ui #btnTheme,
+  body.simple-ui #btnScroll,
+  body.simple-ui #btnRec,
+  body.simple-ui #btnRecCfg,
+  body.simple-ui #btnRefs,
+  body.simple-ui [data-advanced-ui],
+  body.simple-ui #slotToggle,
+  body.simple-ui #editTargetBtn,
+  body.simple-ui #templateHud,
+  body.simple-ui #hudMouseHint {
+    display: none !important;
+  }
+  body.simple-ui #mainGrid { grid-template-columns: 260px minmax(0, 1fr); }
+  body.simple-ui #leftAside .rail-divider { margin: 10px 0; }
+  body.simple-ui #leftAside > div:last-child { padding-top: 12px; }
+  body.simple-ui #actionBarTop { padding-top: 6px; padding-bottom: 6px; }
+  #btnSimpleUI.on {
+    color: #67e8f9;
+    border-color: rgba(34,211,238,0.55);
+    background: rgba(34,211,238,0.12);
+  }
+
   /* ===== AURORA THEME — brighter gray + gold + silver + blue + green flowing ===== */
   /* Default theme. Can switch to dark via 🌙 button. */
   body.theme-aurora {
@@ -1683,7 +1751,7 @@
   }
 </style>
 </head>
-<body>
+<body class="simple-ui">
   <div id="app" class="h-screen w-screen flex flex-col overflow-hidden">
     <!-- ========== HEADER ========== -->
     <header class="glass border-b border-[var(--line)] flex items-center justify-between px-5 py-2.5 shrink-0">
@@ -1723,13 +1791,14 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2" id="headerTools">
         <!-- Removed: decorative CLT Engine / 720° Orbit / Energy Flow badges
              (purely informational, no action), and the ⚡ 預設 button
              (duplicated 模板 ▾ → 跑鞋·競速 entry). Header is now action-only. -->
         <button id="btnLang" class="btn text-[11px]" title="Switch language · 切換語言 (中 ⇄ EN)">🌐 EN</button>
         <button id="btnTheme" class="btn text-[11px]" title="主題循環：Aurora → Venect → 深色">🌙 深色</button>
         <button id="btnScroll" class="btn btn-ghost text-[11px]" title="點擊切換到滾動模式（整頁可上下捲）">📜 滾動</button>
+        <button id="btnSimpleUI" class="btn btn-toggle text-[11px] on" title="顯示材料、疊構與完整工程工具">⚙ 進階</button>
         <button id="btnReset" class="btn btn-ghost text-[11px]">↺ 重置</button>
         <!-- ===== Screen-recording controls =====
              btnRec   — toggle start/stop. Idle = red-accented, recording = pulsing.
@@ -1836,7 +1905,7 @@
           <div class="rail-divider"></div>
 
           <!-- Material Library -->
-          <section>
+          <section data-advanced-ui>
             <div class="flex items-center justify-between mb-2">
               <div class="section-title">🧪 材料資料庫</div>
               <span class="badge b-violet">Database</span>
@@ -2055,7 +2124,7 @@
           <!-- HUD bottom-left — compact one-line mouse control hint.
                Was a multi-pill card; now a minimal text strip so it doesn't
                compete with the 3D scene for attention. -->
-          <div class="hud" style="bottom:10px;left:12px;opacity:0.55;">
+          <div class="hud" id="hudMouseHint" style="bottom:10px;left:12px;opacity:0.55;">
             <div class="text-[10px] mono text-[var(--text-2)]" style="font-family:'JetBrains Mono',monospace;">
               <span class="kbd" style="font-size:9px;padding:1px 5px;">LMB</span> 旋轉
               <span class="text-[var(--text-2)] mx-1">·</span>
@@ -4421,7 +4490,7 @@
     _renderTarget = scene;
 
     camera = new THREE.PerspectiveCamera(38, canvas.clientWidth/canvas.clientHeight, 1, 5000);
-    camera.position.set(380, 260, 480);
+    camera.position.set(300, 190, 370);
     // ===== Split-screen cameras for AB mode =====
     // Two separate cameras with half-aspect ratios used by the scissor-test
     // split rendering. Each is synced to the main camera every frame for
@@ -4537,7 +4606,7 @@
     viewB.scene.background = new THREE.Color(0x3a2a5e);
 
     viewB.camera = new THREE.PerspectiveCamera(38, wB / hB, 1, 5000);
-    viewB.camera.position.set(380, 260, 480);
+    viewB.camera.position.set(300, 190, 370);
 
     // Independent OrbitControls so dragging on the right canvas only affects B
     try {
@@ -5091,7 +5160,14 @@
     const outline = plateOutline(L, W);
 
     const clt = computeCLT(state.plies);
-    const totalT = clt.h * 40; // exaggerate ×40 for visibility
+    const totalT = clt.h * 40; // exploded-layer scale (×40) for inspection
+    // The former code also used the ×40 exploded thickness inside the normal
+    // assembled shoe. That physically separated the upper, foam, plate and
+    // outsole, making every sport model read as floating slabs. Keep the
+    // exaggeration only for Layers/Cutaway; assembled views use a restrained
+    // visible plate thickness close to the real laminate.
+    const assembledT = Math.max(1.2, Math.min(4.0, clt.h * 1.8));
+    const displayT = (state.cutaway || state.viewMode === 'layers') ? totalT : assembledT;
 
     // ============ build curved plate as single mesh ============
     // Plate vertices are positioned WITHIN the full shoe coordinate system, only
@@ -5224,11 +5300,11 @@
     plateMesh.add(main);
     plateMesh.add(wire);
 
-    // build top thin shell (offset by totalT/2 above) for thickness illusion
+    // build top thin shell (assembled thickness in normal shoe view)
     const topGeo = geom.clone();
     const posTop = topGeo.attributes.position;
     for (let i = 0; i < posTop.count; i++){
-      posTop.setY(i, posTop.getY(i) + totalT/2);
+      posTop.setY(i, posTop.getY(i) + displayT/2);
     }
     topGeo.computeVertexNormals();
     // ===== Top surface uses outermost-top ply's weave texture =====
@@ -5252,7 +5328,7 @@
     const botGeo = geom.clone();
     const posBot = botGeo.attributes.position;
     for (let i = 0; i < posBot.count; i++){
-      posBot.setY(i, posBot.getY(i) - totalT/2);
+      posBot.setY(i, posBot.getY(i) - displayT/2);
     }
     botGeo.computeVertexNormals();
     const botPly = state.plies[0];
@@ -5276,7 +5352,7 @@
     const plateOnly  = (state.viewMode === 'plate');
 
     // Always build the shoe so it's available when user toggles back
-    buildShoeShell(Lshoe, W, totalT);
+    buildShoeShell(Lshoe, W, displayT);
 
     if (layersMode){
       // Clear any previous exploded stack particles (parent-aware)
@@ -5309,7 +5385,7 @@
       const u = i/60;
       const nxShoe = range.end - u * (range.end - range.start);
       const x = -Lshoe/2 + nxShoe * Lshoe;
-      const y = plateProfileY(x, Lshoe, state.arch, state.toeAngle, state.drop) + totalT/2 + 4;
+      const y = plateProfileY(x, Lshoe, state.arch, state.toeAngle, state.drop) + displayT/2 + 4;
       curvePts.push(new THREE.Vector3(x, y, 0));
     }
     centerlineCurve = new THREE.CatmullRomCurve3(curvePts);
@@ -6249,13 +6325,13 @@
     // high-top (260mm), football a beefy mid-cut, soccer a sleeve-low cleat,
     // spike near-zero. Goal is "unmistakable at a glance, no label needed."
     switch(style){
-      case 'spike':      return { outsoleH: 6,  midHeel: 12,  midFore: 6,   upperH: 38,  soleW:0.96, lacesN: 4, openStart:0.30, openEnd:0.85, openMaxRad:0.82, superN:3.4, sideTaper:0.48 };
-      case 'soccer':     return { outsoleH: 9,  midHeel: 12,  midFore: 9,   upperH: 48,  soleW:0.98, lacesN: 5, openStart:0.22, openEnd:0.88, openMaxRad:0.88, superN:3.4, sideTaper:0.56 };
-      case 'football':   return { outsoleH: 13, midHeel: 32,  midFore: 22,  upperH: 160, soleW:1.10, lacesN: 5, openStart:0.18, openEnd:0.72, openMaxRad:0.78, superN:2.7, sideTaper:0.74 };
-      case 'basketball': return { outsoleH: 16, midHeel: 46,  midFore: 30,  upperH: 260, soleW:1.10, lacesN: 7, openStart:0.14, openEnd:0.58, openMaxRad:0.74, superN:2.4, sideTaper:0.82 };
-      case 'trail':      return { outsoleH: 22, midHeel: 64,  midFore: 36,  upperH: 175, soleW:1.12, lacesN: 6, openStart:0.20, openEnd:0.70, openMaxRad:0.80, superN:2.6, sideTaper:0.74 };
+      case 'spike':      return { outsoleH: 5,  midHeel: 10, midFore: 5,  upperH: 34,  soleW:0.94, lacesN: 5, openStart:0.12, openEnd:0.62, openMaxRad:0.34, superN:2.7, sideTaper:0.58 };
+      case 'soccer':     return { outsoleH: 7,  midHeel: 10, midFore: 7,  upperH: 42,  soleW:0.97, lacesN: 6, openStart:0.10, openEnd:0.60, openMaxRad:0.36, superN:2.7, sideTaper:0.60 };
+      case 'football':   return { outsoleH: 11, midHeel: 24, midFore: 17, upperH: 92,  soleW:1.07, lacesN: 6, openStart:0.08, openEnd:0.52, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
+      case 'basketball': return { outsoleH: 13, midHeel: 34, midFore: 24, upperH: 132, soleW:1.08, lacesN: 7, openStart:0.07, openEnd:0.52, openMaxRad:0.42, superN:2.3, sideTaper:0.74 };
+      case 'trail':      return { outsoleH: 16, midHeel: 42, midFore: 28, upperH: 96,  soleW:1.09, lacesN: 7, openStart:0.09, openEnd:0.56, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
       case 'running':
-      default:           return { outsoleH: 12, midHeel: 60,  midFore: 28,  upperH: 120, soleW:1.05, lacesN: 6, openStart:0.22, openEnd:0.78, openMaxRad:0.85, superN:2.7, sideTaper:0.72 };
+      default:           return { outsoleH: 8,  midHeel: 42, midFore: 24, upperH: 78,  soleW:1.02, lacesN: 7, openStart:0.08, openEnd:0.58, openMaxRad:0.38, superN:2.35, sideTaper:0.66 };
     }
   }
   function midsoleHeightAt(nx, dims){
@@ -6414,6 +6490,37 @@
     ];
   }
 
+  let _shoeKnitTexture = null;
+  function shoeKnitTexture(){
+    if (_shoeKnitTexture) return _shoeKnitTexture;
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#d8dde3';
+    ctx.fillRect(0, 0, 128, 128);
+    // Fine diagonal warp/weft plus ventilation pores. Kept grayscale so the
+    // sport/template vertex color remains authoritative.
+    ctx.strokeStyle = 'rgba(45,55,70,0.28)';
+    ctx.lineWidth = 1;
+    for (let k = -128; k < 256; k += 8){
+      ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k - 128, 128); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k + 128, 128); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(20,28,40,0.35)';
+    for (let y = 8; y < 128; y += 16){
+      for (let x = 8; x < 128; x += 16){
+        ctx.beginPath();
+        ctx.ellipse(x + ((y/16)%2)*4, y, 1.6, 3.0, 0, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    _shoeKnitTexture = new THREE.CanvasTexture(c);
+    _shoeKnitTexture.wrapS = _shoeKnitTexture.wrapT = THREE.RepeatWrapping;
+    _shoeKnitTexture.colorSpace = THREE.SRGBColorSpace;
+    _shoeKnitTexture.anisotropy = 4;
+    return _shoeKnitTexture;
+  }
+
   function buildShoeShell(L, W, totalT){
     const sport = sportDef(state.sport);
     const style = sport.geom.shoeStyle;
@@ -6494,7 +6601,7 @@
     // and more shoe-like (flatter top, more vertical sides).
     {
       const segX = 60, segPhi = 32;
-      const pos = [], col = [], idx = [];
+      const pos = [], col = [], uv = [], idx = [];
       const n2 = 2 / dims.superN;  // exponent for superellipse parameterization
       for (let i = 0; i <= segX; i++){
         const nx = i/segX;
@@ -6517,6 +6624,7 @@
           const z = -localHalfW * Math.sign(cosP) * Math.pow(Math.abs(cosP), n2 * 0.6);
           const y = yBase + totalT/2 + 1.2 + midH + upH * yNorm;  // +1.2mm offset above midsole top to avoid Z-fight
           pos.push(x, y, z);
+          uv.push(nx * 7, (j/segPhi) * 3);
           // ===== color zoning =====
           // Resin-family accent gets mixed into the heel-counter and toe-cap
           // zones (the "branding" surfaces where shoe designers traditionally
@@ -6591,14 +6699,21 @@
       const geom = new THREE.BufferGeometry();
       geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geom.setAttribute('color',    new THREE.Float32BufferAttribute(col, 3));
+      geom.setAttribute('uv',       new THREE.Float32BufferAttribute(uv, 2));
       geom.setIndex(idx);
       geom.computeVertexNormals();
-      // FrontSide so we don't render the dome's interior — opening becomes truly "see-through"
+      // The parametric strip changes winding across the medial/lateral half.
+      // FrontSide culled an entire lower quarter from common camera angles,
+      // visually detaching the upper from the midsole. DoubleSide preserves
+      // both shoe walls while the skipped opening quads remain truly open.
       const mat = new THREE.MeshPhysicalMaterial({
+        map: shoeKnitTexture(),
+        bumpMap: shoeKnitTexture(),
+        bumpScale: 0.55,
         vertexColors: true,
         metalness: 0.04,
         roughness: 0.62,
-        side: THREE.FrontSide,
+        side: THREE.DoubleSide,
         clearcoat: 0.35,
         clearcoatRoughness: 0.40,
       });
@@ -7060,8 +7175,12 @@
         col.setXYZ(i, 0, 0, 0);
         continue;
       }
-      p.t += p.baseSpeed * speedFactor * dt;
-      if (p.t > 1) p.t -= 1;
+      // A background tab can resume with a very large frame delta. Subtracting
+      // 1 only once left t > 1, which made CatmullRomCurve3 sample beyond its
+      // final point and throw inside Three.js. Modulo keeps every sample in
+      // the valid [0, 1) interval even after a long suspend/resume cycle.
+      const nextT = p.t + p.baseSpeed * speedFactor * dt;
+      p.t = Number.isFinite(nextT) ? ((nextT % 1) + 1) % 1 : 0;
       const v = centerlineCurve.getPointAt(p.t);
       // Vertical bounce + lateral oscillation amplified by action intensity
       const bounce = Math.sin(p.t*Math.PI) * (1.5 + 3.0 * intensity);
@@ -7868,7 +7987,10 @@
 
   function animate(){
     requestAnimationFrame(animate);
-    const dt = clock.getDelta();
+    // Prevent a suspended/background tab from advancing the simulation by
+    // several seconds in one frame. This protects all time-based effects and
+    // keeps the resumed animation visually stable.
+    const dt = Math.min(clock.getDelta(), 0.05);
     controls.autoRotate = state.autoRotate;
     controls.update();
 
@@ -10761,10 +10883,12 @@
     $('#vCamTop').addEventListener('click', () => flyTo(new THREE.Vector3(0, 600, 0.01)));
     $('#vCamSide').addEventListener('click', () => flyTo(new THREE.Vector3(0, 80, 600)));
     $('#vCamBottom').addEventListener('click', () => flyTo(new THREE.Vector3(0, -400, 280)));
-    $('#vCamIso').addEventListener('click', () => flyTo(new THREE.Vector3(380, 260, 480)));
+    $('#vCamIso').addEventListener('click', () => flyTo(new THREE.Vector3(300, 190, 370)));
 
     // ===== Viewport panel collapse / fullscreen =====
-    let leftCollapsed = false, rightCollapsed = false, fullscreen = false;
+    let leftCollapsed = false,
+        rightCollapsed = document.body.classList.contains('simple-ui'),
+        fullscreen = false;
     let fsExitBtn = null;
 
     const triggerResize = () => {
@@ -10774,7 +10898,7 @@
       setTimeout(onResize, 450);
     };
 
-    const updateGrid = () => {
+    let updateGrid = () => {
       const grid = $('#mainGrid');
       const asides = grid.querySelectorAll('aside');
       if (fullscreen){
@@ -10901,7 +11025,6 @@
     // ===== Left / Right panel WIDTH drag-to-resize handles =====
     // Stores live widths so updateGrid() can use them. Replaces the fixed 290/330.
     let _leftPanelW = 290, _rightPanelW = 330;
-    const _origUpdateGridFn = updateGrid;
     // Override updateGrid to use the live widths
     const _newUpdateGrid = () => {
       const grid = $('#mainGrid');
@@ -10919,10 +11042,48 @@
       if (asides[0]) asides[0].style.display = leftCollapsed  ? 'none' : 'flex';
       if (asides[1]) asides[1].style.display = rightCollapsed ? 'none' : 'flex';
     };
-    // Replace the closure-captured updateGrid via direct assignment
-    // (cannot reassign const, so we replace the body of subsequent updates by calling _newUpdateGrid)
-    Object.assign(window, { _updateGridLive: _newUpdateGrid });
-    _newUpdateGrid();
+    // Replace the shared function binding so collapse/expand, fullscreen and
+    // drag-resize all use the same current widths. The previous workaround
+    // only updated drag events; the next collapse click silently reset panels
+    // to 290/330 px.
+    updateGrid = _newUpdateGrid;
+    Object.assign(window, { _updateGridLive: updateGrid });
+
+    // Simple mode is the safe default: calculations stay identical while the
+    // material database and layup editor are progressively disclosed. This is
+    // deliberately reversible at runtime and does not rewrite user data.
+    const simpleUiBtn = document.getElementById('btnSimpleUI');
+    const syncSimpleUiButton = () => {
+      if (!simpleUiBtn) return;
+      const simple = document.body.classList.contains('simple-ui');
+      simpleUiBtn.classList.toggle('on', simple);
+      simpleUiBtn.textContent = simple ? '⚙ 進階' : '✓ 簡潔';
+      simpleUiBtn.title = simple
+        ? '顯示材料、疊構與完整工程工具'
+        : '返回簡潔模擬畫面';
+      simpleUiBtn.setAttribute('aria-pressed', simple ? 'false' : 'true');
+    };
+    if (simpleUiBtn){
+      simpleUiBtn.addEventListener('click', () => {
+        const simple = document.body.classList.toggle('simple-ui');
+        rightCollapsed = simple;
+        if (!simple) rightCollapsed = false;
+        syncSimpleUiButton();
+        updateGrid();
+        triggerResize();
+      });
+    }
+    syncSimpleUiButton();
+
+    // On a narrow first load, prioritize the 3D viewport. Both side panels
+    // remain available through the existing left/right reveal buttons.
+    if (window.innerWidth <= 1180) {
+      leftCollapsed = true;
+      rightCollapsed = true;
+      $('#vToggleLeft').textContent = '⮞';
+      $('#vToggleRight').textContent = '⮜';
+    }
+    updateGrid();
 
     function bindAsideResize(handleId, lineId, side){
       const handle = document.getElementById(handleId);
