@@ -101,7 +101,6 @@
   body.simple-ui #btnRecCfg,
   body.simple-ui #btnRefs,
   body.simple-ui [data-advanced-ui],
-  body.simple-ui #slotToggle,
   body.simple-ui #editTargetBtn,
   body.simple-ui #templateHud,
   body.simple-ui #hudMouseHint {
@@ -1934,8 +1933,9 @@
             </div>
             <div id="loadCaseList" class="space-y-1.5"></div>
             <div class="mt-2.5">
-              <div class="flex justify-between"><span class="field-label">安全係數 SF</span><span class="mono text-[11px] text-[var(--text-1)]"><span id="sfVal">1.5</span>×</span></div>
+              <div class="flex justify-between"><span class="field-label">要求設計係數 Required factor</span><span class="mono text-[11px] text-[var(--text-1)]"><span id="sfVal">1.5</span>×</span></div>
               <input id="sfSlider" type="range" min="1" max="3" value="1.5" step="0.1">
+              <div class="text-[9.5px] text-[var(--text-2)] mt-1">用於失效指數的設計餘裕，不會重複放大載荷。</div>
             </div>
           </section>
         </div>
@@ -1948,9 +1948,10 @@
            is intentionally excluded. -->
       <main id="vpMain" class="glass rounded-xl flex flex-col overflow-hidden relative">
         <div class="px-4 py-2.5 border-b border-[var(--line)] flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 flex-wrap">
             <div class="vp-dot"></div>
             <div class="panel-title">3D 模擬視窗 · Viewport</div>
+            <span class="badge b-amber" title="使用公開物性與簡化載荷包絡；不是完整有限元素驗證">概念工程模型 · ESTIMATED</span>
             <div class="pill-toggle" id="viewModeToggle">
               <button data-mode="stress" class="active">應力 Stress</button>
               <button data-mode="strain">應變 Strain</button>
@@ -2110,11 +2111,11 @@
               <div class="flex items-center justify-between gap-3 mt-2 pt-2 border-t text-[10.5px]"
                    style="border-color: rgba(148,163,184,0.20);">
                 <span class="flex items-center gap-1">
-                  <span class="text-[var(--text-2)]">峰值</span>
+                  <span class="text-[var(--text-2)]">概念峰值</span>
                   <span id="legPeak" class="mono font-semibold text-[var(--text-0)]">— MPa</span>
                 </span>
                 <span class="flex items-center gap-1">
-                  <span class="text-[var(--text-2)]">SF</span>
+                  <span class="text-[var(--text-2)]">設計裕度 RF</span>
                   <span id="legSf" class="mono font-semibold" style="color:#10b981;">—×</span>
                 </span>
               </div>
@@ -2438,30 +2439,31 @@
       <!-- Performance Score -->
       <div class="analysis-card">
         <div class="flex items-center justify-between mb-2">
-          <div class="panel-title">運動表現預測</div>
-          <span class="badge b-emerald" id="scoreLabel">Sport: Run</span>
+          <div class="panel-title">設計適配評分</div>
+          <span class="badge b-amber" id="scoreLabel">Concept score</span>
         </div>
         <div class="space-y-2.5">
           <div>
-            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">能量回饋 Energy Return</span><span class="mono text-[var(--text-0)]"><span id="erVal">82</span> %</span></div>
+            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">回彈適配 Rebound Fit</span><span class="mono text-[var(--text-0)]"><span id="erVal">82</span>/100</span></div>
             <div class="gauge-track"><div id="erBar" class="gauge-fill" style="width:82%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">推進效率 Propulsion</span><span class="mono text-[var(--text-0)]"><span id="prVal">76</span> %</span></div>
+            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">推進適配 Propulsion Fit</span><span class="mono text-[var(--text-0)]"><span id="prVal">76</span>/100</span></div>
             <div class="gauge-track"><div id="prBar" class="gauge-fill" style="width:76%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">舒適度 Comfort</span><span class="mono text-[var(--text-0)]"><span id="cfVal">68</span> %</span></div>
+            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">舒適傾向 Comfort Bias</span><span class="mono text-[var(--text-0)]"><span id="cfVal">68</span>/100</span></div>
             <div class="gauge-track"><div id="cfBar" class="gauge-fill cool" style="width:68%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">穩定性 Stability</span><span class="mono text-[var(--text-0)]"><span id="stVal">71</span> %</span></div>
+            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">穩定傾向 Stability Bias</span><span class="mono text-[var(--text-0)]"><span id="stVal">71</span>/100</span></div>
             <div class="gauge-track"><div id="stBar" class="gauge-fill" style="width:71%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">疲勞耐久 Fatigue Life</span><span class="mono text-[var(--text-0)]"><span id="ftVal">88</span> %</span></div>
+            <div class="flex justify-between text-[11px] mb-0.5"><span class="text-[var(--text-1)]">耐久傾向 Durability Bias</span><span class="mono text-[var(--text-0)]"><span id="ftVal">88</span>/100</span></div>
             <div class="gauge-track"><div id="ftBar" class="gauge-fill cool" style="width:88%"></div></div>
           </div>
+          <div class="mt-2 pt-2 border-t border-[var(--line-soft)] text-[9.5px] text-[var(--text-2)] leading-relaxed">0–100 為同系統內相對比較，不等同實驗回彈率、跑步經濟性或壽命百分比。</div>
         </div>
       </div>
 
@@ -2506,14 +2508,14 @@
       <div class="analysis-card">
         <div class="flex items-center justify-between mb-2">
           <div class="panel-title">中軸線應力分佈</div>
-          <span class="badge b-amber">σ_VM along centerline</span>
+          <span class="badge b-amber">Concept envelope</span>
         </div>
         <div style="height: 140px;">
           <canvas id="stressChart"></canvas>
         </div>
         <div class="flex items-center justify-between mt-1 text-[10.5px] text-[var(--text-2)] mono">
-          <span>peak: <span id="peakStress" class="text-[var(--amber)]">428</span> MPa</span>
-          <span>safety margin: <span id="safetyMar" class="text-[var(--emerald)]">2.1×</span></span>
+          <span>概念峰值: <span id="peakStress" class="text-[var(--amber)]">428</span> MPa</span>
+          <span>設計裕度 RF: <span id="safetyMar" class="text-[var(--emerald)]">2.1×</span></span>
         </div>
       </div>
 
@@ -4235,6 +4237,7 @@
     arch: 14,
     drop: 8,
     sf: 1.5,
+    loadCases: ['rear','mid','fore'],
     plies: TEMPLATES['run-fast'].map(p => ({angle:p.a, fiber:p.f, resin:p.r, t:p.t, weave: p.w || 'UD'})),
     viewMode: 'stress',
     autoRotate: true,
@@ -4308,17 +4311,89 @@
     pivot:  { label:'⟳ 轉身',    color:'#14b8a6', duration: 800, peakBW: 3.2, phase:'torsion pivot'   },
   };
 
+  // Public biomechanics ranges expressed as a transparent design envelope.
+  // These values are scenario inputs, not measured forces for a specific user.
+  const LOAD_CASES = [
+    { id:'rear', label:'後跟落地 (跑步初接觸)', val:'2.5×BW · 約 10–30ms', peakBW:2.5, axis:'longitudinal' },
+    { id:'mid',  label:'中足支撐 (Midstance)',  val:'2.2×BW · 支撐峰值',    peakBW:2.2, axis:'longitudinal' },
+    { id:'fore', label:'前掌推進 (Toe-off)',     val:'3.1×BW · 推進包絡',    peakBW:3.1, axis:'longitudinal' },
+    { id:'lat',  label:'橫向切入 (Cut, 籃/足)', val:'5.5×BW · 高衝擊情境',  peakBW:5.5, axis:'lateral' },
+    { id:'jump', label:'起跳落地 (Jump landing)',val:'6.0×BW · 高衝擊情境', peakBW:6.0, axis:'longitudinal' },
+    { id:'tor',  label:'旋轉扭力 (Pivot)',       val:'1.8×BW · 扭轉包絡',    peakBW:1.8, axis:'torsion' },
+  ];
+
+  function currentLoadEnvelope(){
+    if (state.activeAction && ACTIONS[state.activeAction]){
+      const axis = state.activeAction === 'cut' ? 'lateral'
+                 : state.activeAction === 'pivot' ? 'torsion'
+                 : 'longitudinal';
+      return { peakBW:ACTIONS[state.activeAction].peakBW, axis,
+               label:`動作峰值 · ${ACTIONS[state.activeAction].label.replace(/^\S+\s*/, '')}` };
+    }
+    const selected = LOAD_CASES.filter(c => (state.loadCases || []).includes(c.id));
+    if (!selected.length) return { peakBW:1.0, axis:'longitudinal', label:'未選載荷 · 1.0×BW 基準' };
+    const governing = selected.reduce((a,b) => b.peakBW > a.peakBW ? b : a);
+    return { peakBW:governing.peakBW, axis:governing.axis,
+             label:`${selected.length > 1 ? '包絡' : '單一情境'} · ${governing.label}` };
+  }
+
+  // Preliminary-design stress estimator. It intentionally reports a concept
+  // envelope, not FEA: body mass is linear, pace is a bounded correction,
+  // thickness follows bending stress ~1/h², and the governing directional
+  // stiffness changes with longitudinal/lateral/torsional cases.
+  function estimatePeakStressFor(plies, cltInput){
+    if (!plies || !plies.length) return 0;
+    const clt = cltInput || computeCLT(plies);
+    const load = currentLoadEnvelope();
+    const bwFactor = Math.max(0.50, Math.min(2.0, (state.bw || 70) / 70));
+    const paceFactor = Math.max(0.82, Math.min(1.20, 1 + (4.5 - (state.pace || 4.5)) * 0.08));
+    const thicknessFactor = Math.pow(1.24 / Math.max(0.40, clt.h), 2);
+    const regionFactor = ({ full:1.00, threeq:0.92, foremid:0.86, fore:0.72,
+                            mid:0.66, midheel:0.82, heel:0.68 })[state.region] || 1.0;
+    const axisD = load.axis === 'lateral' ? clt.D22 : load.axis === 'torsion' ? clt.D66 : clt.D11;
+    const refD  = load.axis === 'lateral' ? 3.08    : load.axis === 'torsion' ? 2.26    : 16.58;
+    const directionFactor = Math.max(0.72, Math.min(1.80, Math.sqrt(refD / Math.max(axisD, 0.05))));
+    const peak = 240 * (load.peakBW / 2.6) * bwFactor * paceFactor
+                     * thicknessFactor * regionFactor * directionFactor;
+    state._loadLabel = load.label;
+    state._loadPeakBW = load.peakBW;
+    return Math.max(25, Math.min(2500, peak));
+  }
+
+  function computeLaminateRisk(plies, peakStress){
+    if (!plies || !plies.length || !peakStress) return { worstFI:0, reserveFactor:0, utilization:0 };
+    const rows = perPlyAnalysis(plies, peakStress);
+    const worstFI = rows.reduce((m,r) => Math.max(m, r.maxFI || 0, r.tsaiWuFI || 0), 0);
+    const utilization = worstFI * Math.max(1, state.sf || 1);
+    return { worstFI, utilization, reserveFactor: utilization > 0 ? 1 / utilization : 99 };
+  }
+
+  function centerlineStressData(peakStress, strike){
+    const raw = Array.from({length:30}, (_,i) => {
+      const nx = i/29;
+      let weight;
+      if (strike === 'rear')      weight = Math.exp(-Math.pow((nx-0.20)/0.18,2));
+      else if (strike === 'mid')  weight = Math.exp(-Math.pow((nx-0.50)/0.22,2));
+      else                        weight = Math.exp(-Math.pow((nx-0.78)/0.18,2));
+      const bend = Math.exp(-Math.pow((nx-0.55)/0.32,2));
+      return 0.20 + 0.55*weight + 0.45*bend;
+    });
+    // Normalize against the actual curve maximum. Using a hard floor of 1
+    // silently reduced the plotted peak whenever the shape topped out below
+    // 1, so the chart disagreed with the viewport HUD by about 10%.
+    const maxRaw = Math.max(...raw, 1e-6);
+    return raw.map(v => Math.round(peakStress * v / maxRaw));
+  }
+
   // Returns {nx (0..1 along plate), nz (-1..1 lateral), intensity (0..1.6), force (×BW), strikeName}
   function actionLoadProfile(id, t){
     const tt = Math.max(0, Math.min(1, t));
     switch(id){
       case 'walk': {
-        // Forefoot-strike model: load enters at the toe and shifts rearward
-        // toward the heel through stance — matches carbon-plate competition
-        // shoe biomechanics. (Was 0.18→0.80; now 0.80→0.18.)
-        const nx = 0.80 - 0.62*tt;
+        // Natural gait roll: heel contact → midstance → forefoot propulsion.
+        const nx = 0.18 + 0.64*tt;
         const intensity = Math.exp(-Math.pow((tt-0.22)/0.13,2))*0.45 + Math.exp(-Math.pow((tt-0.70)/0.18,2))*0.55;
-        const strike = tt<0.22?'fore':(tt<0.60?'mid':'heel');
+        const strike = tt<0.28?'heel':(tt<0.62?'mid':'fore');
         return { nx, nz:0, intensity, force: ACTIONS.walk.peakBW*intensity, strikeName: strike };
       }
       case 'jump': {
@@ -4334,17 +4409,17 @@
         return { nx, nz:0, intensity, force: ACTIONS.jump.peakBW*intensity, strikeName: phase };
       }
       case 'jog': {
-        // Forefoot-strike model — toe touches first, weight shifts rearward.
-        const nx = 0.80 - 0.62*tt;
+        // Mid/rear contact rolls continuously toward toe-off.
+        const nx = 0.30 + 0.54*tt;
         const intensity = Math.exp(-Math.pow((tt-0.18)/0.10,2))*0.65 + Math.exp(-Math.pow((tt-0.62)/0.16,2))*0.85;
-        const strike = tt<0.30?'fore':(tt<0.65?'mid':'heel');
+        const strike = tt<0.25?'rear':(tt<0.62?'mid':'fore');
         return { nx, nz:0, intensity, force: ACTIONS.jog.peakBW*intensity, strikeName: strike };
       }
       case 'run': {
-        // Forefoot-strike model.
-        const nx = 0.82 - 0.62*tt;
+        // Competition running: mid/forefoot contact progresses to toe-off.
+        const nx = 0.42 + 0.42*tt;
         const intensity = Math.exp(-Math.pow((tt-0.45)/0.22,2))*1.1;
-        const strike = tt<0.35?'fore':(tt<0.70?'mid':'heel');
+        const strike = tt<0.38?'mid':(tt<0.72?'fore':'toe-off');
         return { nx, nz:0, intensity, force: ACTIONS.run.peakBW*intensity, strikeName: strike };
       }
       case 'sprint': {
@@ -4572,11 +4647,19 @@
 
     // ===== Initialize viewB (right-side independent canvas) =====
     initViewB();
+    // Secondary-canvas boot performs a temporary slot-B state swap. Reassert
+    // the declared edit slot before the first dashboard analysis so the page
+    // cannot start with A labels but B material data.
+    syncStateFromSlot(state.editSlot);
 
     // ===== Diagnostic handle on window =====
     // Lets us inspect state/viewB from DevTools console without touching
     // module scope. Read-only by convention.
-    window.__cae = { state, viewB, get scene(){return scene;}, get renderer(){return renderer;}, get camera(){return camera;}, get controls(){return controls;} };
+    window.__cae = {
+      state, viewB,
+      get scene(){return scene;}, get renderer(){return renderer;}, get camera(){return camera;}, get controls(){return controls;},
+      get shoeMesh(){return shoeMesh;}, get plateMesh(){return plateMesh;}
+    };
 
     window.addEventListener('resize', onResize);
     onResize();
@@ -4745,6 +4828,8 @@
       layerMeshes: layerMeshes.slice(),
       layerParticleSystems: layerParticleSystems.slice(),
       plateBaseY, plateBaseStress, plateVertexNX, plateVertexNZ,
+      _stressMax: state._stressMax, _loadLabel: state._loadLabel,
+      _loadPeakBW: state._loadPeakBW,
       _renderTarget,
       _scene: scene,
     };
@@ -4802,6 +4887,9 @@
       plateBaseStress = saved.plateBaseStress;
       plateVertexNX = saved.plateVertexNX;
       plateVertexNZ = saved.plateVertexNZ;
+      state._stressMax = saved._stressMax;
+      state._loadLabel = saved._loadLabel;
+      state._loadPeakBW = saved._loadPeakBW;
       _renderTarget = saved._renderTarget;
       scene = saved._scene;
     }
@@ -5038,6 +5126,7 @@
   }
 
   function rebuildPlate(){
+    const isSecondaryBuild = !!(viewB && viewB.scene && _renderTarget === viewB.scene);
     // ===== INLINE AB-safety guard =====
     // In AB mode + editSlot='B', state.plies holds slot B's plies (so the
     // right-side layup panel can edit them). But the MAIN SCENE must still
@@ -5094,15 +5183,7 @@
         // body's formula here so per-ply table / HUD show editSlot's stress.
         try {
           const _clt = computeCLT(state.plies);
-          const _sport = SPORTS.find(s => s.id === state.sport) || { loadFactor: 2.6 };
-          const _um = userLoadMul();
-          const baselineH = 1.50;
-          const stressAmp = Math.pow(baselineH / Math.max(0.20, _clt.h), 2.0);
-          const peakStressMpa = 280 * (_sport.loadFactor / 2.6)
-                                    * (_um.bwFactor * _um.paceFactor)
-                                    * stressAmp
-                                    * (state.sf / 1.5);
-          state._stressMax = Math.min(5000, Math.max(40, peakStressMpa));
+          state._stressMax = estimatePeakStressFor(state.plies, _clt);
         } catch(_){
           state._stressMax = _saved._stressMax;
         }
@@ -5134,20 +5215,22 @@
       // Reset centerline curve so particles don't read stale geometry
       centerlineCurve = null;
       // Reset HUDs to "—"
-      const hudPlate  = document.getElementById('hudPlate');
-      const hudLayers = document.getElementById('hudLayers');
-      const hudThick  = document.getElementById('hudThick');
-      const hudMass   = document.getElementById('hudMass');
-      if (hudPlate)  hudPlate.textContent  = '— · 無碳板';
-      if (hudLayers) hudLayers.textContent = '0';
-      if (hudThick)  hudThick.textContent  = '— mm';
-      if (hudMass)   hudMass.textContent   = '0.0 g';
-      const legMid = document.getElementById('legMid');
-      const legMax = document.getElementById('legMax');
-      if (legMid) legMid.textContent = '0';
-      if (legMax) legMax.textContent = '0';
+      if (!isSecondaryBuild){
+        const hudPlate  = document.getElementById('hudPlate');
+        const hudLayers = document.getElementById('hudLayers');
+        const hudThick  = document.getElementById('hudThick');
+        const hudMass   = document.getElementById('hudMass');
+        if (hudPlate)  hudPlate.textContent  = '— · 無碳板';
+        if (hudLayers) hudLayers.textContent = '0';
+        if (hudThick)  hudThick.textContent  = '— mm';
+        if (hudMass)   hudMass.textContent   = '0.0 g';
+        const legMid = document.getElementById('legMid');
+        const legMax = document.getElementById('legMax');
+        if (legMid) legMid.textContent = '0';
+        if (legMax) legMax.textContent = '0';
+      }
       state._stressMax = 0;
-      if (typeof updateLegendKPI === 'function') updateLegendKPI();
+      if (!isSecondaryBuild && typeof updateLegendKPI === 'function') updateLegendKPI();
       if (typeof triggerMaterialPulse === 'function') triggerMaterialPulse(0.9);
       if (typeof triggerPlateHaloPulse === 'function') triggerPlateHaloPulse();
       return;
@@ -5220,16 +5303,8 @@
       return Math.min(1.5, base);
     };
 
-    // ===== Realistic peak stress estimation — σ_max ∝ M / h² =====
-    // Baseline 8-ply T1100G UD (h=1.44mm) at 70kg + 4:30 pace + run = ~280 MPa peak
-    // Reduce plies → h shrinks → stress grows quadratically → warning/failure shows correctly.
-    const baselineH = 1.50;                                      // mm reference
-    const stressAmp = Math.pow(baselineH / Math.max(0.20, clt.h), 2.0);
-    const peakStressMpa = 280 * (sport.loadFactor / 2.6)          // sport-relative
-                              * (_userMul.bwFactor * _userMul.paceFactor)
-                              * stressAmp
-                              * (state.sf / 1.5);                 // safety-factor scaling
-    const stressMax = Math.min(5000, Math.max(40, peakStressMpa));
+    // Preliminary-design envelope; all panels use this same centralized result.
+    const stressMax = estimatePeakStressFor(state.plies, clt);
     state._stressMax = stressMax;
 
     const totalVerts = (segX+1)*(segZ+1);
@@ -5395,16 +5470,18 @@
     // and right-panel layup badges), so we guard against the missing nodes.
     const regionLabel = (PLATE_REGIONS[state.region] && PLATE_REGIONS[state.region].label) || state.region;
     const hudPlateEl = document.getElementById('hudPlate');
-    if (hudPlateEl) hudPlateEl.textContent = `${Lplate.toFixed(0)}mm · ${regionLabel}`;
+    if (!isSecondaryBuild && hudPlateEl) hudPlateEl.textContent = `${Lplate.toFixed(0)}mm · ${regionLabel}`;
     const plateAreaM2 = (L*W*0.001*0.001) * 0.55;
     const massGrams = clt.mass * plateAreaM2 * 1000 * 2; // both feet? no — single plate × pair
-    document.getElementById('hudMass').textContent = `${(clt.mass * plateAreaM2 * 1000).toFixed(1)} g`;
+    if (!isSecondaryBuild) document.getElementById('hudMass').textContent = `${(clt.mass * plateAreaM2 * 1000).toFixed(1)} g`;
 
-    document.getElementById('legMid').textContent = (stressMax*0.5).toFixed(0);
-    document.getElementById('legMax').textContent = stressMax.toFixed(0);
+    if (!isSecondaryBuild){
+      document.getElementById('legMid').textContent = (stressMax*0.5).toFixed(0);
+      document.getElementById('legMax').textContent = stressMax.toFixed(0);
+    }
     // Live KPI strip — peak stress + safety factor (visible on legend HUD even
     // when the carbon plate is hidden behind the shoe shell).
-    updateLegendKPI();
+    if (!isSecondaryBuild) updateLegendKPI();
     // ===== Visible parameter-change feedback =====
     // rebuildPlate() runs for ANY meaningful state change (template apply,
     // ply edit, sport switch, weight/pace slider, action button). Fire a
@@ -5412,6 +5489,10 @@
     // 3D scene visibly reacts — no more silent updates.
     if (typeof triggerMaterialPulse === 'function') triggerMaterialPulse(0.9);
     if (typeof triggerPlateHaloPulse === 'function') triggerPlateHaloPulse();
+    // Some UI flows rebuild the 3D scene without immediately refreshing the
+    // dashboard. Coalesce a follow-up analysis pass so the main HUD can never
+    // be left showing the temporary build's cached values.
+    if (!isSecondaryBuild && stressChart) queueMicrotask(() => refreshAnalysis());
   }
 
   // AB-mode safety is now implemented INLINE inside rebuildPlate()'s body
@@ -5426,14 +5507,25 @@
     const peakEl = document.getElementById('legPeak');
     const sfEl   = document.getElementById('legSf');
     if (!peakEl || !sfEl) return;
-    const peak = state._stressMax || 0;
-    const sigAvg = state.plies.reduce((s,p) => s + (FIBERS[p.fiber]?.sig1t || 0), 0) / Math.max(1, state.plies.length);
-    const margin = sigAvg / Math.max(peak * state.sf, 1);
+    // Recompute from the current edit slot instead of trusting a render cache:
+    // A/B scene construction temporarily swaps plies and can legitimately
+    // replace `_stressMax` while building the secondary canvas.
+    const peak = state.plies && state.plies.length
+      ? estimatePeakStressFor(state.plies, computeCLT(state.plies))
+      : 0;
+    state._stressMax = peak;
+    const midEl = document.getElementById('legMid');
+    const maxEl = document.getElementById('legMax');
+    if (midEl) midEl.textContent = (peak * 0.5).toFixed(0);
+    if (maxEl) maxEl.textContent = peak.toFixed(0);
+    const risk = computeLaminateRisk(state.plies, peak);
+    const margin = risk.reserveFactor;
     peakEl.textContent = `${peak.toFixed(0)} MPa`;
     sfEl.textContent   = `${margin.toFixed(2)}×`;
-    // Color-code SF: green ≥ 2.0, amber 1.2–2.0, red < 1.2
-    sfEl.style.color = margin >= 2.0 ? '#10b981'
-                     : margin >= 1.2 ? '#f59e0b'
+    sfEl.title = `${state._loadLabel || '載荷包絡'} · 最不利 FI ${risk.worstFI.toFixed(2)} · 要求係數 ${state.sf.toFixed(1)}×`;
+    // Reserve factor ≥1 means the requested design factor is satisfied.
+    sfEl.style.color = margin >= 1.5 ? '#10b981'
+                     : margin >= 1.0 ? '#f59e0b'
                      : '#ef4444';
   }
 
@@ -6933,6 +7025,10 @@
       }
     }
 
+    // Cache the assembled shoe's rest geometry. The action engine uses these
+    // buffers to bend the outsole, foam, upper, tongue and attached details as
+    // one continuous shoe instead of merely rocking the whole group.
+    prepareShoeDeformation(shoeGrp, L, W);
     shoeMesh = shoeGrp;
     (_renderTarget || scene).add(shoeMesh);
   }
@@ -7382,12 +7478,10 @@
   // scales force, stress and deflection. Heavier athlete + faster pace → larger
   // GRF, more stress, more bending. Used by both main plate and exploded layers.
   function userLoadMul(){
-    // ===== Stronger amplification so slider changes produce VISIBLE animation differences =====
-    // Body weight: power 1.4 — at 50kg user gets ~0.62×, at 100kg ~1.62×, at 120kg ~2.0×
-    const bwFactor   = Math.max(0.35, Math.min(3.0, Math.pow((state.bw || 70) / 70, 1.4)));
-    // Pace: extended range for visible impact. 3 min/km (sprint) ≈ 1.50×, 4:30 ≈ 1.18×,
-    // 6 min/km (jog) ≈ 0.92×, 8+ min/km (slow walk) ≈ 0.60×
-    const paceFactor = Math.max(0.55, Math.min(1.65, 1.0 + (5.5 - (state.pace || 4.5)) * 0.18));
+    // Force scales linearly with body mass. Pace is a bounded correction because
+    // each selected load case already carries its own peak-BW assumption.
+    const bwFactor   = Math.max(0.50, Math.min(2.0, (state.bw || 70) / 70));
+    const paceFactor = Math.max(0.82, Math.min(1.20, 1.0 + (4.5 - (state.pace || 4.5)) * 0.08));
     return { bwFactor, paceFactor, total: bwFactor * paceFactor };
   }
 
@@ -7444,6 +7538,9 @@
     const isLateral = (state.activeAction === 'cut' || state.activeAction === 'pivot');
     const isImpact  = (state.activeAction === 'land' || state.activeAction === 'jump' || state.activeAction === 'stop');
     const isRolling = (state.activeAction === 'walk' || state.activeAction === 'jog' || state.activeAction === 'run');
+    const plateFlexFactor = Math.max(0.30, Math.min(2.50, 28 / (D11 + 3)))
+                          * Math.pow(1.0 / Math.max(0.15, resinStiff), 0.55);
+    const rollProfile = shoeDeformationProfile(action, state.actionT, plateFlexFactor);
 
     for (let i = 0; i < N; i++){
       const nx = plateVertexNX[i];
@@ -7496,7 +7593,10 @@
       if (deflect < cap) deflect = cap;
       if (deflect >  3.0) deflect =  3.0;
 
-      const newY = plateBaseY[i] + deflect;
+      const toeU = smoothStep01((nx - 0.62) / 0.38);
+      const gaitCurve = rollProfile.toeBend * toeU
+                      + rollProfile.twist * (nx - 0.50) * nz;
+      const newY = plateBaseY[i] + deflect + gaitCurve;
       pos.setY(i, newY);
       posT.setY(i, newY + totalT/2);
       posB.setY(i, newY - totalT/2);
@@ -7661,15 +7761,7 @@
     // stressMax — mirror of rebuildPlate's formula
     let stressMax = 280;
     try {
-      const sportDef_ = sportDef(state.sport);
-      const _userMul = userLoadMul();
-      const baselineH = 1.50;
-      const stressAmp = Math.pow(baselineH / Math.max(0.20, clt.h), 2.0);
-      const peakStressMpa = 280 * (sportDef_.loadFactor / 2.6)
-                                * (_userMul.bwFactor * _userMul.paceFactor)
-                                * stressAmp
-                                * (state.sf / 1.5);
-      stressMax = Math.min(5000, Math.max(40, peakStressMpa));
+      stressMax = estimatePeakStressFor(slot.plies, clt);
     } catch(_){}
     // ===== Feel class — independent per slot (mirror of refreshAnalysis) =====
     const _D11 = clt.D11, _h = clt.h;
@@ -7823,8 +7915,134 @@
     }
   }
 
-  // Apply rigid-body motion to the entire shoe + plate so the user SEES the shoe move
-  // during running, walking, jumping, etc. (in addition to per-vertex plate flex).
+  function prepareShoeDeformation(root, L, W){
+    if (!root) return;
+    root.userData.motionLength = L;
+    root.userData.motionWidth = W;
+    root.children.forEach(child => {
+      if (!child || !child.isMesh) return;
+      child.userData.motionBasePosition = child.position.clone();
+      child.userData.motionBaseRotation = child.rotation.clone();
+      const attr = child.geometry && child.geometry.attributes && child.geometry.attributes.position;
+      if (!attr) return;
+      child.geometry.computeBoundingBox();
+      const box = child.geometry.boundingBox;
+      const spanX = box ? box.max.x - box.min.x : 0;
+      // Continuous shells are deformed vertex-by-vertex. Small components
+      // (laces, studs and accents) follow the local tangent as rigid details.
+      if (spanX > L * 0.16 && attr.count > 50){
+        child.userData.motionBaseVertices = new Float32Array(attr.array);
+      }
+    });
+  }
+
+  function smoothStep01(v){
+    const x = Math.max(0, Math.min(1, v));
+    return x*x*(3 - 2*x);
+  }
+
+  // Returns deformation in millimetres for a stance cycle. The forefoot hinge
+  // sits near the metatarsal heads (~62% shoe length): heel/midfoot stay
+  // comparatively supported while the toe segment curves during propulsion.
+  function shoeDeformationProfile(actionId, t, flexFactor){
+    const load = actionLoadProfile(actionId, t);
+    let toePhase = 0, impactMul = 1, twist = 0;
+    if (actionId === 'walk' || actionId === 'jog' || actionId === 'run'){
+      toePhase = smoothStep01((t - 0.48) / 0.34) * (1 - smoothStep01((t - 0.90) / 0.10));
+    } else if (actionId === 'sprint'){
+      toePhase = Math.sin(Math.PI * smoothStep01(Math.max(0, Math.min(1, t / 0.72))));
+    } else if (actionId === 'jumpUp'){
+      toePhase = smoothStep01((t - 0.34) / 0.34) * (1 - smoothStep01((t - 0.82) / 0.18));
+    } else if (actionId === 'jump'){
+      toePhase = smoothStep01((t - 0.10) / 0.18) * (1 - smoothStep01((t - 0.30) / 0.10));
+      impactMul = t > 0.55 ? 1.55 : 0.75;
+    } else if (actionId === 'land'){
+      toePhase = 0.28 * smoothStep01((t - 0.30) / 0.35);
+      impactMul = 1.65;
+    } else if (actionId === 'stop'){
+      toePhase = -0.28 * Math.sin(Math.PI * Math.min(1, t / 0.55));
+      impactMul = 1.35;
+    } else if (actionId === 'cut'){
+      toePhase = 0.20 * Math.sin(Math.PI*t);
+      twist = 4.5 * Math.sin(Math.PI*t);
+    } else if (actionId === 'pivot'){
+      twist = 5.5 * Math.sin(Math.PI*2*t);
+    }
+    const visibleFlex = Math.max(0.55, Math.min(1.65, Math.sqrt(Math.max(0.2, flexFactor || 1))));
+    const toeBend = 16 * toePhase * visibleFlex;
+    const compression = Math.min(10, (2.2 + 3.8 * load.intensity) * impactMul);
+    return { load, toeBend, compression, twist };
+  }
+
+  function deformShoeAssembly(root, actionId, t, flexFactor){
+    if (!root || !root.userData.motionLength) return;
+    // Updating several thousand shoe-shell vertices at 20 fps is visually
+    // smooth while leaving enough main-thread time for controls and charts.
+    const now = performance.now();
+    if (root.userData.motionLastUpdate && now - root.userData.motionLastUpdate < 50) return;
+    root.userData.motionLastUpdate = now;
+    const L = root.userData.motionLength;
+    const W = root.userData.motionWidth || L*0.36;
+    const profile = shoeDeformationProfile(actionId, t, flexFactor);
+    const hinge = 0.62;
+    const deltaAt = (nx, nz) => {
+      const u = smoothStep01((nx - hinge) / (1 - hinge));
+      const toeCurve = profile.toeBend * u;
+      const dx = Math.max(0, 1 - Math.abs(nx - profile.load.nx) / 0.24);
+      const loadPatch = dx*dx * (0.55 + 0.45*Math.max(0, 1 - nz*nz));
+      const compression = -profile.compression * profile.load.intensity * loadPatch;
+      const torsion = profile.twist * (nx - 0.50) * nz;
+      return toeCurve + compression + torsion;
+    };
+    root.children.forEach(child => {
+      if (!child || !child.isMesh) return;
+      const basePos = child.userData.motionBasePosition;
+      const baseRot = child.userData.motionBaseRotation;
+      const base = child.userData.motionBaseVertices;
+      const attr = child.geometry && child.geometry.attributes && child.geometry.attributes.position;
+      if (base && attr && base.length === attr.array.length){
+        for (let i=0; i<attr.count; i++){
+          const k = i*3;
+          const nx = Math.max(0, Math.min(1, (base[k] + (basePos?.x || 0) + L/2) / L));
+          const nz = Math.max(-1, Math.min(1, (base[k+2] + (basePos?.z || 0)) / Math.max(W*0.48, 1)));
+          attr.array[k] = base[k];
+          attr.array[k+1] = base[k+1] + deltaAt(nx, nz);
+          attr.array[k+2] = base[k+2];
+        }
+        attr.needsUpdate = true;
+        // Keep the rest-pose smooth normals during animation. Recomputing all
+        // upper/foam normals at 60 fps is expensive and can stall WebGL; the
+        // deformation range is small enough that the cached normals remain
+        // visually stable.
+      } else if (basePos && baseRot){
+        const nx = Math.max(0, Math.min(1, (basePos.x + L/2) / L));
+        const nz = Math.max(-1, Math.min(1, basePos.z / Math.max(W*0.48, 1)));
+        child.position.copy(basePos);
+        child.position.y += deltaAt(nx, nz);
+        const du = 0.008;
+        const slope = (deltaAt(Math.min(1,nx+du),nz) - deltaAt(Math.max(0,nx-du),nz)) / (2*du*L);
+        child.rotation.copy(baseRot);
+        child.rotation.z += Math.atan(slope);
+      }
+    });
+  }
+
+  function resetShoeDeformation(root){
+    if (!root) return;
+    root.userData.motionLastUpdate = 0;
+    root.children.forEach(child => {
+      if (!child || !child.isMesh) return;
+      const base = child.userData.motionBaseVertices;
+      const attr = child.geometry && child.geometry.attributes && child.geometry.attributes.position;
+      if (base && attr && base.length === attr.array.length){
+        attr.array.set(base); attr.needsUpdate = true;
+      }
+      if (child.userData.motionBasePosition) child.position.copy(child.userData.motionBasePosition);
+      if (child.userData.motionBaseRotation) child.rotation.copy(child.userData.motionBaseRotation);
+    });
+  }
+
+  // Combine restrained rigid-body motion with local shoe/foot flex.
   function applyShoeMotion(actionId, t, ctx){
     // ctx lets AB mode apply the same motion to viewB's shoe/plate/layers.
     // When called without ctx, default to the main slot's module globals so
@@ -7947,8 +8165,11 @@
       : (state._resinStiff || 1.0);
     const resinFlex = Math.pow(1.0 / Math.max(0.15, _rStiff), 0.55);
     const flexFactor = fiberFlex * resinFlex;
-    rz *= flexFactor;
+    // Keep only a restrained global pitch; the visible response now comes
+    // primarily from local forefoot curvature and foam compression below.
+    rz *= Math.min(1.25, flexFactor) * 0.32;
     ry *= 0.85 + 0.15 * flexFactor;                // pivot less sensitive
+    deformShoeAssembly(ctx.shoeMesh, actionId, t, flexFactor);
 
     // ===== Smooth-easing (low-pass) so transitions don't jolt =====
     // Apply to BOTH the dressed shoe (when visible) AND every exploded layer
@@ -7983,6 +8204,7 @@
       g.position.set(0, 0, 0);
       g.rotation.set(0, 0, 0);
     });
+    resetShoeDeformation(ctx.shoeMesh);
   }
 
   function animate(){
@@ -8810,9 +9032,8 @@
     const stiffness = Math.min(40, clt.Ex * clt.h * clt.h * clt.h / 12);
     const stiffMatch = 1 - Math.min(1, Math.abs(stiffness - stiffnessTarget) / stiffnessTarget);
     const massScore = 1 - Math.min(1, Math.max(0, (clt.mass - 1.2)) / 1.5);
-    const peakStress = state._stressMax || 400;
-    const sigAvg = (plies || []).reduce((s,p)=> s + (FIBERS[p.fiber]?.sig1t || 4900), 0) / N;
-    const safetyMargin = sigAvg / Math.max(peakStress * state.sf, 1);
+    const peakStress = estimatePeakStressFor(plies || [], clt);
+    const safetyMargin = computeLaminateRisk(plies || [], peakStress).reserveFactor;
     return {
       plies, clt,
       h: clt.h, D11: clt.D11, D22: clt.D22, D66: clt.D66,
@@ -8831,6 +9052,21 @@
 
   function refreshAnalysis(){
     const clt = computeCLT(state.plies);
+    // Always recompute from current inputs so analysis never inherits a
+    // temporary A/B rendering pass or an earlier template's cached value.
+    state._stressMax = estimatePeakStressFor(state.plies, clt);
+    // Viewport summary is derived from the same current state as every chart.
+    // This also repairs any temporary A/B render pass that touched 3D globals.
+    const range = plateRange();
+    const currentL = shoeLengthMM() * (range.end - range.start);
+    const regionLabel = (PLATE_REGIONS[state.region] || PLATE_REGIONS.full).label;
+    const hudPlate = document.getElementById('hudPlate');
+    const hudMass = document.getElementById('hudMass');
+    if (hudPlate) hudPlate.textContent = state.plies.length ? `${currentL.toFixed(0)}mm · ${regionLabel}` : '— · 無碳板';
+    if (hudMass){
+      const area = (currentL * plateWidthMM() * 0.55) / 1e6;
+      hudMass.textContent = state.plies.length ? `${(clt.mass * area * 1000).toFixed(1)} g` : '0.0 g';
+    }
     // ===== expose stiffness to dynamic animation engine =====
     state._cltD11 = clt.D11;
     state._cltD22 = clt.D22;       // lateral bending stiffness — drives cut/lateral feel
@@ -8900,25 +9136,17 @@
     setGauge('st', clamp(stability));
     setGauge('ft', clamp(fatigueLife));
 
-    // stress along centerline (approx parabolic distribution scaled by load case)
+    // Normalized centerline shape: chart peak equals the shared envelope peak.
     if (stressChart){
-      const labels = Array.from({length: 30}, (_, i) => i);
-      const data = labels.map(i => {
-        const nx = i/29;
-        let weight;
-        if (state.strike === 'rear')      weight = Math.exp(-Math.pow((nx-0.20)/0.18,2));
-        else if (state.strike === 'mid')  weight = Math.exp(-Math.pow((nx-0.50)/0.22,2));
-        else                              weight = Math.exp(-Math.pow((nx-0.78)/0.18,2));
-        const bend = Math.exp(-Math.pow((nx-0.55)/0.32,2));
-        return Math.round(state._stressMax*(0.20 + 0.55*weight + 0.45*bend));
-      });
+      const data = centerlineStressData(state._stressMax, state.strike);
       stressChart.data.datasets[0].data = data;
-      const peak = Math.max(...data);
-      $('#peakStress').textContent = peak;
-      // safety vs strongest fiber σ1t weighted average
-      const sigAvg = state.plies.reduce((s,p)=>s+FIBERS[p.fiber].sig1t,0)/state.plies.length;
-      const margin = sigAvg / Math.max(peak*state.sf, 1);
+      const peak = state._stressMax;
+      $('#peakStress').textContent = Math.round(peak);
+      const risk = computeLaminateRisk(state.plies, peak);
+      const margin = risk.reserveFactor;
       $('#safetyMar').textContent = margin.toFixed(2)+'×';
+      $('#safetyMar').title = `${state._loadLabel || '載荷包絡'} · 最不利 FI ${risk.worstFI.toFixed(2)} · 要求係數 ${state.sf.toFixed(1)}×`;
+      $('#safetyMar').style.color = margin >= 1.5 ? 'var(--emerald)' : margin >= 1.0 ? 'var(--amber)' : 'var(--red)';
       stressChart.update('none');
     }
 
@@ -8951,6 +9179,7 @@
     } else if (typeof clearABCompareBadges === 'function'){
       clearABCompareBadges();
     }
+    updateLegendKPI();
   }
   // NOTE: clamp() is defined above computeSlotMetrics now (used by both).
 
@@ -9022,25 +9251,14 @@
     attach('safetyMar',  M.safetyMargin, true, '×', 2);
     attach('arealMass',  M.mass, false, ' kg/m²', 2);
     // ---- Performance gauges (next to value labels) ----
-    attach('erVal', M.energyReturn,  true, '%', 0);
-    attach('prVal', M.propulsion,    true, '%', 0);
-    attach('cfVal', M.comfort,       true, '%', 0);
-    attach('stVal', M.stability,     true, '%', 0);
-    attach('ftVal', M.fatigueLife,   true, '%', 0);
+    attach('erVal', M.energyReturn,  true, '/100', 0);
+    attach('prVal', M.propulsion,    true, '/100', 0);
+    attach('cfVal', M.comfort,       true, '/100', 0);
+    attach('stVal', M.stability,     true, '/100', 0);
+    attach('ftVal', M.fatigueLife,   true, '/100', 0);
     // ---- Centerline σ_VM curve: add slot B's data as 2nd dataset ----
     if (stressChart){
-      const labels = Array.from({length: 30}, (_, i) => i);
-      const dataB = labels.map(i => {
-        const nx = i / 29;
-        let weight;
-        if (state.strike === 'rear')      weight = Math.exp(-Math.pow((nx-0.20)/0.18,2));
-        else if (state.strike === 'mid')  weight = Math.exp(-Math.pow((nx-0.50)/0.22,2));
-        else                              weight = Math.exp(-Math.pow((nx-0.78)/0.18,2));
-        const bend = Math.exp(-Math.pow((nx-0.55)/0.32,2));
-        // Each slot has its own peakStress scaling — for compact comparison
-        // we use the same _stressMax so the curves overlay sensibly.
-        return Math.round(state._stressMax * (0.20 + 0.55*weight + 0.45*bend) * (M.D11 / Math.max(state._cltD11 || M.D11, 1e-6)));
-      });
+      const dataB = centerlineStressData(M.peakStress, state.strike);
       const otherColor = otherKey === 'A' ? '#22d3ee' : '#ec4899';
       stressChart.data.datasets.push({
         label: `σ_VM (slot ${otherKey})`,
@@ -9268,11 +9486,11 @@
     for (let i=1;i<n;i++){ if (state.plies[i].angle === state.plies[i-1].angle){ cons++; maxCons=Math.max(maxCons,cons+1); } else cons=0; }
     const consOK = maxCons <= 4;
     checks.push({ ok: consOK, txt: `相鄰同角度最多 ${maxCons} 層 ${consOK ? '✓' : '建議拆開避免裂紋傳播'}` });
-    // 5. safety
-    const sigAvg = state.plies.reduce((s,p)=>s+FIBERS[p.fiber].sig1t,0)/state.plies.length;
-    const margin = sigAvg / Math.max(peakStress*state.sf, 1);
-    const sfOK = margin >= 1.5;
-    checks.push({ ok: sfOK, txt: `安全係數 ${margin.toFixed(2)}× (目標 ≥ 1.5)` });
+    // 5. laminate reserve factor from worst per-ply Max-Stress / Tsai-Wu FI.
+    const risk = computeLaminateRisk(state.plies, peakStress);
+    const margin = risk.reserveFactor;
+    const sfOK = margin >= 1.0;
+    checks.push({ ok: sfOK, txt: `設計裕度 RF ${margin.toFixed(2)}× · 最不利 FI ${risk.worstFI.toFixed(2)} · 要求係數 ${state.sf.toFixed(1)}×` });
     // 6. arch fit
     const archOK = state.arch >= 8 && state.arch <= 22;
     checks.push({ ok: archOK, txt: `足弓曲度 ${state.arch}mm ${archOK ? '符合解剖學' : '建議 8–22mm'}` });
@@ -9371,6 +9589,9 @@
         b.style.boxShadow = '';
       }
     });
+    // The selected movement now governs the analysis envelope, not only the animation.
+    rebuildPlate();
+    refreshAnalysis();
   }
 
   function stopAction(){
@@ -9404,27 +9625,27 @@
       });
     }
     if (forceArrow) forceArrow.visible = false;
+    // Return analysis to the selected checkbox load-case envelope.
+    rebuildPlate();
+    refreshAnalysis();
   }
 
   // ===== Load case panel =====
   function renderLoadCases(){
-    const cases = [
-      { id:'rear', label:'後跟落地 (跑步初接觸)', val: '2.5×BW · ~7ms 衝擊' },
-      { id:'mid',  label:'中足支撐 (Midstance)',  val: '2.2×BW · 50ms 滾動' },
-      { id:'fore', label:'前掌推進 (Toe-off)',     val: '3.1×BW · 推進方向' },
-      { id:'lat',  label:'橫向切入 (Cut, 籃/足)', val: '5.5×BW · ±25° 剪切' },
-      { id:'jump', label:'起跳落地 (Jump landing)',val: '6.0×BW · 垂直撞擊' },
-      { id:'tor',  label:'旋轉扭力 (Pivot)',       val: '1.8×BW · 18 N·m 扭矩' },
-    ];
-    $('#loadCaseList').innerHTML = cases.map((c, i) => `
+    $('#loadCaseList').innerHTML = LOAD_CASES.map(c => `
       <label class="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-[rgba(2,6,23,0.4)] border border-[var(--line-soft)] hover:border-[rgba(34,211,238,0.30)] cursor-pointer">
         <span class="flex items-center gap-2">
-          <input type="checkbox" class="accent-cyan-400" ${i<3?'checked':''} data-case="${c.id}">
+          <input type="checkbox" class="accent-cyan-400" ${(state.loadCases || []).includes(c.id)?'checked':''} data-case="${c.id}">
           <span class="text-[11.5px] text-[var(--text-0)]">${c.label}</span>
         </span>
         <span class="mono text-[10px] text-[var(--text-2)]">${c.val}</span>
       </label>
     `).join('');
+    $$('#loadCaseList input[data-case]').forEach(input => input.addEventListener('change', () => {
+      state.loadCases = $$('#loadCaseList input[data-case]:checked').map(el => el.dataset.case);
+      rebuildPlate();
+      refreshAnalysis();
+    }));
   }
 
   // ===== Plate-only mode visual override =====
@@ -10149,15 +10370,7 @@
       // AB-safety swap may have set state._stressMax to slot A's value
       // during the edit. We recompute from THIS slot's own plies/CLT.
       try {
-        const sportDef_ = sportDef(state.sport);
-        const _userMul = userLoadMul();
-        const baselineH = 1.50;
-        const stressAmp = Math.pow(baselineH / Math.max(0.20, clt.h), 2.0);
-        const peakStressMpa = 280 * (sportDef_.loadFactor / 2.6)
-                                  * (_userMul.bwFactor * _userMul.paceFactor)
-                                  * stressAmp
-                                  * (state.sf / 1.5);
-        slot._stressMax = Math.min(5000, Math.max(40, peakStressMpa));
+        slot._stressMax = estimatePeakStressFor(slot.plies, clt);
       } catch(_){ slot._stressMax = 280; }
     };
     _cacheSlot(state.editSlot);
@@ -10510,15 +10723,7 @@
           // Compute slot's own stressMax (mirror of rebuildPlate's logic).
           // h smaller → stress amplification → softer plate visibly stressed.
           try {
-            const sportDef_ = sportDef(state.sport);
-            const _userMul = userLoadMul();
-            const baselineH = 1.50;
-            const stressAmp = Math.pow(baselineH / Math.max(0.20, clt.h), 2.0);
-            const peakStressMpa = 280 * (sportDef_.loadFactor / 2.6)
-                                      * (_userMul.bwFactor * _userMul.paceFactor)
-                                      * stressAmp
-                                      * (state.sf / 1.5);
-            slot._stressMax = Math.min(5000, Math.max(40, peakStressMpa));
+            slot._stressMax = estimatePeakStressFor(slot.plies, clt);
           } catch(_){ slot._stressMax = state._stressMax || 280; }
         };
         _cacheSlotCLT('A');
