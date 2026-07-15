@@ -7596,7 +7596,9 @@
       if (deflect >  3.0) deflect =  3.0;
 
       const toeU = smoothStep01((nx - 0.62) / 0.38);
-      const gaitCurve = rollProfile.toeBend * toeU
+      const rearU = smoothStep01((0.73 - nx) / 0.71);
+      const gaitCurve = rollProfile.rearLift * rearU
+                      + rollProfile.toeBend * toeU
                       + rollProfile.twist * (nx - 0.50) * nz;
       const newY = plateBaseY[i] + deflect + gaitCurve;
       pos.setY(i, newY);
@@ -7640,6 +7642,9 @@
     const resinSoftMul = Math.pow(1.0 / Math.max(0.12, resinStiff), 0.85);
     const resinDamp = state._resinDamp || 0.02;
     const dampSpread = 1 + resinDamp * 8;
+    const layerFlexFactor = Math.max(0.30, Math.min(2.50, 28 / (D11 + 3)))
+                          * Math.pow(1.0 / Math.max(0.15, resinStiff), 0.55);
+    const rollProfile = shoeDeformationProfile(action, state.actionT, layerFlexFactor);
 
     layerMeshes.forEach(m => {
       if (!m.userData || !m.userData.isExplodedLayer) return;
@@ -7663,7 +7668,12 @@
         const cap = -7.0 * Math.min(4.5, loadMul * Math.sqrt(resinSoftMul));
         if (deflect < cap) deflect = cap;
         if (deflect >  3.0) deflect =  3.0;
-        pos.setY(i, baseY[i] + deflect);
+        const rearU = smoothStep01((0.73 - nx) / 0.71);
+        const toeU = smoothStep01((nx - 0.62) / 0.38);
+        const gaitCurve = rollProfile.rearLift * rearU
+                        + rollProfile.toeBend * toeU
+                        + rollProfile.twist * (nx - 0.50) * nz;
+        pos.setY(i, baseY[i] + deflect + gaitCurve);
 
         // ===== per-vertex tint based on view mode (stress / strain / energy / layers) =====
         if (col){
@@ -7724,7 +7734,8 @@
     const col = main.geometry.attributes.color;
     const posT = top.geometry.attributes.position;
     const posB = bot.geometry.attributes.position;
-    const totalT = state.plies.reduce((a,p)=>a+p.t,0)*40;
+    const totalT = plateMesh?.userData?.displayT
+      ?? state.plies.reduce((a,p)=>a+p.t,0)*40;
     const Ex = state._cltEx || 130;
     const matMod = Math.max(0.30, Math.min(3.5, Ex / 130));
     for (let i = 0; i < pos.count; i++){
@@ -7948,11 +7959,16 @@
   // comparatively supported while the toe segment curves during propulsion.
   function shoeDeformationProfile(actionId, t, flexFactor){
     const load = actionLoadProfile(actionId, t);
-    let toePhase = 0, impactMul = 1, twist = 0;
+    let toePhase = 0, rearRollPhase = 0, rearLiftMax = 0, impactMul = 1, twist = 0;
     if (actionId === 'walk' || actionId === 'jog' || actionId === 'run'){
       toePhase = smoothStep01((t - 0.48) / 0.34) * (1 - smoothStep01((t - 0.90) / 0.10));
+      const rollStart = actionId === 'walk' ? 0.42 : (actionId === 'jog' ? 0.37 : 0.32);
+      rearRollPhase = smoothStep01((t - rollStart) / 0.30) * (1 - smoothStep01((t - 0.91) / 0.09));
+      rearLiftMax = actionId === 'walk' ? 18 : (actionId === 'jog' ? 27 : 36);
     } else if (actionId === 'sprint'){
       toePhase = Math.sin(Math.PI * smoothStep01(Math.max(0, Math.min(1, t / 0.72))));
+      rearRollPhase = smoothStep01(t / 0.25) * (1 - smoothStep01((t - 0.82) / 0.16));
+      rearLiftMax = 43;
     } else if (actionId === 'jumpUp'){
       toePhase = smoothStep01((t - 0.34) / 0.34) * (1 - smoothStep01((t - 0.82) / 0.18));
     } else if (actionId === 'jump'){
@@ -7972,8 +7988,12 @@
     }
     const visibleFlex = Math.max(0.55, Math.min(1.65, Math.sqrt(Math.max(0.2, flexFactor || 1))));
     const toeBend = 16 * toePhase * visibleFlex;
+    // Rear-foot lift is intentionally a distributed bend, not another rigid
+    // rotation of the whole shoe.  Softer layups show a little more roll, but
+    // the range stays anatomical rather than scaling without limit.
+    const rearLift = rearLiftMax * rearRollPhase * (0.86 + 0.14 * visibleFlex);
     const compression = Math.min(10, (2.2 + 3.8 * load.intensity) * impactMul);
-    return { load, toeBend, compression, twist };
+    return { load, toeBend, rearLift, compression, twist };
   }
 
   function deformShoeAssembly(root, actionId, t, flexFactor){
@@ -7990,11 +8010,16 @@
     const deltaAt = (nx, nz) => {
       const u = smoothStep01((nx - hinge) / (1 - hinge));
       const toeCurve = profile.toeBend * u;
+      // Model foot roll as a continuous rear-to-MTP curve.  The heel rises,
+      // the arch bends progressively, and the forefoot contact patch remains
+      // near the ground.  This removes the mechanical "nodding block" look.
+      const rearU = smoothStep01((0.73 - nx) / 0.71);
+      const rearCurve = profile.rearLift * rearU;
       const dx = Math.max(0, 1 - Math.abs(nx - profile.load.nx) / 0.24);
       const loadPatch = dx*dx * (0.55 + 0.45*Math.max(0, 1 - nz*nz));
       const compression = -profile.compression * profile.load.intensity * loadPatch;
       const torsion = profile.twist * (nx - 0.50) * nz;
-      return toeCurve + compression + torsion;
+      return rearCurve + toeCurve + compression + torsion;
     };
     root.children.forEach(child => {
       if (!child || !child.isMesh) return;
@@ -8077,34 +8102,32 @@
     switch(actionId){
       case 'walk': {
         const heelContact = 1 - smoothStep01(t / 0.24);
-        const toeOff = smoothStep01((t - 0.48) / 0.30) * (1 - smoothStep01((t - 0.90) / 0.10));
-        // Early stance pivots about the heel (toe raised); late stance pivots
-        // about the forefoot so the heel visibly leaves the ground.
-        rz = 0.09 * heelContact - 0.18 * toeOff;
-        contactNx = heelContact > toeOff ? 0.08 : (toeOff > 0.02 ? 0.88 : null);
+        // Heel strike still uses a small contact rotation.  Propulsion itself
+        // is handled by distributed rear-foot flex in deformShoeAssembly().
+        rz = 0.07 * heelContact;
+        contactNx = heelContact > 0.02 ? 0.08 : null;
         py = -0.8 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'jog': {
         const heelContact = 0.65 * (1 - smoothStep01(t / 0.20));
-        const toeOff = smoothStep01((t - 0.43) / 0.30) * (1 - smoothStep01((t - 0.89) / 0.11));
-        rz = 0.07 * heelContact - 0.23 * toeOff;
-        contactNx = heelContact > toeOff ? 0.16 : (toeOff > 0.02 ? 0.87 : null);
+        rz = 0.055 * heelContact;
+        contactNx = heelContact > 0.02 ? 0.16 : null;
         py = -1.4 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'run': {
         const midContact = 0.35 * (1 - smoothStep01(t / 0.18));
-        const toeOff = smoothStep01((t - 0.38) / 0.28) * (1 - smoothStep01((t - 0.87) / 0.13));
-        rz = 0.04 * midContact - 0.27 * toeOff;
-        contactNx = midContact > toeOff ? 0.32 : (toeOff > 0.02 ? 0.86 : null);
+        rz = 0.03 * midContact;
+        contactNx = midContact > 0.02 ? 0.32 : null;
         py = -1.8 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'sprint': {
-        const toeOff = Math.sin(Math.PI * smoothStep01(Math.min(1, t / 0.82)));
-        rz = -0.31 * toeOff;
-        contactNx = toeOff > 0.02 ? 0.86 : null;
+        // Forefoot runners bend through the MTP region; the complete shoe no
+        // longer rocks around a single toe point.
+        rz = 0;
+        contactNx = null;
         py = -1.2 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
