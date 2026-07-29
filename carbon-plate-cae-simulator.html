@@ -6423,7 +6423,7 @@
       case 'basketball': return { outsoleH: 13, midHeel: 34, midFore: 24, upperH: 132, soleW:1.08, lacesN: 7, openStart:0.07, openEnd:0.52, openMaxRad:0.42, superN:2.3, sideTaper:0.74 };
       case 'trail':      return { outsoleH: 16, midHeel: 42, midFore: 28, upperH: 96,  soleW:1.09, lacesN: 7, openStart:0.09, openEnd:0.56, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
       case 'running':
-      default:           return { outsoleH: 8,  midHeel: 38, midFore: 23, upperH: 62,  soleW:1.02, lacesN: 6, openStart:0.05, openEnd:0.62, openMaxRad:0.58, superN:2.15, sideTaper:0.72 };
+      default:           return { outsoleH: 8,  midHeel: 42, midFore: 24, upperH: 78,  soleW:1.02, lacesN: 7, openStart:0.08, openEnd:0.58, openMaxRad:0.38, superN:2.35, sideTaper:0.66 };
     }
   }
   function midsoleHeightAt(nx, dims){
@@ -6463,13 +6463,11 @@
       else if (nx < 0.85) r = 0.82 - 0.22*((nx-0.50)/0.35);
       else                r = 0.55 * (1 - (nx-0.85)/0.15);
     } else {
-      // Low-cut racing upper with a defined collar and compact anatomical toe box.
-      if      (nx < 0.08) r = 0.68 + 0.08*(nx/0.08);
-      else if (nx < 0.20) r = 0.76 + 0.10*Math.sin(((nx-0.08)/0.12)*Math.PI);
-      else if (nx < 0.48) r = 0.76 - 0.18*((nx-0.20)/0.28);
-      else if (nx < 0.80) r = 0.58 - 0.18*((nx-0.48)/0.32);
-      else if (nx < 0.96) r = 0.40 - 0.28*((nx-0.80)/0.16);
-      else                r = 0.12 * (1 - (nx-0.96)/0.04);
+      // running (default)
+      if      (nx < 0.20) r = 0.65 + 0.30*Math.sin((nx/0.20)*Math.PI*0.5);
+      else if (nx < 0.50) r = 0.95 - 0.20*((nx-0.20)/0.30);
+      else if (nx < 0.85) r = 0.75 - 0.20*((nx-0.50)/0.35);
+      else                r = 0.50 * (1 - (nx-0.85)/0.15);
     }
     return Math.max(8, r * dims.upperH);
   }
@@ -6862,12 +6860,12 @@
         const localHalfW = halfW * (1 - yNorm) + topHalfW * yNorm;
         const tongueHalfW = Math.abs(localHalfW * Math.sign(cosP) * Math.pow(Math.abs(cosP || 1e-6), n2*0.6));
         // Tongue rises slightly through the opening, peak in middle
-        const tongueY = yBase + totalT/2 + midH + upH * (yNorm + 0.018 + 0.025*Math.sin(t*Math.PI));
+        const tongueY = yBase + totalT/2 + midH + upH * (yNorm + 0.04 + 0.06*Math.sin(t*Math.PI));
         for (let j = 0; j <= segZt; j++){
           const u = j/segZt;
           const z = (-1 + 2*u) * tongueHalfW;
           // small vertical bulge in the middle (z=0) to give 3D feel
-          const bulge = 1.2 * Math.sin(u * Math.PI);
+          const bulge = 2.5 * Math.sin(u * Math.PI);
           pos.push(x, tongueY + bulge, z);
         }
       }
@@ -6898,7 +6896,7 @@
       const lacesN = dims.lacesN;
       const laceMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.45, metalness: 0.0 });
       const yAxis = new THREE.Vector3(0, 1, 0);
-      const laceR = (style === 'basketball' || style === 'football' || style === 'trail') ? 1.8 : 1.05;
+      const laceR = (style === 'basketball' || style === 'football' || style === 'trail') ? 2.0 : 1.6;
       for (let k = 0; k < lacesN; k++){
         const tk = (k + 0.5) / lacesN;
         const nx = dims.openStart + (dims.openEnd - dims.openStart) * tk;
@@ -7008,8 +7006,24 @@
         shoeGrp.add(stripe);
       }
     }
-    // Running graphics remain painted into the bonded upper surface. The old
-    // free-standing side planes were removed because they appeared to float.
+    if (style === 'running'){
+      // brand swoosh-like accent line on each side
+      const accentMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 });
+      for (const side of [-1, 1]){
+        const accentGeo = new THREE.PlaneGeometry(L*0.45, 8);
+        const a = new THREE.Mesh(accentGeo, accentMat);
+        const nx = 0.55;
+        const x = -L/2 + nx*L;
+        const halfW = widthAt(nx) * 0.96;
+        const yBase = baseAt(x);
+        const midH = midsoleHeightAt(nx, dims);
+        const upH = upperHeightAt(nx, dims, style);
+        a.position.set(x, yBase + totalT/2 + midH + upH*0.30, side * halfW * 0.93);
+        a.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
+        a.rotation.x = side * 0.10;
+        shoeGrp.add(a);
+      }
+    }
 
     // Cache the assembled shoe's rest geometry. The action engine uses these
     // buffers to bend the outsole, foam, upper, tongue and attached details as
@@ -7529,8 +7543,6 @@
     const plateFlexFactor = Math.max(0.30, Math.min(2.50, 28 / (D11 + 3)))
                           * Math.pow(1.0 / Math.max(0.15, resinStiff), 0.55);
     const rollProfile = shoeDeformationProfile(action, state.actionT, plateFlexFactor);
-    const bondedView = !!shoeMesh && shoeMesh.visible && !state.cutaway
-                    && state.viewMode !== 'layers' && state.viewMode !== 'plate';
 
     for (let i = 0; i < N; i++){
       const nx = plateVertexNX[i];
@@ -7582,18 +7594,6 @@
       const cap = -7.0 * Math.min(4.5, loadMul * Math.sqrt(resinSoftMul));
       if (deflect < cap) deflect = cap;
       if (deflect >  3.0) deflect =  3.0;
-
-      // In an assembled shoe the carbon plate is bonded between foam and
-      // outsole. Share the shoe skeleton compression and retain only a
-      // sub-millimetre material-dependent offset; larger analytical flex is
-      // reserved for Plate/Layers views so the assembly can never delaminate.
-      if (bondedView){
-        const shoeDx = Math.max(0, 1 - Math.abs(nx - loadNx) / 0.24);
-        const sharedPatch = shoeDx*shoeDx * (0.55 + 0.45*Math.max(0, 1 - nz*nz));
-        const sharedCompression = -rollProfile.compression * intensity * sharedPatch;
-        const materialMicroFlex = Math.max(-0.45, Math.min(0.25, deflect * 0.08));
-        deflect = sharedCompression + materialMicroFlex;
-      }
 
       const toeU = smoothStep01((nx - 0.62) / 0.38);
       const rearU = smoothStep01((0.73 - nx) / 0.71);
@@ -7668,18 +7668,6 @@
         const cap = -7.0 * Math.min(4.5, loadMul * Math.sqrt(resinSoftMul));
         if (deflect < cap) deflect = cap;
         if (deflect >  3.0) deflect =  3.0;
-
-      // In an assembled shoe the carbon plate is bonded between foam and
-      // outsole. Share the shoe skeleton compression and retain only a
-      // sub-millimetre material-dependent offset; larger analytical flex is
-      // reserved for Plate/Layers views so the assembly can never delaminate.
-      if (bondedView){
-        const shoeDx = Math.max(0, 1 - Math.abs(nx - loadNx) / 0.24);
-        const sharedPatch = shoeDx*shoeDx * (0.55 + 0.45*Math.max(0, 1 - nz*nz));
-        const sharedCompression = -rollProfile.compression * intensity * sharedPatch;
-        const materialMicroFlex = Math.max(-0.45, Math.min(0.25, deflect * 0.08));
-        deflect = sharedCompression + materialMicroFlex;
-      }
         const rearU = smoothStep01((0.73 - nx) / 0.71);
         const toeU = smoothStep01((nx - 0.62) / 0.38);
         const gaitCurve = rollProfile.rearLift * rearU
@@ -7976,11 +7964,11 @@
       toePhase = smoothStep01((t - 0.48) / 0.34) * (1 - smoothStep01((t - 0.90) / 0.10));
       const rollStart = actionId === 'walk' ? 0.42 : (actionId === 'jog' ? 0.37 : 0.32);
       rearRollPhase = smoothStep01((t - rollStart) / 0.30) * (1 - smoothStep01((t - 0.91) / 0.09));
-      rearLiftMax = actionId === 'walk' ? 3.5 : (actionId === 'jog' ? 5.0 : 7.0);
+      rearLiftMax = actionId === 'walk' ? 18 : (actionId === 'jog' ? 27 : 36);
     } else if (actionId === 'sprint'){
       toePhase = Math.sin(Math.PI * smoothStep01(Math.max(0, Math.min(1, t / 0.72))));
       rearRollPhase = smoothStep01(t / 0.25) * (1 - smoothStep01((t - 0.82) / 0.16));
-      rearLiftMax = 9.0;
+      rearLiftMax = 43;
     } else if (actionId === 'jumpUp'){
       toePhase = smoothStep01((t - 0.34) / 0.34) * (1 - smoothStep01((t - 0.82) / 0.18));
     } else if (actionId === 'jump'){
@@ -7999,7 +7987,7 @@
       twist = 5.5 * Math.sin(Math.PI*2*t);
     }
     const visibleFlex = Math.max(0.55, Math.min(1.65, Math.sqrt(Math.max(0.2, flexFactor || 1))));
-    const toeBend = 5.0 * toePhase * visibleFlex;
+    const toeBend = 16 * toePhase * visibleFlex;
     // Rear-foot lift is intentionally a distributed bend, not another rigid
     // rotation of the whole shoe.  Softer layups show a little more roll, but
     // the range stays anatomical rather than scaling without limit.
@@ -8185,12 +8173,6 @@
         break;
       }
     }
-    // Restrain viewport motion to engineering-scale cues. Large translations
-    // made every mode feel like a rubber toy and obscured the CAE result.
-    const visualScale = ({ jump:0.58, jumpUp:0.58, land:0.62, cut:0.68, stop:0.60, pivot:0.65 })[actionId] || 0.78;
-    px *= visualScale; py *= visualScale; pz *= visualScale;
-    rx *= visualScale; ry *= visualScale; rz *= visualScale;
-
     // ===== Plate-stiffness modulation of forefoot bending =====
     // AMPLIFIED (2026-05): user reported that fiber-grade / resin changes
     // looked too subtle in the action animation. Widened the flexFactor
