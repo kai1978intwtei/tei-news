@@ -4297,47 +4297,19 @@
 
   // ===== Action library (athlete movements) =====
   const ACTIONS = {
-    // A cycle represents one return of the SAME foot, not one isolated stance.
-    // Contact ratios give locomotion the observed asymmetric rhythm: walking
-    // spends most of the cycle supported; faster running has a short impulse
-    // followed by a longer flight/recovery interval.
-    walk:   { label:'🚶 走路',   color:'#94a3b8', duration:1100, contact:0.60, peakBW:1.3, phase:'heel · ankle · forefoot rocker' },
-    jog:    { label:'🏃 慢跑',   color:'#22d3ee', duration: 820, contact:0.38, peakBW:2.2, phase:'contact · flight · recovery'     },
-    run:    { label:'🏃‍♂️ 快跑',  color:'#3b82f6', duration: 650, contact:0.34, peakBW:2.8, phase:'short stance · flight'          },
-    sprint: { label:'⚡ 衝刺',   color:'#ec4899', duration: 480, contact:0.22, peakBW:4.2, phase:'brief forefoot impulse'         },
-    jump:   { label:'⤒⤓ 跳躍',   color:'#fb7185', duration:1650, active:0.88, peakBW:6.2, phase:'prepare · launch · flight · land' },
-    jumpUp: { label:'⬆ 起跳',    color:'#f59e0b', duration:1300, active:0.82, peakBW:5.5, phase:'prepare · impulse · recovery'    },
-    land:   { label:'⬇ 落地',    color:'#ef4444', duration:1250, active:0.78, peakBW:6.5, phase:'impact · absorption · settle'    },
-    cut:    { label:'⤴ 橫切',    color:'#8b5cf6', duration:1050, active:0.78, peakBW:5.0, phase:'plant · redirect · release'       },
-    stop:   { label:'■ 急停',    color:'#fb923c', duration:1150, active:0.76, peakBW:4.5, phase:'brake · absorb · settle'         },
-    pivot:  { label:'⟳ 轉身',    color:'#14b8a6', duration:1000, active:0.80, peakBW:3.2, phase:'load · rotate · unload'           },
+    // Visualization durations — slowed 1.8–2.5× from real stance phases so the eye
+    // can follow the deformation. Real-world stance is far shorter (e.g., sprint = 90ms).
+    walk:   { label:'🚶 走路',   color:'#94a3b8', duration:1400, peakBW: 1.3, phase:'gentle roll'     },
+    jog:    { label:'🏃 慢跑',   color:'#22d3ee', duration:1100, peakBW: 2.2, phase:'rolling stance'  },
+    run:    { label:'🏃‍♂️ 快跑',  color:'#3b82f6', duration: 750, peakBW: 2.8, phase:'fast stance'     },
+    sprint: { label:'⚡ 衝刺',   color:'#ec4899', duration: 380, peakBW: 4.2, phase:'forefoot drive'  },
+    jump:   { label:'⤒⤓ 跳躍',   color:'#fb7185', duration:1200, peakBW: 6.2, phase:'launch + land'   },
+    jumpUp: { label:'⬆ 起跳',    color:'#f59e0b', duration: 700, peakBW: 5.5, phase:'launch impulse'  },
+    land:   { label:'⬇ 落地',    color:'#ef4444', duration: 600, peakBW: 6.5, phase:'impact + decel'  },
+    cut:    { label:'⤴ 橫切',    color:'#8b5cf6', duration: 600, peakBW: 5.0, phase:'lateral plant'   },
+    stop:   { label:'■ 急停',    color:'#fb923c', duration: 480, peakBW: 4.5, phase:'heel brake'      },
+    pivot:  { label:'⟳ 轉身',    color:'#14b8a6', duration: 800, peakBW: 3.2, phase:'torsion pivot'   },
   };
-
-  function actionRhythmSample(id, cycleT){
-    const cfg = ACTIONS[id] || {};
-    const t = Math.max(0, Math.min(0.999999, cycleT));
-    if (typeof cfg.contact === 'number'){
-      const contact = t < cfg.contact;
-      const stanceT = contact ? t / cfg.contact : 1;
-      const swingT = contact ? 0 : (t - cfg.contact) / Math.max(0.001, 1 - cfg.contact);
-      // Swing height peaks around mid-swing and returns exactly to zero before
-      // the next initial contact, preventing the old loop-boundary jerk.
-      return {
-        cycleT:t, contact, stanceT:Math.max(0, Math.min(1, stanceT)),
-        swingT:Math.max(0, Math.min(1, swingT)),
-        motionT:Math.max(0, Math.min(1, stanceT)),
-        flight:contact ? 0 : Math.sin(Math.PI * swingT),
-      };
-    }
-    // Discrete actions finish before the cycle boundary and hold briefly at
-    // neutral.  This reads as recovery instead of an endless sine-wave loop.
-    const active = cfg.active || 1;
-    const resting = t >= active;
-    return {
-      cycleT:t, contact:true, stanceT:Math.min(1, t / active), swingT:0,
-      motionT:Math.min(1, t / active), flight:0, resting,
-    };
-  }
 
   // Public biomechanics ranges expressed as a transparent design envelope.
   // These values are scenario inputs, not measured forces for a specific user.
@@ -4415,14 +4387,9 @@
 
   // Returns {nx (0..1 along plate), nz (-1..1 lateral), intensity (0..1.6), force (×BW), strikeName}
   function actionLoadProfile(id, t){
-    const rhythm = actionRhythmSample(id, t);
-    const tt = rhythm.motionT;
-    if (rhythm.resting){
-      return { nx:0.50, nz:0, intensity:0, force:0, strikeName:'recovery' };
-    }
+    const tt = Math.max(0, Math.min(1, t));
     switch(id){
       case 'walk': {
-        if (!rhythm.contact) return { nx:0.84, nz:0, intensity:0, force:0, strikeName:'swing' };
         // Natural gait roll: heel contact → midstance → forefoot propulsion.
         const nx = 0.18 + 0.64*tt;
         const intensity = Math.exp(-Math.pow((tt-0.22)/0.13,2))*0.45 + Math.exp(-Math.pow((tt-0.70)/0.18,2))*0.55;
@@ -4442,7 +4409,6 @@
         return { nx, nz:0, intensity, force: ACTIONS.jump.peakBW*intensity, strikeName: phase };
       }
       case 'jog': {
-        if (!rhythm.contact) return { nx:0.84, nz:0, intensity:0, force:0, strikeName:'flight' };
         // Mid/rear contact rolls continuously toward toe-off.
         const nx = 0.30 + 0.54*tt;
         const intensity = Math.exp(-Math.pow((tt-0.18)/0.10,2))*0.65 + Math.exp(-Math.pow((tt-0.62)/0.16,2))*0.85;
@@ -4450,7 +4416,6 @@
         return { nx, nz:0, intensity, force: ACTIONS.jog.peakBW*intensity, strikeName: strike };
       }
       case 'run': {
-        if (!rhythm.contact) return { nx:0.84, nz:0, intensity:0, force:0, strikeName:'flight' };
         // Competition running: mid/forefoot contact progresses to toe-off.
         const nx = 0.42 + 0.42*tt;
         const intensity = Math.exp(-Math.pow((tt-0.45)/0.22,2))*1.1;
@@ -4458,7 +4423,6 @@
         return { nx, nz:0, intensity, force: ACTIONS.run.peakBW*intensity, strikeName: strike };
       }
       case 'sprint': {
-        if (!rhythm.contact) return { nx:0.80, nz:0, intensity:0, force:0, strikeName:'flight' };
         // Sprint already stays on the forefoot — keep elevated nx.
         const nx = 0.74 + 0.06*Math.sin(tt*Math.PI);
         const intensity = Math.exp(-Math.pow((tt-0.32)/0.13,2))*1.45;
@@ -7994,13 +7958,7 @@
   // sits near the metatarsal heads (~62% shoe length): heel/midfoot stay
   // comparatively supported while the toe segment curves during propulsion.
   function shoeDeformationProfile(actionId, t, flexFactor){
-    const cycleT = t;
-    const rhythm = actionRhythmSample(actionId, cycleT);
-    const load = actionLoadProfile(actionId, cycleT);
-    if (rhythm.resting){
-      return { load, toeBend:0, rearLift:0, compression:0, twist:0 };
-    }
-    t = rhythm.motionT;
+    const load = actionLoadProfile(actionId, t);
     let toePhase = 0, rearRollPhase = 0, rearLiftMax = 0, impactMul = 1, twist = 0;
     if (actionId === 'walk' || actionId === 'jog' || actionId === 'run'){
       toePhase = smoothStep01((t - 0.48) / 0.34) * (1 - smoothStep01((t - 0.90) / 0.10));
@@ -8133,9 +8091,6 @@
     // either slot was mid-rebuild, leaving B frozen even though shoeMesh was
     // actually present.
     if (!ctx.shoeMesh) return;
-    const cycleT = t;
-    const rhythm = actionRhythmSample(actionId, cycleT);
-    t = rhythm.motionT;
     // ===== REALISTIC HUMAN BODY KINEMATICS =====
     // COORDINATE NOTE — plate length is along world X (heel at -X, toe at +X),
     // width along Z, vertical along Y.
@@ -8155,7 +8110,6 @@
         break;
       }
       case 'jog': {
-        if (!rhythm.contact) return { nx:0.84, nz:0, intensity:0, force:0, strikeName:'flight' };
         const heelContact = 0.65 * (1 - smoothStep01(t / 0.20));
         rz = 0.055 * heelContact;
         contactNx = heelContact > 0.02 ? 0.16 : null;
@@ -8163,7 +8117,6 @@
         break;
       }
       case 'run': {
-        if (!rhythm.contact) return { nx:0.84, nz:0, intensity:0, force:0, strikeName:'flight' };
         const midContact = 0.35 * (1 - smoothStep01(t / 0.18));
         rz = 0.03 * midContact;
         contactNx = midContact > 0.02 ? 0.32 : null;
@@ -8171,7 +8124,6 @@
         break;
       }
       case 'sprint': {
-        if (!rhythm.contact) return { nx:0.80, nz:0, intensity:0, force:0, strikeName:'flight' };
         // Forefoot runners bend through the MTP region; the complete shoe no
         // longer rocks around a single toe point.
         rz = 0;
@@ -8190,7 +8142,7 @@
       case 'jumpUp': {
         // crouch (heel-down) → explosive forefoot push-off (toe-down)
         if (t < 0.40){ py = -5 * (t/0.40); rz = -0.12*smoothStep01(t/0.40); contactNx = 0.84; }
-        else { const k = (t-0.40)/0.60; py = -5*(1-k) + 28*Math.sin(k*Math.PI); rz = -0.18*Math.sin(k*Math.PI); contactNx = k < 0.45 ? 0.86 : null; }
+        else { const k = (t-0.40)/0.60; py = -5 + 28 * Math.sin(k*Math.PI); rz = -0.18 * Math.sin(k*Math.PI); contactNx = k < 0.45 ? 0.86 : null; }
         break;
       }
       case 'land': {
@@ -8217,22 +8169,9 @@
       case 'pivot': {
         // Spin around vertical axis
         ry = 0.30 * Math.sin(t * Math.PI * 2);
-        py = -1.5 * Math.pow(Math.sin(t * Math.PI), 2);
+        py = -1.5;
         break;
       }
-    }
-    // Locomotion has a real unloaded interval.  During swing the shoe clears
-    // the ground, relaxes its deformation and returns quietly for the next
-    // contact instead of instantly snapping from toe-off back to heel-strike.
-    if (typeof ACTIONS[actionId]?.contact === 'number' && !rhythm.contact){
-      const u = rhythm.swingT;
-      py = 7 + (actionId === 'walk' ? 8 : actionId === 'jog' ? 13 : actionId === 'run' ? 17 : 20) * rhythm.flight;
-      px = (u - 0.5) * (actionId === 'walk' ? 5 : 8);
-      rz = (actionId === 'walk' ? -0.025 : -0.04) * Math.sin(Math.PI * u);
-      contactNx = null;
-    }
-    if (rhythm.resting){
-      py=0; px=0; pz=0; rx=0; ry=0; rz=0; contactNx=null;
     }
     // ===== Plate-stiffness modulation of forefoot bending =====
     // AMPLIFIED (2026-05): user reported that fiber-grade / resin changes
@@ -8267,7 +8206,7 @@
     // provides the main gait cue. This avoids the old centre-axis "nodding".
     rz *= 0.72 + 0.14 * Math.min(1.50, Math.sqrt(Math.max(0.2, flexFactor)));
     ry *= 0.85 + 0.15 * flexFactor;                // pivot less sensitive
-    deformShoeAssembly(ctx.shoeMesh, actionId, cycleT, flexFactor);
+    deformShoeAssembly(ctx.shoeMesh, actionId, t, flexFactor);
 
     // Rotate around the actual ground contact rather than the group centre.
     // The compensating translation keeps heel/toe contact stationary while
@@ -8279,7 +8218,7 @@
       py += -pivotX * Math.sin(rz);
       // Account for the local forefoot curvature at the contact point so the
       // pivot does not visually float above the ground during toe-off.
-      const motionProfile = shoeDeformationProfile(actionId, cycleT, flexFactor);
+      const motionProfile = shoeDeformationProfile(actionId, t, flexFactor);
       const contactCurve = motionProfile.toeBend * smoothStep01((contactNx - 0.62) / 0.38);
       py -= contactCurve;
     }
@@ -8293,15 +8232,14 @@
     (ctx.layerMeshes || []).forEach(m => {
       if (m && m.userData && m.userData.isExplodedLayer) targets.push(m);
     });
-    const motionAlpha = typeof ACTIONS[actionId]?.contact === 'number' ? 0.42 : 0.30;
     targets.forEach(g => {
       if (!g) return;
-      g.position.x += (px - g.position.x) * motionAlpha;
-      g.position.y += (py - g.position.y) * motionAlpha;
-      g.position.z += (pz - g.position.z) * motionAlpha;
-      g.rotation.x += (rx - g.rotation.x) * motionAlpha;
-      g.rotation.y += (ry - g.rotation.y) * motionAlpha;
-      g.rotation.z += (rz - g.rotation.z) * motionAlpha;
+      g.position.x += (px - g.position.x) * 0.30;
+      g.position.y += (py - g.position.y) * 0.30;
+      g.position.z += (pz - g.position.z) * 0.30;
+      g.rotation.x += (rx - g.rotation.x) * 0.30;
+      g.rotation.y += (ry - g.rotation.y) * 0.30;
+      g.rotation.z += (rz - g.rotation.z) * 0.30;
     });
   }
 
