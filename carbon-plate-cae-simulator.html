@@ -6410,20 +6410,16 @@
   // openMaxRad: HALF-angle of foot opening (rad). 0.78 ≈ 45° each side ≈ 90° total opening.
   // superN: superellipse exponent for cross-section (2 = ellipse, >2 = more rectangular/shoe-like)
   function shoeDims(style){
-    // ===== AMPLIFIED sport silhouettes =====
-    // User feedback (2026-05): the original spread (upperH 55..180) wasn't
-    // visually distinct enough — at AB-mode zoom the basketball shoe still
-    // read as a running shoe. Pushed the contrast: basketball is now a clear
-    // high-top (260mm), football a beefy mid-cut, soccer a sleeve-low cleat,
-    // spike near-zero. Goal is "unmistakable at a glance, no label needed."
+    // Real footwear proportions. Sport identity comes from collar height,
+    // sole stack and traction details, never by stretching the whole upper.
     switch(style){
-      case 'spike':      return { outsoleH: 5,  midHeel: 10, midFore: 5,  upperH: 34,  soleW:0.94, lacesN: 5, openStart:0.12, openEnd:0.62, openMaxRad:0.34, superN:2.7, sideTaper:0.58 };
-      case 'soccer':     return { outsoleH: 7,  midHeel: 10, midFore: 7,  upperH: 42,  soleW:0.97, lacesN: 6, openStart:0.10, openEnd:0.60, openMaxRad:0.36, superN:2.7, sideTaper:0.60 };
-      case 'football':   return { outsoleH: 11, midHeel: 24, midFore: 17, upperH: 92,  soleW:1.07, lacesN: 6, openStart:0.08, openEnd:0.52, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
-      case 'basketball': return { outsoleH: 13, midHeel: 34, midFore: 24, upperH: 132, soleW:1.08, lacesN: 7, openStart:0.07, openEnd:0.52, openMaxRad:0.42, superN:2.3, sideTaper:0.74 };
-      case 'trail':      return { outsoleH: 16, midHeel: 42, midFore: 28, upperH: 96,  soleW:1.09, lacesN: 7, openStart:0.09, openEnd:0.56, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
+      case 'spike':      return { outsoleH:4, midHeel:11, midFore:7,  upperH:44,  soleW:0.96, lacesN:5, openStart:0.08, openEnd:0.68, openMaxRad:0.50, superN:2.7, sideTaper:0.58 };
+      case 'soccer':     return { outsoleH:5, midHeel:14, midFore:10, upperH:50,  soleW:0.98, lacesN:6, openStart:0.07, openEnd:0.66, openMaxRad:0.52, superN:2.6, sideTaper:0.60 };
+      case 'football':   return { outsoleH:6, midHeel:24, midFore:17, upperH:78,  soleW:1.06, lacesN:6, openStart:0.07, openEnd:0.58, openMaxRad:0.50, superN:2.5, sideTaper:0.64 };
+      case 'basketball': return { outsoleH:7, midHeel:31, midFore:23, upperH:108, soleW:1.07, lacesN:7, openStart:0.06, openEnd:0.53, openMaxRad:0.46, superN:2.4, sideTaper:0.67 };
+      case 'trail':      return { outsoleH:7, midHeel:34, midFore:24, upperH:82,  soleW:1.10, lacesN:6, openStart:0.07, openEnd:0.60, openMaxRad:0.50, superN:2.5, sideTaper:0.65 };
       case 'running':
-      default:           return { outsoleH: 8,  midHeel: 42, midFore: 24, upperH: 78,  soleW:1.02, lacesN: 7, openStart:0.08, openEnd:0.58, openMaxRad:0.38, superN:2.35, sideTaper:0.66 };
+      default:           return { outsoleH:5, midHeel:23, midFore:15, upperH:62,  soleW:1.04, lacesN:6, openStart:0.06, openEnd:0.64, openMaxRad:0.52, superN:2.5, sideTaper:0.62 };
     }
   }
   function midsoleHeightAt(nx, dims){
@@ -6684,7 +6680,7 @@
       const yBot = (nx, x) => baseAt(x) + totalT/2 + 0.6;
       const foam = [0.92, 0.93, 0.96];
       shoeGrp.add(buildSlabMesh(L, yTop, yBot, dims.soleW * 0.97, foam, {
-        roughness: 0.65, opacity: 0.88, clearcoat: 0.3
+        roughness: 0.72, clearcoat: 0.12
       }));
     }
 
@@ -6693,7 +6689,7 @@
     // and more shoe-like (flatter top, more vertical sides).
     {
       const segX = 60, segPhi = 32;
-      const pos = [], col = [], uv = [], idx = [];
+      const pos = [], col = [], idx = [];
       const n2 = 2 / dims.superN;  // exponent for superellipse parameterization
       for (let i = 0; i <= segX; i++){
         const nx = i/segX;
@@ -6714,9 +6710,8 @@
           // z interpolates between halfW (sole edge) and topHalfW (top) based on yNorm
           const localHalfW = halfW * (1 - yNorm) + topHalfW * yNorm;
           const z = -localHalfW * Math.sign(cosP) * Math.pow(Math.abs(cosP), n2 * 0.6);
-          const y = yBase + totalT/2 + 1.2 + midH + upH * yNorm;  // +1.2mm offset above midsole top to avoid Z-fight
+          const y = yBase + totalT/2 + 0.15 + midH + upH * Math.pow(yNorm, 0.45);  // +1.2mm offset above midsole top to avoid Z-fight
           pos.push(x, y, z);
-          uv.push(nx * 7, (j/segPhi) * 3);
           // ===== color zoning =====
           // Resin-family accent gets mixed into the heel-counter and toe-cap
           // zones (the "branding" surfaces where shoe designers traditionally
@@ -6791,17 +6786,10 @@
       const geom = new THREE.BufferGeometry();
       geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geom.setAttribute('color',    new THREE.Float32BufferAttribute(col, 3));
-      geom.setAttribute('uv',       new THREE.Float32BufferAttribute(uv, 2));
       geom.setIndex(idx);
       geom.computeVertexNormals();
-      // The parametric strip changes winding across the medial/lateral half.
-      // FrontSide culled an entire lower quarter from common camera angles,
-      // visually detaching the upper from the midsole. DoubleSide preserves
-      // both shoe walls while the skipped opening quads remain truly open.
+      // FrontSide so we don't render the dome's interior — opening becomes truly "see-through"
       const mat = new THREE.MeshPhysicalMaterial({
-        map: shoeKnitTexture(),
-        bumpMap: shoeKnitTexture(),
-        bumpScale: 0.55,
         vertexColors: true,
         metalness: 0.04,
         roughness: 0.62,
@@ -6829,7 +6817,7 @@
           const yNorm = Math.pow(Math.abs(sinP), n2);
           const localHalfW = halfW * (1 - yNorm) + topHalfW * yNorm;
           const z = -localHalfW * Math.sign(cosP) * Math.pow(Math.abs(cosP || 1e-6), n2 * 0.6);
-          const y = yBase + totalT/2 + 1.2 + midH + upH * yNorm;  // +1.2mm offset above midsole top to avoid Z-fight
+          const y = yBase + totalT/2 + 0.15 + midH + upH * Math.pow(yNorm, 0.45);  // +1.2mm offset above midsole top to avoid Z-fight
           rimPos.push(x, y, z);
         }
       }
@@ -6860,7 +6848,7 @@
         const localHalfW = halfW * (1 - yNorm) + topHalfW * yNorm;
         const tongueHalfW = Math.abs(localHalfW * Math.sign(cosP) * Math.pow(Math.abs(cosP || 1e-6), n2*0.6));
         // Tongue rises slightly through the opening, peak in middle
-        const tongueY = yBase + totalT/2 + midH + upH * (yNorm + 0.04 + 0.06*Math.sin(t*Math.PI));
+        const tongueY = yBase + totalT/2 + midH + upH * (Math.pow(yNorm, 0.45) + 0.025 + 0.035*Math.sin(t*Math.PI));
         for (let j = 0; j <= segZt; j++){
           const u = j/segZt;
           const z = (-1 + 2*u) * tongueHalfW;
@@ -6896,7 +6884,7 @@
       const lacesN = dims.lacesN;
       const laceMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.45, metalness: 0.0 });
       const yAxis = new THREE.Vector3(0, 1, 0);
-      const laceR = (style === 'basketball' || style === 'football' || style === 'trail') ? 2.0 : 1.6;
+      const laceR = (style === 'basketball' || style === 'football' || style === 'trail') ? 1.05 : 0.82;
       for (let k = 0; k < lacesN; k++){
         const tk = (k + 0.5) / lacesN;
         const nx = dims.openStart + (dims.openEnd - dims.openStart) * tk;
@@ -6915,7 +6903,7 @@
           const yNorm = Math.pow(Math.abs(sinP), n2);
           const localHalfW = halfW * (1 - yNorm) + topHalfW * yNorm;
           const z = -localHalfW * Math.sign(cosP) * Math.pow(Math.abs(cosP || 1e-6), n2 * 0.6);
-          const y = yBase + totalT/2 + midH + upH * yNorm + 1.5;  // sit slightly above topline
+          const y = yBase + totalT/2 + midH + upH * Math.pow(yNorm, 0.45) + 1.0;  // sit slightly above topline
           endpoints.push([y, z]);
         }
         const [y1, z1] = endpoints[0];
@@ -6989,46 +6977,8 @@
         }
       }
     }
-    if (style === 'basketball'){
-      // visible side panel accent stripe (Jordan-like)
-      const stripeMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.45 });
-      for (const side of [-1, 1]){
-        const stripeGeo = new THREE.PlaneGeometry(L*0.32, 18);
-        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-        const nx = 0.45;
-        const x = -L/2 + nx*L;
-        const halfW = widthAt(nx) * 0.96;
-        const yBase = baseAt(x);
-        const midH = midsoleHeightAt(nx, dims);
-        const upH = upperHeightAt(nx, dims, style);
-        stripe.position.set(x, yBase + totalT/2 + midH + upH*0.45, side * halfW * 0.92);
-        stripe.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
-        shoeGrp.add(stripe);
-      }
-    }
-    if (style === 'running'){
-      // brand swoosh-like accent line on each side
-      const accentMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 });
-      for (const side of [-1, 1]){
-        const accentGeo = new THREE.PlaneGeometry(L*0.45, 8);
-        const a = new THREE.Mesh(accentGeo, accentMat);
-        const nx = 0.55;
-        const x = -L/2 + nx*L;
-        const halfW = widthAt(nx) * 0.96;
-        const yBase = baseAt(x);
-        const midH = midsoleHeightAt(nx, dims);
-        const upH = upperHeightAt(nx, dims, style);
-        a.position.set(x, yBase + totalT/2 + midH + upH*0.30, side * halfW * 0.93);
-        a.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
-        a.rotation.x = side * 0.10;
-        shoeGrp.add(a);
-      }
-    }
-
-    // Cache the assembled shoe's rest geometry. The action engine uses these
-    // buffers to bend the outsole, foam, upper, tongue and attached details as
-    // one continuous shoe instead of merely rocking the whole group.
-    prepareShoeDeformation(shoeGrp, L, W);
+    // Flat side-logo planes were removed: they floated above the curved upper.
+    // Sport identity is carried by the fitted shell, collar, sole and traction geometry.
     shoeMesh = shoeGrp;
     (_renderTarget || scene).add(shoeMesh);
   }
@@ -7496,8 +7446,7 @@
     const posT = top.geometry.attributes.position;
     const posB = bot.geometry.attributes.position;
     const N = pos.count;
-    const totalT = plateMesh?.userData?.displayT
-      ?? state.plies.reduce((a,p)=>a+p.t,0)*40;
+    const totalT = state.plies.reduce((a,p)=>a+p.t,0)*40;
 
     const sp = sportDef(state.sport).geom;
     const spreadX = sp.spreadX || 0.045;
@@ -7540,9 +7489,6 @@
     const isLateral = (state.activeAction === 'cut' || state.activeAction === 'pivot');
     const isImpact  = (state.activeAction === 'land' || state.activeAction === 'jump' || state.activeAction === 'stop');
     const isRolling = (state.activeAction === 'walk' || state.activeAction === 'jog' || state.activeAction === 'run');
-    const plateFlexFactor = Math.max(0.30, Math.min(2.50, 28 / (D11 + 3)))
-                          * Math.pow(1.0 / Math.max(0.15, resinStiff), 0.55);
-    const rollProfile = shoeDeformationProfile(action, state.actionT, plateFlexFactor);
 
     for (let i = 0; i < N; i++){
       const nx = plateVertexNX[i];
@@ -7595,12 +7541,7 @@
       if (deflect < cap) deflect = cap;
       if (deflect >  3.0) deflect =  3.0;
 
-      const toeU = smoothStep01((nx - 0.62) / 0.38);
-      const rearU = smoothStep01((0.73 - nx) / 0.71);
-      const gaitCurve = rollProfile.rearLift * rearU
-                      + rollProfile.toeBend * toeU
-                      + rollProfile.twist * (nx - 0.50) * nz;
-      const newY = plateBaseY[i] + deflect + gaitCurve;
+      const newY = plateBaseY[i] + deflect;
       pos.setY(i, newY);
       posT.setY(i, newY + totalT/2);
       posB.setY(i, newY - totalT/2);
@@ -7642,9 +7583,6 @@
     const resinSoftMul = Math.pow(1.0 / Math.max(0.12, resinStiff), 0.85);
     const resinDamp = state._resinDamp || 0.02;
     const dampSpread = 1 + resinDamp * 8;
-    const layerFlexFactor = Math.max(0.30, Math.min(2.50, 28 / (D11 + 3)))
-                          * Math.pow(1.0 / Math.max(0.15, resinStiff), 0.55);
-    const rollProfile = shoeDeformationProfile(action, state.actionT, layerFlexFactor);
 
     layerMeshes.forEach(m => {
       if (!m.userData || !m.userData.isExplodedLayer) return;
@@ -7668,12 +7606,7 @@
         const cap = -7.0 * Math.min(4.5, loadMul * Math.sqrt(resinSoftMul));
         if (deflect < cap) deflect = cap;
         if (deflect >  3.0) deflect =  3.0;
-        const rearU = smoothStep01((0.73 - nx) / 0.71);
-        const toeU = smoothStep01((nx - 0.62) / 0.38);
-        const gaitCurve = rollProfile.rearLift * rearU
-                        + rollProfile.toeBend * toeU
-                        + rollProfile.twist * (nx - 0.50) * nz;
-        pos.setY(i, baseY[i] + deflect + gaitCurve);
+        pos.setY(i, baseY[i] + deflect);
 
         // ===== per-vertex tint based on view mode (stress / strain / energy / layers) =====
         if (col){
@@ -8071,178 +8004,16 @@
 
   // Combine restrained rigid-body motion with local shoe/foot flex.
   function applyShoeMotion(actionId, t, ctx){
-    // ctx lets AB mode apply the same motion to viewB's shoe/plate/layers.
-    // When called without ctx, default to the main slot's module globals so
-    // every existing caller (animate() main pass) continues to work unchanged.
-    if (!ctx){
-      ctx = {
-        shoeMesh: shoeMesh,
-        plateMesh: plateMesh,
-        layerMeshes: layerMeshes,
-        D11: state._cltD11 || 0,
-        // Include resin stiffness so the amplified flex formula can apply
-        // resin's contribution to bending amplitude (TPU bends way more
-        // than PEEK at same D11, etc.)
-        resinStiff: state._resinStiff || 1.0,
-      };
-    }
-    // Tolerate missing plateMesh: at minimum we want shoeMesh to animate.
-    // Earlier `!ctx.shoeMesh || !ctx.plateMesh` short-circuited slot B when
-    // either slot was mid-rebuild, leaving B frozen even though shoeMesh was
-    // actually present.
-    if (!ctx.shoeMesh) return;
-    // ===== REALISTIC HUMAN BODY KINEMATICS =====
-    // COORDINATE NOTE — plate length is along world X (heel at -X, toe at +X),
-    // width along Z, vertical along Y.
-    //   rotation.z  = pitch (FOREFOOT bending — toe-down or heel-down)  ← running uses this
-    //   rotation.x  = roll  (lateral lean — left/right tilt)            ← cut uses this
-    //   rotation.y  = yaw   (turning around vertical)                   ← pivot uses this
-    let py=0, px=0, pz=0, rx=0, ry=0, rz=0;
-    let contactNx = null;  // ground contact used as the rotation pivot
-    switch(actionId){
-      case 'walk': {
-        const heelContact = 1 - smoothStep01(t / 0.24);
-        // Heel strike still uses a small contact rotation.  Propulsion itself
-        // is handled by distributed rear-foot flex in deformShoeAssembly().
-        rz = 0.07 * heelContact;
-        contactNx = heelContact > 0.02 ? 0.08 : null;
-        py = -0.8 * Math.sin(Math.PI * Math.min(1, t));
-        break;
-      }
-      case 'jog': {
-        const heelContact = 0.65 * (1 - smoothStep01(t / 0.20));
-        rz = 0.055 * heelContact;
-        contactNx = heelContact > 0.02 ? 0.16 : null;
-        py = -1.4 * Math.sin(Math.PI * Math.min(1, t));
-        break;
-      }
-      case 'run': {
-        const midContact = 0.35 * (1 - smoothStep01(t / 0.18));
-        rz = 0.03 * midContact;
-        contactNx = midContact > 0.02 ? 0.32 : null;
-        py = -1.8 * Math.sin(Math.PI * Math.min(1, t));
-        break;
-      }
-      case 'sprint': {
-        // Forefoot runners bend through the MTP region; the complete shoe no
-        // longer rocks around a single toe point.
-        rz = 0;
-        contactNx = null;
-        py = -1.2 * Math.sin(Math.PI * Math.min(1, t));
-        break;
-      }
-      case 'jump': {
-        // crouch → launch → airborne → land
-        if (t < 0.30){ py = -6 * (t/0.30); rz = 0.04 - 0.18*smoothStep01(t/0.30); contactNx = 0.84; }
-        else if (t < 0.55){ const k=(t-0.30)/0.25; py = -6 + 30*Math.sin(k*Math.PI*0.5); rz = -0.14*(1-k); contactNx = k < 0.45 ? 0.86 : null; }
-        else if (t < 0.80){ const k=(t-0.55)/0.25; py = 24 - 30*Math.sin(k*Math.PI*0.5); rz = -0.07 + 0.10*k; }
-        else { const k=(t-0.80)/0.20; py = -6 * Math.exp(-k*4); rz = -0.05 * Math.exp(-k*4); contactNx = 0.82; }
-        break;
-      }
-      case 'jumpUp': {
-        // crouch (heel-down) → explosive forefoot push-off (toe-down)
-        if (t < 0.40){ py = -5 * (t/0.40); rz = -0.12*smoothStep01(t/0.40); contactNx = 0.84; }
-        else { const k = (t-0.40)/0.60; py = -5 + 28 * Math.sin(k*Math.PI); rz = -0.18 * Math.sin(k*Math.PI); contactNx = k < 0.45 ? 0.86 : null; }
-        break;
-      }
-      case 'land': {
-        // descending → impact → settle (slight forefoot flex during settle)
-        if (t < 0.20){ py = 16 * (1 - t/0.20); rz = -0.02; }
-        else if (t < 0.35){ const k=(t-0.20)/0.15; py = -7 * Math.sin(k*Math.PI*0.5); rz = -0.06*k; }
-        else { const k=(t-0.35)/0.65; py = -7 * Math.exp(-k*3); rz = -0.06 + 0.06*k; }
-        break;
-      }
-      case 'cut': {
-        // Lateral plant — actual side lean uses rotation.x (roll around length axis)
-        rx = -0.16 * Math.sin(t * Math.PI);    // ±9° lateral lean
-        pz =  6 * Math.sin(t * Math.PI);
-        py = -3 * Math.abs(Math.sin(t * Math.PI));
-        break;
-      }
-      case 'stop': {
-        // Heel brake: pitch BACK strongly (toe-up to dig heel in)
-        rz = 0.14 * Math.sin(t * Math.PI);     // +8° toe-up
-        contactNx = 0.10;
-        py = -3 * Math.abs(Math.sin(t * Math.PI));
-        break;
-      }
-      case 'pivot': {
-        // Spin around vertical axis
-        ry = 0.30 * Math.sin(t * Math.PI * 2);
-        py = -1.5;
-        break;
-      }
-    }
-    // ===== Plate-stiffness modulation of forefoot bending =====
-    // AMPLIFIED (2026-05): user reported that fiber-grade / resin changes
-    // looked too subtle in the action animation. Widened the flexFactor
-    // range from 0.55–1.55 to 0.30–2.50 (~8× max/min ratio) AND added a
-    // resin-stiffness multiplier on top so the rigid-body bend visibly
-    // reflects material identity, not just stiffness.
-    //   D11 = 0  (no plate)        → fiberFlex ≈ 2.50  (fully flexible upper)
-    //   D11 = 10 (soft fiber)      → fiberFlex ≈ 2.15
-    //   D11 = 22 (T700S baseline)  → fiberFlex ≈ 1.12
-    //   D11 = 45 (T1100G stiff)    → fiberFlex ≈ 0.58
-    //   D11 = 80 (UHM pitch)       → fiberFlex ≈ 0.34
-    // Resin amplifier (relative to epoxy baseline = 1.0):
-    //   TPU  (resinStiff 0.17) → 2.0× (very pliable rebound)
-    //   PA12 (resinStiff 0.46) → 1.45×
-    //   EP-TGH baseline       → 1.00×
-    //   PEEK (resinStiff 1.03) → 0.96×
-    //   BMI  (resinStiff 1.20) → 0.88×
-    const D11 = ctx.D11 || 0;
-    const fiberFlex = D11 < 0.5
-      ? 2.50                                       // no plate at all
-      : Math.max(0.30, Math.min(2.50, 28 / (D11 + 3)));
-    // Pull resinStiff from ctx (default 1.0 = epoxy baseline). When called
-    // without ctx, fallback to state._resinStiff so single-slot path still
-    // gets the resin amplification.
-    const _rStiff = (typeof ctx.resinStiff === 'number')
-      ? ctx.resinStiff
-      : (state._resinStiff || 1.0);
-    const resinFlex = Math.pow(1.0 / Math.max(0.15, _rStiff), 0.55);
-    const flexFactor = fiberFlex * resinFlex;
-    // Material stiffness still modulates pitch, but the contact-point pivot
-    // provides the main gait cue. This avoids the old centre-axis "nodding".
-    rz *= 0.72 + 0.14 * Math.min(1.50, Math.sqrt(Math.max(0.2, flexFactor)));
-    ry *= 0.85 + 0.15 * flexFactor;                // pivot less sensitive
-    deformShoeAssembly(ctx.shoeMesh, actionId, t, flexFactor);
-
-    // Rotate around the actual ground contact rather than the group centre.
-    // The compensating translation keeps heel/toe contact stationary while
-    // the opposite end rises, producing a recognizable foot-roll motion.
-    if (contactNx != null){
-      const L = ctx.shoeMesh.userData.motionLength || shoeLengthMM();
-      const pivotX = -L/2 + contactNx * L;
-      px += pivotX * (1 - Math.cos(rz));
-      py += -pivotX * Math.sin(rz);
-      // Account for the local forefoot curvature at the contact point so the
-      // pivot does not visually float above the ground during toe-off.
-      const motionProfile = shoeDeformationProfile(actionId, t, flexFactor);
-      const contactCurve = motionProfile.toeBend * smoothStep01((contactNx - 0.62) / 0.38);
-      py -= contactCurve;
-    }
-
-    // ===== Smooth-easing (low-pass) so transitions don't jolt =====
-    // Apply to BOTH the dressed shoe (when visible) AND every exploded layer
-    // (when visible) so the user sees the same stride/jump motion in any view.
-    // Directional indicators (TOE/HEEL arrows, foot silhouette) are NOT moved
-    // because they're ground-frame references.
-    const targets = [ctx.shoeMesh, ctx.plateMesh];
-    (ctx.layerMeshes || []).forEach(m => {
-      if (m && m.userData && m.userData.isExplodedLayer) targets.push(m);
-    });
+    // Keep the assembled shoe bonded and visually stable. Loads, stress colors,
+    // plate-only and exploded-layer views continue to show simulation results.
+    if (!ctx) ctx = { shoeMesh, plateMesh, layerMeshes };
+    const targets = [ctx.shoeMesh, ctx.plateMesh].concat(ctx.layerMeshes || []).filter(Boolean);
     targets.forEach(g => {
-      if (!g) return;
-      g.position.x += (px - g.position.x) * 0.30;
-      g.position.y += (py - g.position.y) * 0.30;
-      g.position.z += (pz - g.position.z) * 0.30;
-      g.rotation.x += (rx - g.rotation.x) * 0.30;
-      g.rotation.y += (ry - g.rotation.y) * 0.30;
-      g.rotation.z += (rz - g.rotation.z) * 0.30;
+      g.position.set(0, 0, 0);
+      g.rotation.set(0, 0, 0);
+      g.scale.set(1, 1, 1);
     });
   }
-
   function resetShoeMotion(ctx){
     if (!ctx){
       ctx = { shoeMesh, plateMesh, layerMeshes };
