@@ -2646,6 +2646,11 @@
             </ul>
           </div>
         </div>
+        <div class="mt-3 p-3 rounded-lg border border-[rgba(34,211,238,0.18)] bg-[rgba(34,211,238,0.04)] text-[10.5px] text-[var(--text-1)] leading-relaxed">
+          <b>3D 鞋體模型：</b>六種運動均使用獨立實鞋網格；來源依 CC BY 4.0 授權，已移除原始材質、貼圖、影像與品牌標誌，並加入 TEi 碳板／釘底架構。
+          <a href="models/carbon-shoes-v2/ATTRIBUTION.md" target="_blank" rel="noopener" class="text-[var(--cyan)] underline">模型來源與作者</a>，
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener" class="text-[var(--cyan)] underline">CC BY 4.0</a>。
+        </div>
         <div class="mt-3 text-[10.5px] text-[var(--text-2)] leading-relaxed">
           ※ 本系統屬於設計概念階段 (preliminary design) 的快速評估工具。最終驗證仍需匯入 Abaqus / ANSYS ACP 進行非線性 FEA、LS-DYNA 衝擊模擬與 OpenSim/AnyBody 生物力學耦合分析。等效公式參考 Jones (1999), Tsai-Wu (1971), 及 ESAComp / HyperSizer 技術文件。
         </div>
@@ -2741,6 +2746,7 @@
 <script type="module">
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
   import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
   import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
   import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -4194,17 +4200,17 @@
   //   - Mizuno Wave Rebellion partial — wave plate doesn't cover heel
   const TEMPLATE_REGIONS = {
     // Generic sport templates — applied when user switches sport tab.
-    'basket'            : 'midfoot',   // basketball shank only (Anta disclosure)
-    'soccer'            : 'fore',      // soccer forefoot Controlplate
-    'football'          : 'midfoot',   // Nike Vapor Edge split midfoot plate
-    'trail'             : '3q',        // Hoka Tecton X heel-to-mid-forefoot
+    'basket'            : 'full',      // full-palm arched carbon plate
+    'soccer'            : 'full',      // full carbon outsole / soleplate
+    'football'          : 'full',      // carbon-composite cleat chassis
+    'trail'             : '7q8',       // split 7/8-length trail plate
     // Brand-specific shoe templates.
     'nike-jordan38'     : 'midfoot',
-    'spike-sprint'      : 'fore',
+    'spike-sprint'      : 'full',
     'adi-predator-elite': 'fore',
     'adi-takumi-sen10'  : 'fore_mid',
     'miz-wave-rebellion3': 'fore_mid',
-    'hoka-tecton-x3'    : '3q',     // dual-plate trail, heel-to-fore coverage
+    'hoka-tecton-x3'    : '7q8',    // dual-plate trail, heel-to-fore coverage
   };
 
   // =====================================================================
@@ -4468,6 +4474,7 @@
   // 0 = heel rear edge, 1 = toe tip
   const PLATE_REGIONS = {
     'full':     { start: 0.00, end: 1.00, label: '全長 Full-length' },
+    '7q8':      { start: 0.06, end: 0.94, label: '7/8 分岔 Split plate' },
     '3q':       { start: 0.05, end: 0.85, label: '3/4 (heel→front)' },
     'fore_mid': { start: 0.30, end: 0.98, label: '前掌+中足' },
     'fore':     { start: 0.55, end: 0.98, label: '前掌 only' },
@@ -5341,6 +5348,12 @@
     }
     for (let i = 0; i < segX; i++){
       for (let j = 0; j < segZ; j++){
+        const nxMid = range.start + ((i + 0.5) / segX) * (range.end - range.start);
+        const nzMid = -1 + 2 * ((j + 0.5) / segZ);
+        // Trail architecture uses two longitudinal carbon blades. The closed
+        // heel/toe bridges preserve load transfer while the central gap allows
+        // terrain conformity instead of forcing one flat sheet.
+        if (state.region === '7q8' && nxMid > 0.22 && nxMid < 0.88 && Math.abs(nzMid) < 0.12) continue;
         const a = i*(segZ+1) + j;
         const b = (i+1)*(segZ+1) + j;
         const c = (i+1)*(segZ+1) + j + 1;
@@ -5420,7 +5433,7 @@
     (_renderTarget || scene).add(plateMesh);
 
     // ===== Geometry mode after rebuild =====
-    //   shoe-mode  : shoe + plate visible · no explode
+    //   shoe-mode  : complete shoe visible · internal plate hidden
     //   plate-mode : plate only · no explode (shoe hidden)
     //   layers     : exploded stack only (shoe + main plate hidden)
     const layersMode = (state.cutaway || state.viewMode === 'layers');
@@ -5448,7 +5461,10 @@
       }
     } else {
       if (shoeMesh)  shoeMesh.visible  = true;
-      if (plateMesh) plateMesh.visible = true;
+      // A production carbon plate sits inside the foam package. Keeping
+      // it hidden in the dressed view prevents false visual delamination;
+      // Plate and Layers tabs remain the engineering inspection views.
+      if (plateMesh) plateMesh.visible = false;
     }
 
     // ===== centerline curve for particles (follows the plate's range only) =====
@@ -6410,20 +6426,16 @@
   // openMaxRad: HALF-angle of foot opening (rad). 0.78 ≈ 45° each side ≈ 90° total opening.
   // superN: superellipse exponent for cross-section (2 = ellipse, >2 = more rectangular/shoe-like)
   function shoeDims(style){
-    // ===== AMPLIFIED sport silhouettes =====
-    // User feedback (2026-05): the original spread (upperH 55..180) wasn't
-    // visually distinct enough — at AB-mode zoom the basketball shoe still
-    // read as a running shoe. Pushed the contrast: basketball is now a clear
-    // high-top (260mm), football a beefy mid-cut, soccer a sleeve-low cleat,
-    // spike near-zero. Goal is "unmistakable at a glance, no label needed."
+    // Logo-free product-class proportions. Keep the six families distinct
+    // without exaggerating collars and foam into toy-like silhouettes.
     switch(style){
-      case 'spike':      return { outsoleH: 5,  midHeel: 10, midFore: 5,  upperH: 34,  soleW:0.94, lacesN: 5, openStart:0.12, openEnd:0.62, openMaxRad:0.34, superN:2.7, sideTaper:0.58 };
-      case 'soccer':     return { outsoleH: 7,  midHeel: 10, midFore: 7,  upperH: 42,  soleW:0.97, lacesN: 6, openStart:0.10, openEnd:0.60, openMaxRad:0.36, superN:2.7, sideTaper:0.60 };
-      case 'football':   return { outsoleH: 11, midHeel: 24, midFore: 17, upperH: 92,  soleW:1.07, lacesN: 6, openStart:0.08, openEnd:0.52, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
-      case 'basketball': return { outsoleH: 13, midHeel: 34, midFore: 24, upperH: 132, soleW:1.08, lacesN: 7, openStart:0.07, openEnd:0.52, openMaxRad:0.42, superN:2.3, sideTaper:0.74 };
-      case 'trail':      return { outsoleH: 16, midHeel: 42, midFore: 28, upperH: 96,  soleW:1.09, lacesN: 7, openStart:0.09, openEnd:0.56, openMaxRad:0.40, superN:2.4, sideTaper:0.70 };
+      case 'spike':      return { outsoleH: 3, midHeel: 10, midFore: 9,  upperH: 32, soleW:0.93, lacesN:5, openStart:0.12, openEnd:0.62, openMaxRad:0.34, superN:2.7, sideTaper:0.58 };
+      case 'soccer':     return { outsoleH: 3, midHeel: 8,  midFore: 6,  upperH: 35, soleW:0.96, lacesN:6, openStart:0.10, openEnd:0.60, openMaxRad:0.36, superN:2.7, sideTaper:0.60 };
+      case 'football':   return { outsoleH: 5, midHeel: 11, midFore: 8,  upperH: 65, soleW:1.04, lacesN:6, openStart:0.08, openEnd:0.52, openMaxRad:0.40, superN:2.4, sideTaper:0.68 };
+      case 'basketball': return { outsoleH: 6, midHeel: 22, midFore: 18, upperH: 78, soleW:1.08, lacesN:7, openStart:0.07, openEnd:0.53, openMaxRad:0.42, superN:2.35, sideTaper:0.70 };
+      case 'trail':      return { outsoleH: 7, midHeel: 33, midFore: 25, upperH: 60, soleW:1.07, lacesN:6, openStart:0.09, openEnd:0.57, openMaxRad:0.40, superN:2.45, sideTaper:0.67 };
       case 'running':
-      default:           return { outsoleH: 8,  midHeel: 42, midFore: 24, upperH: 78,  soleW:1.02, lacesN: 7, openStart:0.08, openEnd:0.58, openMaxRad:0.38, superN:2.35, sideTaper:0.66 };
+      default:           return { outsoleH: 5, midHeel: 38, midFore: 28, upperH: 56, soleW:1.02, lacesN:6, openStart:0.08, openEnd:0.58, openMaxRad:0.38, superN:2.4, sideTaper:0.64 };
     }
   }
   function midsoleHeightAt(nx, dims){
@@ -6457,11 +6469,12 @@
       else if (nx < 0.85) r = 0.82 - 0.22*((nx-0.50)/0.35);
       else                r = 0.55 * (1 - (nx-0.85)/0.15);
     } else if (style === 'trail'){
-      // Rugged mid-cut — taller across the whole midfoot, generous ankle wrap.
-      if      (nx < 0.20) r = 0.80 + 0.20*Math.sin((nx/0.20)*Math.PI*0.5);
-      else if (nx < 0.50) r = 1.00 - 0.18*((nx-0.20)/0.30);
-      else if (nx < 0.85) r = 0.82 - 0.22*((nx-0.50)/0.35);
-      else                r = 0.55 * (1 - (nx-0.85)/0.15);
+      // Rugged low-cut trail upper: protected heel, normal ankle height and a
+      // gradual forefoot taper instead of the former boot-like solid block.
+      if      (nx < 0.18) r = 0.68 + 0.20*Math.sin((nx/0.18)*Math.PI*0.5);
+      else if (nx < 0.48) r = 0.88 - 0.18*((nx-0.18)/0.30);
+      else if (nx < 0.85) r = 0.70 - 0.30*((nx-0.48)/0.37);
+      else                r = 0.40 * (1 - (nx-0.85)/0.15);
     } else {
       // running (default)
       if      (nx < 0.20) r = 0.65 + 0.30*Math.sin((nx/0.20)*Math.PI*0.5);
@@ -6613,7 +6626,238 @@
     return _shoeKnitTexture;
   }
 
+  // ==================== LOGO-FREE REAL SHOE MESH PIPELINE ====================
+  const REAL_SHOE_ASSETS = Object.freeze({
+    running:    'models/carbon-shoes-v2/approved/running.glb',
+    basketball: 'models/carbon-shoes-v2/approved/basketball.glb',
+    soccer:     'models/carbon-shoes-v2/approved/soccer.glb',
+    football:   'models/carbon-shoes-v2/approved/football.glb',
+    trail:      'models/carbon-shoes-v2/approved/trail.glb',
+    spike:      'models/carbon-shoes-v2/approved/spike.glb',
+  });
+  const _realShoeLoader = new GLTFLoader();
+  const _realShoeCache = new Map();
+  const _realShoeLoading = new Map();
+  let _realShoeRebuildQueued = false;
+
+  function queueRealShoeRebuild(){
+    if (_realShoeRebuildQueued) return;
+    _realShoeRebuildQueued = true;
+    requestAnimationFrame(() => {
+      _realShoeRebuildQueued = false;
+      rebuildPlate();
+    });
+  }
+
+  function requestRealShoe(style){
+    const url = REAL_SHOE_ASSETS[style];
+    if (!url || _realShoeCache.has(style) || _realShoeLoading.has(style)) return;
+    const load = _realShoeLoader.loadAsync(url)
+      .then(gltf => {
+        _realShoeCache.set(style, gltf.scene);
+        _realShoeLoading.delete(style);
+        if (sportDef(state.sport).geom.shoeStyle === style) queueRealShoeRebuild();
+      })
+      .catch(err => {
+        _realShoeLoading.delete(style);
+        console.error('Real shoe GLB failed:', style, err);
+      });
+    _realShoeLoading.set(style, load);
+  }
+
+  function applyShoeGeometryMatrix(root, matrix){
+    root.traverse(child => {
+      if (!child?.isMesh || !child.geometry) return;
+      child.geometry.applyMatrix4(matrix);
+      child.geometry.computeBoundingBox();
+      child.geometry.computeBoundingSphere();
+    });
+  }
+
+  function bakeRealShoeScene(source){
+    const clone = source.clone(true);
+    clone.updateMatrixWorld(true);
+    const baked = new THREE.Group();
+    clone.traverse(child => {
+      if (!child?.isMesh || !child.geometry) return;
+      const geometry = child.geometry.clone();
+      geometry.applyMatrix4(child.matrixWorld);
+      const mesh = new THREE.Mesh(geometry);
+      mesh.name = child.name || 'shoe-part';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      baked.add(mesh);
+    });
+    return baked;
+  }
+
+  function maxEndHeight(root, box, positive){
+    const span = Math.max(1e-6, box.max.x - box.min.x);
+    const cut = positive ? box.max.x - span*0.20 : box.min.x + span*0.20;
+    let maxY = -Infinity;
+    root.traverse(child => {
+      const attr = child?.geometry?.attributes?.position;
+      if (!child?.isMesh || !attr) return;
+      for (let i=0; i<attr.count; i++){
+        const x = attr.getX(i);
+        if ((positive && x >= cut) || (!positive && x <= cut)){
+          maxY = Math.max(maxY, attr.getY(i));
+        }
+      }
+    });
+    return maxY;
+  }
+
+  function assignLogoFreeMaterials(root, style, upRGB, soleRGB, box){
+    const height = Math.max(1e-6, box.max.y - box.min.y);
+    const length = Math.max(1e-6, box.max.x - box.min.x);
+    const soleFrac = style === 'spike' ? 0.23 : (style === 'soccer' ? 0.10 : (style === 'trail' ? 0.17 : 0.14));
+    const foamFrac = style === 'spike' ? 0.23 : (style === 'soccer' ? 0.13 : (style === 'trail' ? 0.23 : 0.27));
+    root.traverse(child => {
+      if (!child?.isMesh || !child.geometry?.attributes?.position) return;
+      const pos = child.geometry.attributes.position;
+      const colors = new Float32Array(pos.count*3);
+      for (let i=0; i<pos.count; i++){
+        const ny = (pos.getY(i)-box.min.y)/height;
+        const nx = (pos.getX(i)-box.min.x)/length;
+        let c;
+        if (ny <= soleFrac){
+          c = [soleRGB[0]*0.34, soleRGB[1]*0.34, soleRGB[2]*0.38];
+        } else if (ny <= foamFrac){
+          const cool = style === 'trail' ? 0.72 : 0.90;
+          c = [cool, cool+0.015, cool+0.035];
+        } else {
+          let shade = 0.86 + 0.14*Math.min(1, (ny-foamFrac)/(1-foamFrac));
+          if (nx < 0.16) shade *= 0.66;
+          if (nx > 0.86) shade *= 0.88;
+          c = [upRGB[0]*shade, upRGB[1]*shade, upRGB[2]*shade];
+        }
+        colors[i*3] = c[0]; colors[i*3+1] = c[1]; colors[i*3+2] = c[2];
+      }
+      child.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      child.material = new THREE.MeshPhysicalMaterial({
+        vertexColors: true,
+        metalness: 0.0,
+        roughness: style === 'soccer' ? 0.54 : 0.68,
+        clearcoat: style === 'soccer' ? 0.28 : 0.14,
+        clearcoatRoughness: 0.55,
+        side: THREE.DoubleSide,
+      });
+    });
+  }
+
+  function makeCarbonChassis(length, rearWidth, frontWidth, thickness){
+    const shape = new THREE.Shape();
+    shape.moveTo(-length/2, -rearWidth/2);
+    shape.lineTo(length/2, -frontWidth/2);
+    shape.lineTo(length/2, frontWidth/2);
+    shape.lineTo(-length/2, rearWidth/2);
+    shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: thickness, bevelEnabled: false, curveSegments: 1, steps: 1
+    });
+    geometry.rotateX(Math.PI/2);
+    const material = new THREE.MeshPhysicalMaterial({
+      color: 0x121820, metalness: 0.34, roughness: 0.31,
+      clearcoat: 0.62, clearcoatRoughness: 0.22
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = 'TEi-carbon-chassis';
+    return mesh;
+  }
+
+  function addRealShoeHardware(root, style, L, W, bottomY){
+    const widthAt = widthAtFn(L, W);
+    if (style === 'football'){
+      const chassis = makeCarbonChassis(L*0.91, W*0.69, W*0.76, 2.8);
+      // The source is already a real cleated competition last. Seat the
+      // carbon chassis above its moulded studs so it reads as one outsole.
+      chassis.position.set(0, bottomY+7.2, 0);
+      root.add(chassis);
+    }
+    if (style === 'spike'){
+      const plate = makeCarbonChassis(L*0.38, W*0.66, W*0.54, 2.2);
+      // Seat the TEi forefoot plate into the moulded cleat base.
+      plate.position.set(L*0.29, bottomY+7.2, 0);
+      root.add(plate);
+      const pinGeo = new THREE.ConeGeometry(2.1, 10, 10);
+      const pinMat = new THREE.MeshPhysicalMaterial({ color:0xe9d28a, roughness:0.18, metalness:0.92 });
+      [[0.69,-0.48],[0.69,0.48],[0.82,-0.55],[0.82,0.55],[0.94,-0.36],[0.94,0.36]].forEach(([nx,nz]) => {
+        const pin = new THREE.Mesh(pinGeo, pinMat);
+        pin.position.set(-L/2+nx*L, bottomY-2.2, nz*widthAt(nx));
+        pin.rotation.x = Math.PI;
+        pin.name = 'TEi-sprint-pin';
+        root.add(pin);
+      });
+    }
+  }
+
+  function canonicalRealShoe(source, L, W, totalT, style, upRGB, soleRGB){
+    const root = bakeRealShoeScene(source);
+    let box = new THREE.Box3().setFromObject(root);
+    let size = box.getSize(new THREE.Vector3());
+    if (size.z > size.x){
+      applyShoeGeometryMatrix(root, new THREE.Matrix4().makeRotationY(Math.PI/2));
+      box = new THREE.Box3().setFromObject(root);
+    }
+    if (maxEndHeight(root, box, true) > maxEndHeight(root, box, false)){
+      applyShoeGeometryMatrix(root, new THREE.Matrix4().makeRotationY(Math.PI));
+      box = new THREE.Box3().setFromObject(root);
+    }
+
+    size = box.getSize(new THREE.Vector3());
+    const uniform = (L*0.98)/Math.max(size.x, 1e-6);
+    applyShoeGeometryMatrix(root, new THREE.Matrix4().makeScale(uniform, uniform, uniform));
+    box = new THREE.Box3().setFromObject(root);
+    size = box.getSize(new THREE.Vector3());
+    const targetWidth = W * (style === 'football' ? 1.10 : (style === 'basketball' ? 1.04 : (style === 'spike' ? 0.88 : 0.96)));
+    const widthScale = Math.max(0.72, Math.min(1.28, targetWidth/Math.max(size.z,1e-6)));
+    const heightScale = style === 'spike' ? 0.68 : (style === 'soccer' ? 0.84 : (style === 'football' ? 1.02 : 1.0));
+    applyShoeGeometryMatrix(root, new THREE.Matrix4().makeScale(1, heightScale, widthScale));
+
+    box = new THREE.Box3().setFromObject(root);
+    const bottomY = -10-totalT/2;
+    const center = box.getCenter(new THREE.Vector3());
+    applyShoeGeometryMatrix(root, new THREE.Matrix4().makeTranslation(-center.x, bottomY-box.min.y, -center.z));
+    box = new THREE.Box3().setFromObject(root);
+    assignLogoFreeMaterials(root, style, upRGB, soleRGB, box);
+    addRealShoeHardware(root, style, L, W, box.min.y);
+    root.name = 'LogoFreeRealCarbonShoe-' + style;
+    root.userData.logoFree = true;
+    root.userData.importedShoe = true;
+    root.userData.motionScale = 1;
+    root.userData.carbonArchitecture = state.region;
+    return root;
+  }
+
+  function buildRealShoeShell(L, W, totalT){
+    const sport = sportDef(state.sport);
+    const style = sport.geom.shoeStyle;
+    const source = _realShoeCache.get(style);
+    if (!source){
+      requestRealShoe(style);
+      shoeMesh = null;
+      return true;
+    }
+    let upRGB = sport.geom.upperRGB.slice();
+    let soleRGB = sport.geom.soleRGB.slice();
+    if (style === 'basketball'){ upRGB = [0.68,0.08,0.16]; soleRGB = [0.05,0.06,0.10]; }
+    if (style === 'football'){ upRGB = [0.18,0.36,0.78]; soleRGB = [0.04,0.08,0.16]; }
+    if (state.viewSlot === 'AB' && _renderTarget === slotMeshGroups.B){
+      upRGB = _rotateHue(upRGB, 180);
+      soleRGB = _rotateHue(soleRGB, 30);
+    }
+    const shoeGrp = canonicalRealShoe(source, L, W, totalT, style, upRGB, soleRGB);
+    prepareShoeDeformation(shoeGrp, L, W);
+    shoeMesh = shoeGrp;
+    (_renderTarget || scene).add(shoeMesh);
+    return true;
+  }
+
   function buildShoeShell(L, W, totalT){
+    // Never render the rejected procedural shell. The real-mesh loader
+    // owns both ready and loading states, so no blocky fallback can flash.
+    if (buildRealShoeShell(L, W, totalT)) return;
     const sport = sportDef(state.sport);
     const style = sport.geom.shoeStyle;
     // ===== Slot-aware fabric color =====
@@ -6638,7 +6882,8 @@
     // expose heel/toe/accent so each shoe is visually distinct (e.g. Nike
     // Volt yellow vs Adidas Solar Red vs Hoka Cyclamen pink).
     let brandHeel = null, brandToe = null, brandAccent = null;
-    const _cw = (typeof BRAND_COLORWAYS !== 'undefined') ? BRAND_COLORWAYS[state.templateKey] : null;
+    // Never apply brand palettes or marks to the customer-facing shoe shell.
+    const _cw = null;
     if (_cw){
       const u = _hex2rgb(_cw.upper);
       const s = _hex2rgb(_cw.sole);
@@ -6653,6 +6898,9 @@
     }
     const dims = shoeDims(style);
     const shoeGrp = new THREE.Group();
+    shoeGrp.name = `LogoFreeCarbonShoe-${style}`;
+    shoeGrp.userData.logoFree = true;
+    shoeGrp.userData.carbonArchitecture = state.region;
     const widthAt = widthAtFn(L, W);
     const baseAt = (x) => plateProfileY(x, L, state.arch, state.toeAngle, state.drop);
     // ===== Resin-family accent =====
@@ -6836,11 +7084,46 @@
       // (rim drawn as line; small detail, optional)
     }
 
+    // ============ 3b. COLLAR CAVITY / INSOLE ============
+    // A recessed dark surface makes the heel opening read as a real shoe cavity
+    // from the normal three-quarter camera instead of a solid clog-like shell.
+    {
+      const segXC = 18, segZC = 6;
+      const pos = [], idx = [];
+      const cavityEnd = dims.openStart + (dims.openEnd - dims.openStart) * 0.48;
+      for (let i = 0; i <= segXC; i++){
+        const t = i / segXC;
+        const nx = dims.openStart + (cavityEnd - dims.openStart) * t;
+        const x = -L/2 + nx*L;
+        const halfW = widthAt(nx) * (0.16 + 0.18*Math.sin(Math.PI*t));
+        const yBase = baseAt(x);
+        const midH = midsoleHeightAt(nx, dims);
+        const upH = upperHeightAt(nx, dims, style);
+        const y = yBase + totalT/2 + midH + upH*(0.60 + 0.10*Math.sin(Math.PI*t));
+        for (let j = 0; j <= segZC; j++){
+          const z = (-1 + 2*j/segZC) * halfW;
+          pos.push(x, y - 1.5*Math.pow(z/Math.max(halfW,1),2), z);
+        }
+      }
+      for (let i = 0; i < segXC; i++){
+        for (let j = 0; j < segZC; j++){
+          const a=i*(segZC+1)+j, b=(i+1)*(segZC+1)+j, c=b+1, d=a+1;
+          idx.push(a,b,d,b,c,d);
+        }
+      }
+      const cavityGeo = new THREE.BufferGeometry();
+      cavityGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+      cavityGeo.setIndex(idx); cavityGeo.computeVertexNormals();
+      shoeGrp.add(new THREE.Mesh(cavityGeo, new THREE.MeshStandardMaterial({
+        color:0x080b12, roughness:0.96, metalness:0, side:THREE.DoubleSide
+      })));
+    }
     // ============ 4. TONGUE — RAISED 3D flap protruding through the opening ============
     {
       const n2 = 2 / dims.superN;
-      const tongueNxStart = (dims.openStart + dims.openEnd)/2 - 0.18;
-      const tongueNxEnd   = (dims.openStart + dims.openEnd)/2 + 0.10;
+      // Leave the rear collar visibly open; the tongue begins at the instep.
+      const tongueNxStart = dims.openStart + (dims.openEnd - dims.openStart) * 0.43;
+      const tongueNxEnd   = Math.min(0.74, dims.openEnd + 0.06);
       const segXt = 18, segZt = 6;
       const pos = [], idx = [];
       for (let i = 0; i <= segXt; i++){
@@ -6987,41 +7270,6 @@
           s.position.set(x, y - 2, z);
           shoeGrp.add(s);
         }
-      }
-    }
-    if (style === 'basketball'){
-      // visible side panel accent stripe (Jordan-like)
-      const stripeMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.45 });
-      for (const side of [-1, 1]){
-        const stripeGeo = new THREE.PlaneGeometry(L*0.32, 18);
-        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-        const nx = 0.45;
-        const x = -L/2 + nx*L;
-        const halfW = widthAt(nx) * 0.96;
-        const yBase = baseAt(x);
-        const midH = midsoleHeightAt(nx, dims);
-        const upH = upperHeightAt(nx, dims, style);
-        stripe.position.set(x, yBase + totalT/2 + midH + upH*0.45, side * halfW * 0.92);
-        stripe.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
-        shoeGrp.add(stripe);
-      }
-    }
-    if (style === 'running'){
-      // brand swoosh-like accent line on each side
-      const accentMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1 });
-      for (const side of [-1, 1]){
-        const accentGeo = new THREE.PlaneGeometry(L*0.45, 8);
-        const a = new THREE.Mesh(accentGeo, accentMat);
-        const nx = 0.55;
-        const x = -L/2 + nx*L;
-        const halfW = widthAt(nx) * 0.96;
-        const yBase = baseAt(x);
-        const midH = midsoleHeightAt(nx, dims);
-        const upH = upperHeightAt(nx, dims, style);
-        a.position.set(x, yBase + totalT/2 + midH + upH*0.30, side * halfW * 0.93);
-        a.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
-        a.rotation.x = side * 0.10;
-        shoeGrp.add(a);
       }
     }
 
@@ -7932,23 +8180,23 @@
     if (!root) return;
     root.userData.motionLength = L;
     root.userData.motionWidth = W;
-    root.children.forEach(child => {
+    root.updateMatrixWorld(true);
+    root.userData.motionBounds = new THREE.Box3().setFromObject(root);
+    root.traverse(child => {
       if (!child || !child.isMesh) return;
       child.userData.motionBasePosition = child.position.clone();
       child.userData.motionBaseRotation = child.rotation.clone();
-      const attr = child.geometry && child.geometry.attributes && child.geometry.attributes.position;
+      const attr = child.geometry?.attributes?.position;
       if (!attr) return;
       child.geometry.computeBoundingBox();
       const box = child.geometry.boundingBox;
       const spanX = box ? box.max.x - box.min.x : 0;
-      // Continuous shells are deformed vertex-by-vertex. Small components
-      // (laces, studs and accents) follow the local tangent as rigid details.
-      if (spanX > L * 0.16 && attr.count > 50){
-        child.userData.motionBaseVertices = new Float32Array(attr.array);
-      }
+      child.userData.motionBounds = box ? box.clone() : null;
+      // Cache every attached mesh, including laces, studs and lugs. Using one
+      // shoe-frame deformation field keeps all interfaces bonded in motion.
+      if (attr.count > 0) child.userData.motionBaseVertices = new Float32Array(attr.array);
     });
   }
-
   function smoothStep01(v){
     const x = Math.max(0, Math.min(1, v));
     return x*x*(3 - 2*x);
@@ -7987,88 +8235,124 @@
       twist = 5.5 * Math.sin(Math.PI*2*t);
     }
     const visibleFlex = Math.max(0.55, Math.min(1.65, Math.sqrt(Math.max(0.2, flexFactor || 1))));
-    const toeBend = 16 * toePhase * visibleFlex;
+    const toeBend = 13 * toePhase * visibleFlex;
     // Rear-foot lift is intentionally a distributed bend, not another rigid
     // rotation of the whole shoe.  Softer layups show a little more roll, but
     // the range stays anatomical rather than scaling without limit.
     const rearLift = rearLiftMax * rearRollPhase * (0.86 + 0.14 * visibleFlex);
+    // Anatomical stance roll: the hindfoot and midfoot rotate as one segment
+    // around the metatarsophalangeal joint while the forefoot stays planted.
+    // rearLift is expressed as a restrained joint angle in degrees.
+    const heelRoll = THREE.MathUtils.degToRad(rearLift);
     const compression = Math.min(10, (2.2 + 3.8 * load.intensity) * impactMul);
-    return { load, toeBend, rearLift, compression, twist };
+    return { load, toeBend, rearLift, heelRoll, compression, twist };
   }
 
   function deformShoeAssembly(root, actionId, t, flexFactor){
     if (!root || !root.userData.motionLength) return;
-    // Updating several thousand shoe-shell vertices at 20 fps is visually
-    // smooth while leaving enough main-thread time for controls and charts.
     const now = performance.now();
-    if (root.userData.motionLastUpdate && now - root.userData.motionLastUpdate < 50) return;
+    if (root.userData.motionLastUpdate && now - root.userData.motionLastUpdate < 34) return;
     root.userData.motionLastUpdate = now;
     const L = root.userData.motionLength;
     const W = root.userData.motionWidth || L*0.36;
     const profile = shoeDeformationProfile(actionId, t, flexFactor);
+
+    // Textured GLB path: rotate the complete forefoot around a metatarsal
+    // hinge. Because every visible shoe part is in the same mesh, the sole,
+    // upper, tongue and laces remain bonded throughout the motion.
+    if (root.userData.importedShoe){
+      const modelScale = Math.max(root.userData.motionScale || 1, 1e-6);
+      root.traverse(child => {
+        if (!child?.isMesh) return;
+        const base = child.userData.motionBaseVertices;
+        const bounds = root.userData.motionBounds || child.userData.motionBounds;
+        const attr = child.geometry?.attributes?.position;
+        if (!base || !bounds || !attr || base.length !== attr.array.length) return;
+        const spanX = Math.max(bounds.max.x - bounds.min.x, 1e-6);
+        const spanY = Math.max(bounds.max.y - bounds.min.y, 1e-6);
+        const spanZ = Math.max(bounds.max.z - bounds.min.z, 1e-6);
+        // MTP joint is near 73% of heel-to-toe length and close to the
+        // outsole. All imported parts share these bounds, so upper, midsole,
+        // outsole and laces remain bonded during the articulated bend.
+        const hingeX = bounds.min.x + spanX * 0.73;
+        const hingeY = bounds.min.y + spanY * 0.11;
+        const centerZ = (bounds.min.z + bounds.max.z) * 0.5;
+        const compressionMM = Math.min(3.2, profile.compression * profile.load.intensity * 0.34);
+        for (let i=0; i<attr.count; i++){
+          const k=i*3;
+          const bx=base[k], by=base[k+1], bz=base[k+2];
+          const nx=Math.max(0,Math.min(1,(bx-bounds.min.x)/spanX));
+          const nz=Math.max(-1,Math.min(1,(bz-centerZ)/(spanZ*0.5)));
+          // Rear 64% moves almost rigidly; only a narrow zone around the MTP
+          // joint blends the angle. This removes the rubbery banana motion.
+          const rearW=1-smoothStep01((nx-0.63)/0.12);
+          const rollAngle=-(profile.heelRoll || 0)*rearW;
+          const dx=bx-hingeX, dy=by-hingeY;
+          let x=hingeX + Math.cos(rollAngle)*dx - Math.sin(rollAngle)*dy;
+          let y=hingeY + Math.sin(rollAngle)*dx + Math.cos(rollAngle)*dy;
+          let z=bz;
+          // A small toe-spring response is layered onto the planted forefoot;
+          // it never rotates the whole shoe or lifts the contact patch.
+          const toeW=smoothStep01((nx-0.76)/0.22);
+          y += (profile.toeBend/modelScale)*0.16*toeW;
+          const loadDx=Math.max(0,1-Math.abs(nx-profile.load.nx)/0.22);
+          const loadPatch=loadDx*loadDx*(0.55+0.45*Math.max(0,1-nz*nz));
+          y -= (compressionMM/modelScale)*loadPatch;
+          const twistAngle=THREE.MathUtils.degToRad(profile.twist)*(nx-0.50);
+          if (Math.abs(twistAngle)>1e-5){
+            const yy=y-hingeY, zz=z-centerZ;
+            y=hingeY+Math.cos(twistAngle)*yy-Math.sin(twistAngle)*zz;
+            z=centerZ+Math.sin(twistAngle)*yy+Math.cos(twistAngle)*zz;
+          }
+          attr.array[k]=x; attr.array[k+1]=y; attr.array[k+2]=z;
+        }
+        attr.needsUpdate=true;
+      });
+      return;
+    }
+
+    // Procedural fallback used only while the GLB downloads.
     const hinge = 0.62;
     const deltaAt = (nx, nz) => {
       const u = smoothStep01((nx - hinge) / (1 - hinge));
       const toeCurve = profile.toeBend * u;
-      // Model foot roll as a continuous rear-to-MTP curve.  The heel rises,
-      // the arch bends progressively, and the forefoot contact patch remains
-      // near the ground.  This removes the mechanical "nodding block" look.
-      const rearU = smoothStep01((0.73 - nx) / 0.71);
-      const rearCurve = profile.rearLift * rearU;
+      // Rearfoot lift is handled as a rigid roll about forefoot contact below;
+      // do not bend the heel into a banana-shaped local deformation.
       const dx = Math.max(0, 1 - Math.abs(nx - profile.load.nx) / 0.24);
       const loadPatch = dx*dx * (0.55 + 0.45*Math.max(0, 1 - nz*nz));
       const compression = -profile.compression * profile.load.intensity * loadPatch;
       const torsion = profile.twist * (nx - 0.50) * nz;
-      return rearCurve + toeCurve + compression + torsion;
+      return toeCurve + compression + torsion;
     };
-    root.children.forEach(child => {
-      if (!child || !child.isMesh) return;
-      const basePos = child.userData.motionBasePosition;
-      const baseRot = child.userData.motionBaseRotation;
-      const base = child.userData.motionBaseVertices;
-      const attr = child.geometry && child.geometry.attributes && child.geometry.attributes.position;
-      if (base && attr && base.length === attr.array.length){
-        for (let i=0; i<attr.count; i++){
-          const k = i*3;
-          const nx = Math.max(0, Math.min(1, (base[k] + (basePos?.x || 0) + L/2) / L));
-          const nz = Math.max(-1, Math.min(1, (base[k+2] + (basePos?.z || 0)) / Math.max(W*0.48, 1)));
-          attr.array[k] = base[k];
-          attr.array[k+1] = base[k+1] + deltaAt(nx, nz);
-          attr.array[k+2] = base[k+2];
+    root.traverse(child => {
+      if (!child?.isMesh) return;
+      const basePos=child.userData.motionBasePosition;
+      const baseRot=child.userData.motionBaseRotation;
+      const base=child.userData.motionBaseVertices;
+      const attr=child.geometry?.attributes?.position;
+      if (base && attr && base.length===attr.array.length){
+        for(let i=0;i<attr.count;i++){
+          const k=i*3;
+          const nx=Math.max(0,Math.min(1,(base[k]+(basePos?.x||0)+L/2)/L));
+          const nz=Math.max(-1,Math.min(1,(base[k+2]+(basePos?.z||0))/Math.max(W*0.48,1)));
+          attr.array[k]=base[k]; attr.array[k+1]=base[k+1]+deltaAt(nx,nz); attr.array[k+2]=base[k+2];
         }
-        attr.needsUpdate = true;
-        // Keep the rest-pose smooth normals during animation. Recomputing all
-        // upper/foam normals at 60 fps is expensive and can stall WebGL; the
-        // deformation range is small enough that the cached normals remain
-        // visually stable.
-      } else if (basePos && baseRot){
-        const nx = Math.max(0, Math.min(1, (basePos.x + L/2) / L));
-        const nz = Math.max(-1, Math.min(1, basePos.z / Math.max(W*0.48, 1)));
-        child.position.copy(basePos);
-        child.position.y += deltaAt(nx, nz);
-        const du = 0.008;
-        const slope = (deltaAt(Math.min(1,nx+du),nz) - deltaAt(Math.max(0,nx-du),nz)) / (2*du*L);
-        child.rotation.copy(baseRot);
-        child.rotation.z += Math.atan(slope);
+        attr.needsUpdate=true;
       }
     });
   }
-
   function resetShoeDeformation(root){
     if (!root) return;
     root.userData.motionLastUpdate = 0;
-    root.children.forEach(child => {
-      if (!child || !child.isMesh) return;
-      const base = child.userData.motionBaseVertices;
-      const attr = child.geometry && child.geometry.attributes && child.geometry.attributes.position;
-      if (base && attr && base.length === attr.array.length){
-        attr.array.set(base); attr.needsUpdate = true;
-      }
+    root.traverse(child => {
+      if (!child?.isMesh) return;
+      const base=child.userData.motionBaseVertices;
+      const attr=child.geometry?.attributes?.position;
+      if (base && attr && base.length===attr.array.length){ attr.array.set(base); attr.needsUpdate=true; }
       if (child.userData.motionBasePosition) child.position.copy(child.userData.motionBasePosition);
       if (child.userData.motionBaseRotation) child.rotation.copy(child.userData.motionBaseRotation);
     });
   }
-
   // Combine restrained rigid-body motion with local shoe/foot flex.
   function applyShoeMotion(actionId, t, ctx){
     // ctx lets AB mode apply the same motion to viewB's shoe/plate/layers.
@@ -8101,34 +8385,32 @@
     let contactNx = null;  // ground contact used as the rotation pivot
     switch(actionId){
       case 'walk': {
-        const heelContact = 1 - smoothStep01(t / 0.24);
-        // Heel strike still uses a small contact rotation.  Propulsion itself
-        // is handled by distributed rear-foot flex in deformShoeAssembly().
-        rz = 0.07 * heelContact;
+        const heelContact = 1 - smoothStep01(t / 0.20);
+        rz = 0.045 * heelContact;
         contactNx = heelContact > 0.02 ? 0.08 : null;
-        py = -0.8 * Math.sin(Math.PI * Math.min(1, t));
+        py = -0.45 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'jog': {
-        const heelContact = 0.65 * (1 - smoothStep01(t / 0.20));
-        rz = 0.055 * heelContact;
-        contactNx = heelContact > 0.02 ? 0.16 : null;
-        py = -1.4 * Math.sin(Math.PI * Math.min(1, t));
+        const heelContact = 0.45 * (1 - smoothStep01(t / 0.16));
+        rz = 0.030 * heelContact;
+        contactNx = heelContact > 0.02 ? 0.15 : null;
+        py = -0.65 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'run': {
-        const midContact = 0.35 * (1 - smoothStep01(t / 0.18));
-        rz = 0.03 * midContact;
-        contactNx = midContact > 0.02 ? 0.32 : null;
-        py = -1.8 * Math.sin(Math.PI * Math.min(1, t));
+        const midContact = 0.25 * (1 - smoothStep01(t / 0.13));
+        rz = 0.018 * midContact;
+        contactNx = midContact > 0.02 ? 0.30 : null;
+        py = -0.80 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'sprint': {
-        // Forefoot runners bend through the MTP region; the complete shoe no
-        // longer rocks around a single toe point.
+        // Sprint stance is forefoot-led. Joint articulation is handled in
+        // deformShoeAssembly; there is no rigid whole-shoe pitch here.
         rz = 0;
         contactNx = null;
-        py = -1.2 * Math.sin(Math.PI * Math.min(1, t));
+        py = -0.35 * Math.sin(Math.PI * Math.min(1, t));
         break;
       }
       case 'jump': {
