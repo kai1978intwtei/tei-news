@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Token 用量追蹤</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --muted:       #898781;
+    --hairline:    rgba(11,11,11,0.10);
+    --grid:        #e1e0d9;
+    --accent:      #2a78d6;
+    --warning:     #c98500;
+    --danger:      #d03b3b;
+    --good:        #0ca30c;
+    --track:       rgba(11,11,11,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page:      #0d0d0d;
+      --surface:   #1a1a19;
+      --ink:       #ffffff;
+      --ink-2:     #c3c2b7;
+      --muted:     #898781;
+      --hairline:  rgba(255,255,255,0.10);
+      --grid:      #2c2c2a;
+      --accent:    #3987e5;
+      --warning:   #fab219;
+      --danger:    #d03b3b;
+      --good:      #0ca30c;
+      --track:     rgba(255,255,255,0.10);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:      #0d0d0d;
+    --surface:   #1a1a19;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --muted:     #898781;
+    --hairline:  rgba(255,255,255,0.10);
+    --grid:      #2c2c2a;
+    --accent:    #3987e5;
+    --warning:   #fab219;
+    --danger:    #d03b3b;
+    --good:      #0ca30c;
+    --track:     rgba(255,255,255,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 24px 16px 64px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header .updated { font-size: 13px; color: var(--muted); }
+
+  .toolbar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  button {
+    font: inherit; cursor: pointer;
+    border: 1px solid var(--hairline);
+    background: var(--surface); color: var(--ink);
+    border-radius: 8px; padding: 6px 14px; font-size: 14px;
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+  button.small { padding: 3px 10px; font-size: 13px; }
+  button.danger-btn { color: var(--danger); }
+
+  .service {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    padding: 18px 18px 22px;
+    margin-bottom: 16px;
+  }
+  .service-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .service-head .name { font-size: 17px; font-weight: 700; flex: 1; }
+  .rings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .ring-card {
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    padding: 14px 8px 12px;
+    text-align: center;
+  }
+  .ring-card .win-label { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+  .ring-box { position: relative; width: 110px; height: 110px; margin: 0 auto; }
+  .ring-box svg { transform: rotate(-90deg); }
+  .ring-box .pct {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+  }
+  .ring-card .resets { font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+  .ring-card .amount { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  section h2 { font-size: 16px; margin: 28px 0 10px; }
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 12px;
+    overflow: hidden; font-size: 13px;
+  }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--grid); }
+  th { color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty-hint { color: var(--muted); font-size: 13px; padding: 16px; text-align: center; }
+
+  dialog {
+    border: 1px solid var(--hairline); border-radius: 16px;
+    background: var(--surface); color: var(--ink);
+    padding: 22px; width: min(92vw, 420px);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.5); }
+  dialog h3 { font-size: 17px; margin-bottom: 14px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--ink-2); margin-bottom: 4px; }
+  input, select {
+    font: inherit; width: 100%;
+    background: var(--page); color: var(--ink);
+    border: 1px solid var(--hairline); border-radius: 8px; padding: 7px 10px;
+  }
+  .quick { display: flex; gap: 6px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .win-row {
+    border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 10px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .win-row .full { grid-column: 1 / -1; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🤖 AI Token 用量</h1>
+    <span class="updated" id="updated"></span>
+  </header>
+
+  <div class="toolbar">
+    <button class="primary" id="btn-add-service">＋ 新增 AI 服務</button>
+    <button id="btn-export">匯出備份</button>
+    <button id="btn-theme">🌓 切換深淺色</button>
+  </div>
+
+  <div id="services"></div>
+
+  <section>
+    <h2>最近記錄</h2>
+    <div id="log-area"></div>
+  </section>
+</div>
+
+<!-- 記錄用量 -->
+<dialog id="dlg-usage">
+  <h3 id="dlg-usage-title">記錄用量</h3>
+  <div class="field">
+    <label>這次用了多少 tokens？</label>
+    <input type="number" id="usage-tokens" min="1" placeholder="例如 25000">
+    <div class="quick">
+      <button type="button" class="small" data-add="1000">＋1K</button>
+      <button type="button" class="small" data-add="10000">＋10K</button>
+      <button type="button" class="small" data-add="50000">＋50K</button>
+      <button type="button" class="small" data-add="100000">＋100K</button>
+    </div>
+  </div>
+  <div class="field">
+    <label>備註（選填）</label>
+    <input type="text" id="usage-note" placeholder="例如：寫報告、翻譯">
+  </div>
+  <div class="dialog-actions">
+    <button id="usage-cancel">取消</button>
+    <button class="primary" id="usage-save">記錄</button>
+  </div>
+</dialog>
+
+<!-- 服務設定 -->
+<dialog id="dlg-service">
+  <h3 id="dlg-service-title">服務設定</h3>
+  <div class="field">
+    <label>服務名稱</label>
+    <input type="text" id="svc-name" placeholder="例如 Claude">
+  </div>
+  <div id="svc-windows"></div>
+  <button class="small" id="btn-add-window">＋ 新增額度視窗</button>
+  <p class="hint">額度視窗＝一段時間內的 token 上限，例如「5 小時 30 萬」或「每週 200 萬」。時間到自動歸零重算。</p>
+  <div class="dialog-actions">
+    <button class="danger-btn" id="svc-delete" style="margin-right:auto">刪除服務</button>
+    <button id="svc-cancel">取消</button>
+    <button class="primary" id="svc-save">儲存</button>
+  </div>
+</dialog>
+
+<script>
+const STORE_KEY = 'aiUsageTracker.v1';
+const HOUR = 3600 * 1000;
+
+function defaultState() {
+  return {
+    services: [
+      { id: 's1', name: 'Claude', windows: [
+        { id: 'w1', label: '5 小時額度', hours: 5,   limit: 300000,  used: 0, start: null },
+        { id: 'w2', label: '每週額度',   hours: 168, limit: 2000000, used: 0, start: null },
+      ]},
+      { id: 's2', name: 'ChatGPT', windows: [
+        { id: 'w1', label: '3 小時額度', hours: 3,   limit: 200000,  used: 0, start: null },
+        { id: 'w2', label: '每週額度',   hours: 168, limit: 1500000, used: 0, start: null },
+      ]},
+      { id: 's3', name: 'Gemini', windows: [
+        { id: 'w1', label: '每日額度',   hours: 24,  limit: 1000000, used: 0, start: null },
+      ]},
+    ],
+    log: [],
+  };
+}
+
+let state = load();
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return defaultState();
+}
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+function uid() { return 'x' + Math.random().toString(36).slice(2, 9); }
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function fmtTokens(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(n % 1e3 ? 1 : 0) + 'K';
+  return String(n);
+}
+
+function checkResets() {
+  const now = Date.now();
+  let changed = false;
+  for (const svc of state.services) {
+    for (const w of svc.windows) {
+      if (w.start && now - w.start >= w.hours * HOUR) {
+        w.used = 0; w.start = null; changed = true;
+      }
+    }
+  }
+  if (changed) save();
+}
+
+function resetText(w) {
+  if (!w.start) return '尚未開始計時';
+  const left = w.start + w.hours * HOUR - Date.now();
+  if (left <= 0) return '即將重置';
+  const mins = Math.ceil(left / 60000);
+  if (mins < 60) return mins + ' 分鐘後重置';
+  const hrs = Math.round(left / HOUR);
+  if (hrs < 48) return hrs + ' 小時後重置';
+  return Math.round(hrs / 24) + ' 天後重置';
+}
+
+function ringColor(pct) {
+  if (pct >= 85) return 'var(--danger)';
+  if (pct >= 60) return 'var(--warning)';
+  return 'var(--accent)';
+}
+
+function ringSVG(pct) {
+  const r = 45, c = 2 * Math.PI * r;
+  const shown = Math.min(pct, 100);
+  const dash = (shown / 100) * c;
+  const progress = shown > 0
+    ? `<circle cx="55" cy="55" r="${r}" fill="none" stroke="${ringColor(pct)}" stroke-width="9"
+        stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}"/>`
+    : '';
+  return `<svg width="110" height="110" viewBox="0 0 110 110" aria-hidden="true">
+    <circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--track)" stroke-width="9"/>
+    ${progress}
+  </svg>`;
+}
+
+function render() {
+  checkResets();
+  document.getElementById('updated').textContent =
+    '更新於 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
+  const box = document.getElementById('services');
+  box.innerHTML = state.services.map(svc => `
+    <div class="service">
+      <div class="service-head">
+        <span class="name">${esc(svc.name)}</span>
+        <button class="small primary" data-usage="${svc.id}">＋ 記錄用量</button>
+        <button class="small" data-edit="${svc.id}" title="設定">⚙️</button>
+      </div>
+      <div class="rings">
+        ${svc.windows.map(w => {
+          const pct = w.limit > 0 ? Math.round(w.used / w.limit * 100) : 0;
+          return `<div class="ring-card">
+            <div class="win-label">${esc(w.label)}</div>
+            <div class="ring-box">${ringSVG(pct)}<div class="pct">${pct}%</div></div>
+            <div class="resets">${resetText(w)}</div>
+            <div class="amount">${fmtTokens(w.used)} / ${fmtTokens(w.limit)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  const logArea = document.getElementById('log-area');
+  if (!state.log.length) {
+    logArea.innerHTML = '<div class="empty-hint">還沒有記錄。按各服務的「＋ 記錄用量」開始追蹤。</div>';
+  } else {
+    const rows = state.log.slice(0, 20).map(e => {
+      const svc = state.services.find(s => s.id === e.serviceId);
+      const t = new Date(e.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `<tr><td>${t}</td><td>${esc(svc ? svc.name : '（已刪除）')}</td>
+        <td class="num">${fmtTokens(e.tokens)}</td><td>${esc(e.note || '')}</td></tr>`;
+    }).join('');
+    logArea.innerHTML = `<table><thead><tr><th>時間</th><th>服務</th><th style="text-align:right">Tokens</th><th>備註</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+}
+
+/* ---------- 記錄用量 ---------- */
+const dlgUsage = document.getElementById('dlg-usage');
+let usageTarget = null;
+
+document.getElementById('services').addEventListener('click', e => {
+  const usageBtn = e.target.closest('[data-usage]');
+  const editBtn = e.target.closest('[data-edit]');
+  if (usageBtn) openUsage(usageBtn.dataset.usage);
+  if (editBtn) openService(editBtn.dataset.edit);
+});
+
+function openUsage(serviceId) {
+  usageTarget = serviceId;
+  const svc = state.services.find(s => s.id === serviceId);
+  document.getElementById('dlg-usage-title').textContent = '記錄用量 — ' + svc.name;
+  document.getElementById('usage-tokens').value = '';
+  document.getElementById('usage-note').value = '';
+  dlgUsage.showModal();
+}
+dlgUsage.querySelector('.quick').addEventListener('click', e => {
+  const b = e.target.closest('[data-add]');
+  if (!b) return;
+  const inp = document.getElementById('usage-tokens');
+  inp.value = (parseInt(inp.value, 10) || 0) + parseInt(b.dataset.add, 10);
+});
+document.getElementById('usage-cancel').onclick = () => dlgUsage.close();
+document.getElementById('usage-save').onclick = () => {
+  const tokens = parseInt(document.getElementById('usage-tokens').value, 10);
+  if (!tokens || tokens <= 0) { alert('請輸入 token 數量'); return; }
+  const svc = state.services.find(s => s.id === usageTarget);
+  const now = Date.now();
+  for (const w of svc.windows) {
+    if (w.start && now - w.start >= w.hours * HOUR) { w.used = 0; w.start = null; }
+    if (!w.start) w.start = now;
+    w.used += tokens;
+  }
+  state.log.unshift({ ts: now, serviceId: svc.id, tokens, note: document.getElementById('usage-note').value.trim() });
+  if (state.log.length > 200) state.log.length = 200;
+  save(); render(); dlgUsage.close();
+};
+
+/* ---------- 服務設定 ---------- */
+const dlgSvc = document.getElementById('dlg-service');
+let editTarget = null; // null = 新增
+
+document.getElementById('btn-add-service').onclick = () => openService(null);
+
+function windowRow(w) {
+  return `<div class="win-row" data-wid="${w.id}">
+    <div class="full"><label>視窗名稱</label><input type="text" class="w-label" value="${esc(w.label)}"></div>
+    <div><label>Token 上限</label><input type="number" class="w-limit" min="1" value="${w.limit}"></div>
+    <div><label>週期（小時）</label><input type="number" class="w-hours" min="1" value="${w.hours}"></div>
+    <div class="full" style="text-align:right"><button type="button" class="small danger-btn w-del">移除此視窗</button></div>
+  </div>`;
+}
+
+function openService(serviceId) {
+  editTarget = serviceId;
+  const svc = serviceId ? state.services.find(s => s.id === serviceId) : null;
+  document.getElementById('dlg-service-title').textContent = svc ? '服務設定 — ' + svc.name : '新增 AI 服務';
+  document.getElementById('svc-name').value = svc ? svc.name : '';
+  document.getElementById('svc-delete').style.display = svc ? '' : 'none';
+  const windows = svc ? svc.windows : [{ id: uid(), label: '5 小時額度', hours: 5, limit: 300000, used: 0, start: null }];
+  document.getElementById('svc-windows').innerHTML = windows.map(windowRow).join('');
+  dlgSvc.showModal();
+}
+document.getElementById('btn-add-window').onclick = () => {
+  document.getElementById('svc-windows').insertAdjacentHTML('beforeend',
+    windowRow({ id: uid(), label: '新額度視窗', hours: 24, limit: 1000000 }));
+};
+document.getElementById('svc-windows').addEventListener('click', e => {
+  if (e.target.classList.contains('w-del')) e.target.closest('.win-row').remove();
+});
+document.getElementById('svc-cancel').onclick = () => dlgSvc.close();
+document.getElementById('svc-delete').onclick = () => {
+  if (!confirm('確定刪除這個服務？記錄會保留在歷史清單。')) return;
+  state.services = state.services.filter(s => s.id !== editTarget);
+  save(); render(); dlgSvc.close();
+};
+document.getElementById('svc-save').onclick = () => {
+  const name = document.getElementById('svc-name').value.trim();
+  if (!name) { alert('請輸入服務名稱'); return; }
+  const svc = editTarget ? state.services.find(s => s.id === editTarget)
+                         : { id: uid(), name: '', windows: [] };
+  const old = {};
+  for (const w of svc.windows) old[w.id] = w;
+  const rows = [...document.querySelectorAll('#svc-windows .win-row')];
+  if (!rows.length) { alert('至少要有一個額度視窗'); return; }
+  svc.name = name;
+  svc.windows = rows.map(row => {
+    const prev = old[row.dataset.wid] || { used: 0, start: null };
+    return {
+      id: row.dataset.wid,
+      label: row.querySelector('.w-label').value.trim() || '額度視窗',
+      limit: Math.max(1, parseInt(row.querySelector('.w-limit').value, 10) || 1),
+      hours: Math.max(1, parseInt(row.querySelector('.w-hours').value, 10) || 1),
+      used: prev.used, start: prev.start,
+    };
+  });
+  if (!editTarget) state.services.push(svc);
+  save(); render(); dlgSvc.close();
+};
+
+/* ---------- 其他 ---------- */
+document.getElementById('btn-export').onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ai-usage-backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById('btn-theme').onclick = () => {
+  const root = document.documentElement;
+  const dark = getComputedStyle(root).colorScheme.includes('dark');
+  root.dataset.theme = dark ? 'light' : 'dark';
+};
+
+render();
+setInterval(render, 60 * 1000);
+</script>
+</body>
+</html>
