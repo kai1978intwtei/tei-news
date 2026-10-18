@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#81d8d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>TEi Composites · 碳排盤查系統</title>
+<style>
+ * { box-sizing: border-box; }
+ html, body { overscroll-behavior-y:none; }
+ body { margin:0; min-height:100vh; color:#1d1d1f; line-height:1.5;
+        font-family:"SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Helvetica Neue",sans-serif;
+        background:
+          radial-gradient(1200px 820px at 8% -10%, rgba(255,255,255,0.55), transparent 60%),
+          radial-gradient(1000px 720px at 92% 0%, rgba(255,255,255,0.30), transparent 65%),
+          radial-gradient(900px 700px at 50% 110%, rgba(10,186,181,0.25), transparent 60%),
+          linear-gradient(180deg, #b4e6e1 0%, #81d8d0 55%, #5fc7be 100%);
+        background-attachment:fixed;
+        letter-spacing:-0.003em;
+        -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+
+ .wrap { max-width:1280px; margin:24px auto; padding:32px;
+         background:rgba(255,255,255,0.72);
+         backdrop-filter:saturate(180%) blur(28px);
+         -webkit-backdrop-filter:saturate(180%) blur(28px);
+         border-radius:22px;
+         box-shadow:
+           0 1px 0 rgba(255,255,255,0.9) inset,
+           0 1px 2px rgba(0,0,0,0.04),
+           0 18px 50px rgba(60,70,90,0.12),
+           0 6px 18px rgba(60,70,90,0.06);
+         border:1px solid rgba(255,255,255,0.6); }
+
+ header { display:flex; align-items:center; gap:16px; margin-bottom:22px;
+          padding-bottom:18px; border-bottom:1px solid rgba(0,0,0,0.06); flex-wrap:wrap; }
+ header .logo-placeholder { height:48px; min-width:48px; border-radius:10px;
+          background:linear-gradient(135deg,#1f8a72,#0aab85); color:#fff;
+          display:flex; align-items:center; justify-content:center;
+          font-weight:800; font-size:18px; letter-spacing:0.04em; padding:0 12px; flex-shrink:0; }
+ header .brand-text { display:flex; flex-direction:column; gap:3px; flex:1; min-width:200px; }
+ header h1 { font-size:24px; margin:0; font-weight:600; letter-spacing:-0.02em; line-height:1.25; }
+ header .sub { color:#6e6e73; font-size:12.5px; line-height:1.6; }
+ header .sub strong { color:#1d1d1f; font-weight:600; }
+
+ .back { font-size:12.5px; color:#1d1d1f; text-decoration:none;
+         padding:8px 14px; border-radius:99px;
+         background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.85);
+         box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 6px rgba(60,70,90,0.06);
+         transition:transform .2s, box-shadow .2s; }
+ .back:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(60,70,90,0.12); }
+
+ /* Summary cards */
+ .summary { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:22px; }
+ .sum-card { padding:18px; border-radius:18px; background:rgba(255,255,255,0.78);
+             border:1px solid rgba(255,255,255,0.85);
+             box-shadow:0 1px 0 rgba(255,255,255,0.9) inset,
+                        0 6px 18px rgba(60,70,90,0.07);
+             position:relative; overflow:hidden; }
+ .sum-card .label { font-size:11.5px; color:#6e6e73; font-weight:600;
+                    text-transform:uppercase; letter-spacing:0.06em; }
+ .sum-card .value { font-size:28px; font-weight:700; margin-top:6px; letter-spacing:-0.02em;
+                    font-variant-numeric:tabular-nums; }
+ .sum-card .unit { font-size:11.5px; color:#6e6e73; margin-left:4px; font-weight:500; }
+ .sum-card .pct { font-size:11.5px; color:#6e6e73; margin-top:4px; }
+ .sum-card.s1 { background:linear-gradient(135deg, rgba(255,200,160,0.85), rgba(255,178,128,0.55)); }
+ .sum-card.s2 { background:linear-gradient(135deg, rgba(170,210,255,0.85), rgba(140,190,250,0.55)); }
+ .sum-card.s3 { background:linear-gradient(135deg, rgba(200,225,180,0.85), rgba(170,210,150,0.55)); }
+ .sum-card.total { background:linear-gradient(135deg, rgba(255,255,255,0.95), rgba(245,250,248,0.85)); }
+ .sum-card.total .value { color:#0a7a5a; }
+
+ /* Chart + breakdown */
+ .insight { display:grid; grid-template-columns:280px 1fr; gap:18px; margin-bottom:22px; }
+ .donut-card { padding:18px; border-radius:18px; background:rgba(255,255,255,0.78);
+               border:1px solid rgba(255,255,255,0.85);
+               box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 6px 18px rgba(60,70,90,0.07);
+               display:flex; flex-direction:column; align-items:center; }
+ .donut-card h3 { margin:0 0 12px; font-size:13px; font-weight:600; color:#1d1d1f; align-self:flex-start; }
+ .donut { position:relative; width:200px; height:200px; }
+ .donut svg { width:100%; height:100%; transform:rotate(-90deg); }
+ .donut .center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                  text-align:center; }
+ .donut .center .num { font-size:22px; font-weight:700; letter-spacing:-0.02em; color:#0a7a5a;
+                       font-variant-numeric:tabular-nums; }
+ .donut .center .lbl { font-size:10.5px; color:#6e6e73; }
+
+ .legend { margin-top:14px; width:100%; }
+ .legend-row { display:flex; align-items:center; gap:10px; font-size:12px; padding:5px 0; }
+ .legend-dot { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+ .legend-row .name { flex:1; color:#1d1d1f; }
+ .legend-row .num { color:#6e6e73; font-variant-numeric:tabular-nums; }
+
+ .breakdown { padding:18px; border-radius:18px; background:rgba(255,255,255,0.78);
+              border:1px solid rgba(255,255,255,0.85);
+              box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 6px 18px rgba(60,70,90,0.07); }
+ .breakdown h3 { margin:0 0 14px; font-size:13px; font-weight:600; }
+ .bar-row { display:grid; grid-template-columns:140px 1fr 110px; gap:12px; align-items:center;
+            padding:6px 0; font-size:12.5px; }
+ .bar-row .b-label { color:#1d1d1f; font-weight:500; }
+ .bar-row .b-track { background:rgba(0,0,0,0.05); border-radius:99px; height:10px; overflow:hidden; }
+ .bar-row .b-fill { height:100%; border-radius:99px; transition:width .5s ease; }
+ .bar-row .b-val { text-align:right; color:#1d1d1f; font-variant-numeric:tabular-nums; }
+ .bar-row .b-val .u { color:#6e6e73; font-size:11px; margin-left:3px; }
+
+ /* Scope panels */
+ .scope { padding:20px; border-radius:18px; background:rgba(255,255,255,0.78);
+          border:1px solid rgba(255,255,255,0.85);
+          box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 6px 18px rgba(60,70,90,0.07);
+          margin-bottom:18px; }
+ .scope-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+ .scope-head h2 { margin:0; font-size:17px; font-weight:600; letter-spacing:-0.01em; }
+ .scope-head .tag { font-size:10.5px; padding:3px 9px; border-radius:99px; font-weight:700;
+                    text-transform:uppercase; letter-spacing:0.05em; }
+ .scope.s1 .tag { background:rgba(255,140,80,0.18); color:#b85020; }
+ .scope.s2 .tag { background:rgba(80,130,220,0.18); color:#2a55a8; }
+ .scope.s3 .tag { background:rgba(110,170,90,0.18); color:#3f7a2e; }
+ .scope-head .total { margin-left:auto; font-size:13px; color:#6e6e73; }
+ .scope-head .total b { color:#1d1d1f; font-size:15px; font-variant-numeric:tabular-nums; }
+ .scope-desc { font-size:12px; color:#6e6e73; margin:0 0 14px; }
+
+ /* Activity table */
+ .activity { display:flex; flex-direction:column; gap:8px; }
+ .row { display:grid; grid-template-columns:1.4fr 1.2fr 1fr 1.2fr 1fr 36px;
+        gap:8px; align-items:center; padding:8px;
+        background:rgba(255,255,255,0.6); border-radius:12px;
+        border:1px solid rgba(0,0,0,0.04); }
+ .row-head { background:transparent; border:none; padding:4px 8px;
+             font-size:10.5px; color:#6e6e73; font-weight:600;
+             text-transform:uppercase; letter-spacing:0.05em; }
+ .row select, .row input { width:100%; font-family:inherit; font-size:12.5px;
+                           padding:7px 10px; border-radius:9px;
+                           background:rgba(255,255,255,0.9);
+                           border:1px solid rgba(0,0,0,0.08); color:#1d1d1f;
+                           transition:border-color .15s, box-shadow .15s; }
+ .row select:focus, .row input:focus { outline:none;
+                           border-color:#0aab85;
+                           box-shadow:0 0 0 3px rgba(10,171,133,0.18); }
+ .row input[readonly] { background:rgba(0,0,0,0.03); color:#6e6e73; }
+ .row .emit { font-weight:700; color:#0a7a5a; font-variant-numeric:tabular-nums; font-size:13px;
+              text-align:right; padding-right:4px; }
+ .row .del { width:28px; height:28px; border-radius:8px; border:none;
+             background:rgba(255,80,80,0.10); color:#c0392b;
+             cursor:pointer; font-size:16px; line-height:1;
+             display:flex; align-items:center; justify-content:center;
+             transition:background .15s; }
+ .row .del:hover { background:rgba(255,80,80,0.22); }
+ .row .desc { font-size:12.5px; padding:7px 10px; }
+
+ .add-btn { margin-top:10px; padding:9px 14px; font-family:inherit; font-size:12.5px;
+            border-radius:10px; border:1px dashed rgba(10,171,133,0.4);
+            background:rgba(10,171,133,0.06); color:#0a7a5a;
+            cursor:pointer; font-weight:600; transition:background .15s; }
+ .add-btn:hover { background:rgba(10,171,133,0.14); }
+
+ /* Toolbar */
+ .toolbar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+ .toolbar .meta { display:flex; gap:10px; flex:1; min-width:200px; }
+ .toolbar input[type=text], .toolbar input[type=number] {
+            padding:8px 12px; border-radius:10px;
+            background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.08);
+            font-family:inherit; font-size:12.5px; }
+ .btn { padding:8px 14px; font-family:inherit; font-size:12.5px;
+        border-radius:10px; border:1px solid rgba(255,255,255,0.85);
+        background:rgba(255,255,255,0.8); color:#1d1d1f;
+        cursor:pointer; font-weight:600;
+        box-shadow:0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 6px rgba(60,70,90,0.06);
+        transition:transform .2s, box-shadow .2s, background .15s; }
+ .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(60,70,90,0.12); }
+ .btn.primary { background:linear-gradient(135deg,#0aab85,#0a7a5a); color:#fff;
+                border-color:rgba(255,255,255,0.5); }
+ .btn.danger { color:#c0392b; }
+
+ footer { margin-top:24px; padding-top:16px; border-top:1px solid rgba(0,0,0,0.06);
+          font-size:11.5px; color:#6e6e73; }
+ footer a { color:#0a7a5a; }
+
+ @media (max-width: 900px) {
+   .summary { grid-template-columns:repeat(2, 1fr); }
+   .insight { grid-template-columns:1fr; }
+   .row { grid-template-columns:1fr 1fr; }
+   .row-head { display:none; }
+   .row select, .row input { font-size:13px; }
+   .wrap { padding:20px; margin:12px; }
+   header h1 { font-size:20px; }
+ }
+
+ @media print {
+   body { background:#fff; }
+   .wrap { box-shadow:none; border:none; margin:0; padding:0; background:#fff; }
+   .toolbar, .add-btn, .row .del, .back { display:none !important; }
+   .row { background:#fafafa; border:1px solid #e0e0e0; }
+ }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo-placeholder">CO₂</div>
+    <div class="brand-text">
+      <h1>碳排盤查系統</h1>
+      <div class="sub">
+        TEi Composites · 溫室氣體盤查工作表（GHG Inventory）
+        <strong style="margin-left:6px">範疇 1 + 範疇 2 + 範疇 3</strong>
+      </div>
+    </div>
+    <a class="back" href="../">← 回新聞首頁</a>
+  </header>
+
+  <div class="toolbar">
+    <div class="meta">
+      <input type="text" id="orgName"   placeholder="盤查單位（例：TEi Composites Taipei）">
+      <input type="text" id="periodVal" placeholder="盤查期間（例：2025-01 ~ 2025-12）">
+    </div>
+    <button class="btn"        id="exportCsv">匯出 CSV</button>
+    <button class="btn"        id="printBtn">列印 / 存 PDF</button>
+    <button class="btn danger" id="resetBtn">清空全部</button>
+  </div>
+
+  <div class="summary">
+    <div class="sum-card s1">
+      <div class="label">範疇 1 · 直接排放</div>
+      <div><span class="value" id="s1Total">0.00</span><span class="unit">tCO₂e</span></div>
+      <div class="pct" id="s1Pct">0.0% of total</div>
+    </div>
+    <div class="sum-card s2">
+      <div class="label">範疇 2 · 能源間接</div>
+      <div><span class="value" id="s2Total">0.00</span><span class="unit">tCO₂e</span></div>
+      <div class="pct" id="s2Pct">0.0% of total</div>
+    </div>
+    <div class="sum-card s3">
+      <div class="label">範疇 3 · 其他間接</div>
+      <div><span class="value" id="s3Total">0.00</span><span class="unit">tCO₂e</span></div>
+      <div class="pct" id="s3Pct">0.0% of total</div>
+    </div>
+    <div class="sum-card total">
+      <div class="label">總排放量</div>
+      <div><span class="value" id="grandTotal">0.00</span><span class="unit">tCO₂e</span></div>
+      <div class="pct" id="rowCount">0 筆活動數據</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="donut-card">
+      <h3>範疇佔比</h3>
+      <div class="donut">
+        <svg viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="3.2"/>
+          <circle id="arc1" cx="18" cy="18" r="15.9155" fill="none" stroke="#ff9560" stroke-width="3.2"
+                  stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="butt"/>
+          <circle id="arc2" cx="18" cy="18" r="15.9155" fill="none" stroke="#5c8fe0" stroke-width="3.2"
+                  stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="butt"/>
+          <circle id="arc3" cx="18" cy="18" r="15.9155" fill="none" stroke="#6fb04a" stroke-width="3.2"
+                  stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="butt"/>
+        </svg>
+        <div class="center">
+          <div class="num" id="donutNum">0</div>
+          <div class="lbl">tCO₂e</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-row"><span class="legend-dot" style="background:#ff9560"></span><span class="name">範疇 1</span><span class="num" id="lg1">0%</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#5c8fe0"></span><span class="name">範疇 2</span><span class="num" id="lg2">0%</span></div>
+        <div class="legend-row"><span class="legend-dot" style="background:#6fb04a"></span><span class="name">範疇 3</span><span class="num" id="lg3">0%</span></div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <h3>各活動類別排放（Top）</h3>
+      <div id="topBars"></div>
+    </div>
+  </div>
+
+  <section class="scope s1">
+    <div class="scope-head">
+      <h2>範疇 1 · 直接排放</h2>
+      <span class="tag">Scope 1</span>
+      <div class="total">小計：<b id="s1Sub">0.00</b> tCO₂e</div>
+    </div>
+    <p class="scope-desc">
+      公司營運直接產生的排放：固定燃燒源（鍋爐、發電機）、移動燃燒源（自有車輛）、製程排放、逸散源（冷媒、滅火器）。
+    </p>
+    <div class="row row-head">
+      <div>燃料 / 來源</div>
+      <div>說明（選填）</div>
+      <div>使用量</div>
+      <div>單位（係數）</div>
+      <div>排放（kgCO₂e）</div>
+      <div></div>
+    </div>
+    <div class="activity" id="s1Rows"></div>
+    <button class="add-btn" data-scope="1">＋ 新增範疇 1 活動</button>
+  </section>
+
+  <section class="scope s2">
+    <div class="scope-head">
+      <h2>範疇 2 · 能源間接排放</h2>
+      <span class="tag">Scope 2</span>
+      <div class="total">小計：<b id="s2Sub">0.00</b> tCO₂e</div>
+    </div>
+    <p class="scope-desc">
+      購買能源（電力、外購蒸汽、外購冷熱能）所間接產生的排放。台灣電力預設使用 2024 公告值
+      <strong>0.494 kgCO₂e/kWh</strong>。
+    </p>
+    <div class="row row-head">
+      <div>能源 / 來源</div>
+      <div>說明（選填）</div>
+      <div>使用量</div>
+      <div>單位（係數）</div>
+      <div>排放（kgCO₂e）</div>
+      <div></div>
+    </div>
+    <div class="activity" id="s2Rows"></div>
+    <button class="add-btn" data-scope="2">＋ 新增範疇 2 活動</button>
+  </section>
+
+  <section class="scope s3">
+    <div class="scope-head">
+      <h2>範疇 3 · 其他間接排放</h2>
+      <span class="tag">Scope 3</span>
+      <div class="total">小計：<b id="s3Sub">0.00</b> tCO₂e</div>
+    </div>
+    <p class="scope-desc">
+      價值鏈相關但非自有來源：員工通勤、商務差旅、廢棄物處理、上下游物流等。本工作表提供常見類別簡化估算。
+    </p>
+    <div class="row row-head">
+      <div>類別 / 來源</div>
+      <div>說明（選填）</div>
+      <div>活動量</div>
+      <div>單位（係數）</div>
+      <div>排放（kgCO₂e）</div>
+      <div></div>
+    </div>
+    <div class="activity" id="s3Rows"></div>
+    <button class="add-btn" data-scope="3">＋ 新增範疇 3 活動</button>
+  </section>
+
+  <footer>
+    本工具係內部試算用，排放係數採用我國環境部、能源局公告值與 IPCC AR5/AR6 GWP100 數據彙整。
+    實際申報請以最新公告版本與第三方查證為準。
+    所有資料儲存於本機瀏覽器（LocalStorage），不會上傳。
+  </footer>
+</div>
+
+<script>
+'use strict';
+
+// ─── 排放係數庫（kgCO2e / 單位）────────────────────────────────
+// 來源：環境部國家溫室氣體排放係數管理表 6.0.4、能源局熱值、IPCC AR5 GWP100
+const FACTORS = {
+  1: [
+    { id:'diesel_stat',  name:'柴油（固定源）',        unit:'公升 L',  ef:2.722 },
+    { id:'gasoline_stat',name:'汽油（固定源）',        unit:'公升 L',  ef:2.263 },
+    { id:'natgas',       name:'天然氣',                unit:'Nm³',     ef:1.879 },
+    { id:'lpg_kg',       name:'液化石油氣 LPG',        unit:'公斤 kg', ef:3.000 },
+    { id:'lpg_l',        name:'液化石油氣 LPG',        unit:'公升 L',  ef:1.754 },
+    { id:'coal',         name:'煙煤',                  unit:'公噸 t',  ef:2419  },
+    { id:'diesel_mob',   name:'柴油（移動源/車輛）',   unit:'公升 L',  ef:2.730 },
+    { id:'gasoline_mob', name:'汽油（移動源/車輛）',   unit:'公升 L',  ef:2.271 },
+    { id:'r410a',        name:'冷媒 R-410A 逸散',      unit:'公斤 kg', ef:2088  },
+    { id:'r134a',        name:'冷媒 R-134a 逸散',      unit:'公斤 kg', ef:1430  },
+    { id:'r32',          name:'冷媒 R-32 逸散',        unit:'公斤 kg', ef:675   },
+    { id:'r404a',        name:'冷媒 R-404A 逸散',      unit:'公斤 kg', ef:3922  },
+    { id:'co2_extg',     name:'CO₂ 滅火器逸散',        unit:'公斤 kg', ef:1     },
+    { id:'acetylene',    name:'乙炔（焊接製程）',      unit:'公斤 kg', ef:3.380 },
+  ],
+  2: [
+    { id:'elec_tw',  name:'台灣電力（台電）',  unit:'度 kWh', ef:0.494 },
+    { id:'elec_renew',name:'再生能源電力',     unit:'度 kWh', ef:0     },
+    { id:'steam',    name:'外購蒸汽',          unit:'公噸 t', ef:267   },
+    { id:'chill',    name:'外購冰水',          unit:'RT-hr',  ef:0.512 },
+  ],
+  3: [
+    { id:'commute_car',  name:'員工通勤 · 自小客車', unit:'人公里 pkm', ef:0.176 },
+    { id:'commute_bus',  name:'員工通勤 · 公車',     unit:'人公里 pkm', ef:0.073 },
+    { id:'commute_mrt',  name:'員工通勤 · 捷運/台鐵',unit:'人公里 pkm', ef:0.040 },
+    { id:'commute_mc',   name:'員工通勤 · 機車',     unit:'人公里 pkm', ef:0.084 },
+    { id:'travel_dom',   name:'商務差旅 · 國內航班', unit:'人公里 pkm', ef:0.255 },
+    { id:'travel_short', name:'商務差旅 · 短程國際', unit:'人公里 pkm', ef:0.156 },
+    { id:'travel_long',  name:'商務差旅 · 長程國際', unit:'人公里 pkm', ef:0.150 },
+    { id:'travel_hsr',   name:'商務差旅 · 高鐵',     unit:'人公里 pkm', ef:0.028 },
+    { id:'waste_general',name:'一般廢棄物 焚化',     unit:'公斤 kg',    ef:0.523 },
+    { id:'waste_paper',  name:'紙類回收',            unit:'公斤 kg',    ef:0.058 },
+    { id:'waste_plastic',name:'塑膠廢棄',            unit:'公斤 kg',    ef:2.745 },
+    { id:'water',        name:'自來水',              unit:'立方公尺 m³',ef:0.162 },
+    { id:'wastewater',   name:'廢水處理',            unit:'立方公尺 m³',ef:0.708 },
+    { id:'paper_a4',     name:'A4 影印紙',           unit:'公斤 kg',    ef:0.961 },
+  ],
+};
+
+const STORAGE_KEY = 'tei-ghg-inventory-v1';
+
+const state = {
+  org:'', period:'',
+  rows:{ 1:[], 2:[], 3:[] }
+};
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      state.org    = data.org    || '';
+      state.period = data.period || '';
+      state.rows   = data.rows   || { 1:[], 2:[], 3:[] };
+      for(const s of [1,2,3]) if(!Array.isArray(state.rows[s])) state.rows[s] = [];
+    }
+  } catch(e){ console.warn('load failed', e); }
+  if(!state.rows[1].length && !state.rows[2].length && !state.rows[3].length){
+    seedDemo();
+  }
+}
+
+function seedDemo(){
+  state.rows[1].push({ id:uid(), factorId:'diesel_mob', desc:'公務車隊',     qty:1200 });
+  state.rows[1].push({ id:uid(), factorId:'r410a',      desc:'空調冷媒補充', qty:2.5  });
+  state.rows[2].push({ id:uid(), factorId:'elec_tw',    desc:'廠區用電',     qty:85000 });
+  state.rows[3].push({ id:uid(), factorId:'commute_car',desc:'員工通勤估算', qty:45000 });
+  state.rows[3].push({ id:uid(), factorId:'travel_dom', desc:'國內出差',     qty:8200 });
+}
+
+function save(){
+  state.org    = document.getElementById('orgName').value;
+  state.period = document.getElementById('periodVal').value;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function findFactor(scope, id){
+  return FACTORS[scope].find(f => f.id === id) || FACTORS[scope][0];
+}
+
+function emitFor(scope, row){
+  const f = findFactor(scope, row.factorId);
+  const q = parseFloat(row.qty);
+  if(!isFinite(q)) return 0;
+  return q * f.ef;
+}
+
+function renderRow(scope, row){
+  const f = findFactor(scope, row.factorId);
+  const emit = emitFor(scope, row);
+  const wrap = document.createElement('div');
+  wrap.className = 'row';
+  wrap.dataset.id = row.id;
+
+  const optsHtml = FACTORS[scope]
+    .map(o => `<option value="${o.id}" ${o.id===row.factorId?'selected':''}>${o.name}</option>`)
+    .join('');
+
+  wrap.innerHTML = `
+    <select class="f-factor">${optsHtml}</select>
+    <input  class="f-desc"   type="text"   value="${escapeHtml(row.desc||'')}" placeholder="說明（選填）">
+    <input  class="f-qty"    type="number" value="${row.qty ?? ''}" min="0" step="any" placeholder="0">
+    <input  class="f-unit"   type="text"   value="${f.unit} × ${f.ef}" readonly>
+    <div    class="emit">${fmt(emit)}</div>
+    <button class="del" title="刪除">×</button>
+  `;
+  wrap.querySelector('.f-factor').addEventListener('change', e => {
+    row.factorId = e.target.value;
+    const nf = findFactor(scope, row.factorId);
+    wrap.querySelector('.f-unit').value = `${nf.unit} × ${nf.ef}`;
+    wrap.querySelector('.emit').textContent = fmt(emitFor(scope, row));
+    recompute();
+  });
+  wrap.querySelector('.f-desc').addEventListener('input', e => { row.desc = e.target.value; scheduleSave(); });
+  wrap.querySelector('.f-qty').addEventListener('input',  e => {
+    row.qty = e.target.value;
+    wrap.querySelector('.emit').textContent = fmt(emitFor(scope, row));
+    recompute();
+  });
+  wrap.querySelector('.del').addEventListener('click', () => {
+    state.rows[scope] = state.rows[scope].filter(r => r.id !== row.id);
+    wrap.remove();
+    recompute();
+  });
+  return wrap;
+}
+
+function renderAll(){
+  for(const scope of [1,2,3]){
+    const container = document.getElementById(`s${scope}Rows`);
+    container.innerHTML = '';
+    state.rows[scope].forEach(r => container.appendChild(renderRow(scope, r)));
+  }
+  document.getElementById('orgName').value   = state.org;
+  document.getElementById('periodVal').value = state.period;
+  recompute();
+}
+
+function recompute(){
+  const totals = { 1:0, 2:0, 3:0 };
+  const breakdown = [];
+  for(const scope of [1,2,3]){
+    for(const row of state.rows[scope]){
+      const e = emitFor(scope, row);
+      totals[scope] += e;
+      if(e > 0){
+        const f = findFactor(scope, row.factorId);
+        breakdown.push({ scope, name:f.name, desc:row.desc, emit:e });
+      }
+    }
+  }
+  const grand = totals[1] + totals[2] + totals[3];
+
+  document.getElementById('s1Total').textContent = fmtT(totals[1]);
+  document.getElementById('s2Total').textContent = fmtT(totals[2]);
+  document.getElementById('s3Total').textContent = fmtT(totals[3]);
+  document.getElementById('s1Sub').textContent   = fmtT(totals[1]);
+  document.getElementById('s2Sub').textContent   = fmtT(totals[2]);
+  document.getElementById('s3Sub').textContent   = fmtT(totals[3]);
+  document.getElementById('grandTotal').textContent = fmtT(grand);
+  document.getElementById('donutNum').textContent   = fmtT(grand);
+
+  const p1 = grand ? (totals[1]/grand*100) : 0;
+  const p2 = grand ? (totals[2]/grand*100) : 0;
+  const p3 = grand ? (totals[3]/grand*100) : 0;
+  document.getElementById('s1Pct').textContent = `${p1.toFixed(1)}% of total`;
+  document.getElementById('s2Pct').textContent = `${p2.toFixed(1)}% of total`;
+  document.getElementById('s3Pct').textContent = `${p3.toFixed(1)}% of total`;
+  document.getElementById('lg1').textContent = `${p1.toFixed(1)}%`;
+  document.getElementById('lg2').textContent = `${p2.toFixed(1)}%`;
+  document.getElementById('lg3').textContent = `${p3.toFixed(1)}%`;
+
+  setArc('arc1', 0,            p1);
+  setArc('arc2', p1,           p2);
+  setArc('arc3', p1+p2,        p3);
+
+  const rowCount = state.rows[1].length + state.rows[2].length + state.rows[3].length;
+  document.getElementById('rowCount').textContent = `${rowCount} 筆活動數據`;
+
+  // Top breakdown bars
+  breakdown.sort((a,b) => b.emit - a.emit);
+  const top = breakdown.slice(0, 7);
+  const max = top[0]?.emit || 1;
+  const colors = { 1:'#ff9560', 2:'#5c8fe0', 3:'#6fb04a' };
+  const bars = document.getElementById('topBars');
+  if(!top.length){
+    bars.innerHTML = '<div style="font-size:12px;color:#86868b;padding:20px 0;text-align:center">尚無活動數據</div>';
+  } else {
+    bars.innerHTML = top.map(b => `
+      <div class="bar-row">
+        <div class="b-label">${escapeHtml(b.name)}</div>
+        <div class="b-track"><div class="b-fill" style="width:${(b.emit/max*100).toFixed(1)}%;background:${colors[b.scope]}"></div></div>
+        <div class="b-val">${fmtT(b.emit)}<span class="u">tCO₂e</span></div>
+      </div>
+    `).join('');
+  }
+
+  scheduleSave();
+}
+
+function setArc(id, startPct, lenPct){
+  const el = document.getElementById(id);
+  el.setAttribute('stroke-dasharray', `${lenPct.toFixed(2)} ${(100-lenPct).toFixed(2)}`);
+  el.setAttribute('stroke-dashoffset', (25 - startPct).toFixed(2));
+}
+
+function fmt(v){
+  // kg
+  if(!isFinite(v)) return '0';
+  return v.toLocaleString('zh-TW', { maximumFractionDigits: v < 10 ? 2 : 0 });
+}
+function fmtT(vkg){
+  const t = vkg / 1000;
+  return t.toLocaleString('zh-TW', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+let saveTimer = null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 250);
+}
+
+// ─── Buttons ─────────────────────────────────────────────
+document.querySelectorAll('.add-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const scope = parseInt(btn.dataset.scope, 10);
+    const newRow = { id:uid(), factorId:FACTORS[scope][0].id, desc:'', qty:'' };
+    state.rows[scope].push(newRow);
+    document.getElementById(`s${scope}Rows`).appendChild(renderRow(scope, newRow));
+    recompute();
+  });
+});
+
+document.getElementById('orgName').addEventListener('input', scheduleSave);
+document.getElementById('periodVal').addEventListener('input', scheduleSave);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('確定要清空所有活動資料？此動作無法復原。')) return;
+  state.rows = { 1:[], 2:[], 3:[] };
+  localStorage.removeItem(STORAGE_KEY);
+  renderAll();
+});
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+document.getElementById('exportCsv').addEventListener('click', () => {
+  const lines = [['範疇','類別','說明','使用量','單位','排放係數(kgCO2e/單位)','排放量(kgCO2e)']];
+  for(const scope of [1,2,3]){
+    for(const row of state.rows[scope]){
+      const f = findFactor(scope, row.factorId);
+      lines.push([
+        `Scope ${scope}`, f.name, row.desc || '',
+        row.qty || 0, f.unit, f.ef, emitFor(scope,row).toFixed(2)
+      ]);
+    }
+  }
+  const csv = '﻿' + lines.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = URL.createObjectURL(blob);
+  a.download = `GHG-inventory_${stamp}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ─── boot ────────────────────────────────────────────────
+load();
+renderAll();
+</script>
+</body>
+</html>
